@@ -1049,20 +1049,58 @@ document.getElementById("reserveForm").addEventListener("submit",function(e){
 function openViewReservesModal(serial) {
   const m=machines.find(m=>m.serial===serial);
   if (!m) return;
+  document.getElementById("viewReservesModal").dataset.serial = serial;
+  refreshViewReservesContent(serial);
+  document.getElementById("viewReservesModal").classList.add("open");
+}
+
+function refreshViewReservesContent(serial) {
+  const m=machines.find(m=>m.serial===serial);
+  if (!m) return;
   const content=document.getElementById("viewReservesContent");
-  if (!m.reservations.length) { content.innerHTML="<p style='color:#6b7280'>Nenhuma reserva cadastrada.</p>"; }
-  else {
-    content.innerHTML=m.reservations.map(r=>`
-      <div class="reservation-detail">
+  if (!m.reservations.length) {
+    content.innerHTML="<p style='color:#6b7280'>Nenhuma reserva cadastrada.</p>";
+    return;
+  }
+  content.innerHTML=m.reservations.map((r,idx)=>`
+    <div class="reservation-detail" style="position:relative">
+      <div style="margin-bottom:6px">
         <b>${r.event}</b><br>
         ${formatDate(r.startDate)} → ${formatDate(r.endDate)}
         ${r.city?`<br>Cidade: ${r.city}`:""}
         ${r.responsible?`<br>Responsável: ${r.responsible}`:""}
         ${r.createdBy?`<br><span class="history-user">👤 ${r.createdBy}</span>`:""}
-      </div>`).join("");
-  }
-  document.getElementById("viewReservesModal").classList.add("open");
+      </div>
+      <button onclick="cancelReservation('${serial}', ${idx})"
+        style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">
+        Cancelar reserva
+      </button>
+    </div>`).join("");
 }
+
+function cancelReservation(serial, idx) {
+  const m=machines.find(m=>m.serial===serial);
+  if (!m) return;
+  const res=m.reservations[idx];
+  if (!res) return;
+  if (!confirm(`Cancelar a reserva "${res.event}" (${formatDate(res.startDate)} → ${formatDate(res.endDate)})?`)) return;
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  m.history.push({
+    type:"cancelamento de reserva",
+    event:res.event,
+    startDate:res.startDate,
+    endDate:res.endDate,
+    city:res.city||"",
+    responsible:res.responsible||"",
+    date:new Date().toISOString(),
+    user:userName,
+    userEmail
+  });
+  m.reservations.splice(idx,1);
+  save();
+  refreshViewReservesContent(serial);
+}
+
 function closeViewReservesModal() { document.getElementById("viewReservesModal").classList.remove("open"); }
 
 // ── MANUTENÇÃO ────────────────────────────────────────
