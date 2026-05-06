@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Controle de Máquinas – Easytick</title>
+  <title>Controle de Máquinas – Easytick</title>
 
   <!-- Firebase SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove, update }
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, onValue }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     // ══════════════════════════════════════════════
     //  🔧 COLE AQUI AS SUAS CONFIGURAÇÕES DO FIREBASE
@@ -20,29 +23,48 @@
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
       storageBucket:     "easytick-maquinas.firebasestorage.app",
-      messagingSenderId: "096291599566",
+      messagingSenderId: "1096291599566",
       appId:             "1:1096291599566:web:6e96b6ebec057fd37afc9f"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
+    const app  = initializeApp(firebaseConfig);
+    const db   = getDatabase(app);
+    const auth = getAuth(app);
 
-    // Expõe funções para o código principal
     window._db     = db;
+    window._auth   = auth;
     window._ref    = ref;
     window._set    = set;
     window._onValue= onValue;
-    window._remove = remove;
-    window._update = update;
+    window._signIn = (email, pass) => signInWithEmailAndPassword(auth, email, pass);
+    window._signOut= () => signOut(auth);
+    window._onAuth = (cb) => onAuthStateChanged(auth, cb);
 
-    // Inicia escuta assim que o Firebase carregar
     window.addEventListener("DOMContentLoaded", () => {
-      startFirebaseListener();
+      window._onAuth((user) => {
+        if (user) {
+          window._currentUser = user;
+          showApp();
+          startFirebaseListener();
+        } else {
+          window._currentUser = null;
+          showLogin();
+        }
+      });
     });
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+    /* ── BASE ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fb;
+      color: #1f2937;
+      min-height: 100vh;
+      font-size: 15px;
+    }
 
     :root {
       --blue:   #004aad;
@@ -50,47 +72,111 @@
       --green:  #16a34a;
       --red:    #dc2626;
       --gray:   #374151;
-      --light:  #f4f7fb;
-      --white:  #ffffff;
       --border: #e5e7eb;
-      --shadow: 0 4px 18px rgba(0,74,173,.10);
+      --shadow: 0 4px 18px rgba(0,74,173,.09);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--light);
-      color: #1f2937;
+    /* ── TELA DE LOGIN ── */
+    #loginScreen {
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blue);
+      padding: 20px;
     }
+    #loginScreen.hidden { display: none; }
+
+    .login-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 42px;
+      margin-bottom: 8px;
+    }
+    .login-card h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 4px;
+    }
+    .login-card p {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .login-card form { display: grid; gap: 12px; }
+    #loginError {
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+      display: none;
+    }
+    #loginError.show { display: block; }
+
+    /* ── APP (oculto até login) ── */
+    #appScreen { display: none; }
+    #appScreen.visible { display: block; }
 
     /* ── HEADER ── */
     .header {
       background: var(--blue);
       color: #fff;
-      padding: 22px 18px 18px;
+      padding: 16px 18px;
       display: flex;
       align-items: center;
-      gap: 14px;
+      justify-content: space-between;
+      gap: 12px;
     }
+    .header-left { display: flex; align-items: center; gap: 12px; }
     .header-icon {
-      width: 46px; height: 46px;
+      width: 42px; height: 42px;
       background: rgba(255,255,255,.15);
-      border-radius: 12px;
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; flex-shrink: 0;
+      font-size: 20px; flex-shrink: 0;
     }
-    .header h1 { font-family: 'Syne', sans-serif; font-size: 22px; line-height: 1.2; }
-    .header p  { font-size: 13px; opacity: .8; margin-top: 2px; }
+    .header h1 { font-size: 20px; font-weight: 700; line-height: 1.2; }
+    .header-sub { font-size: 12px; opacity: .8; margin-top: 2px; }
 
-    /* ── FIREBASE STATUS BANNER ── */
+    .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .user-badge {
+      background: rgba(255,255,255,.15);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #fff;
+      text-align: right;
+      line-height: 1.4;
+    }
+    .user-badge b { display: block; font-size: 13px; }
+    .logout-btn {
+      background: rgba(255,255,255,.18);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      width: auto;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,.3); }
+
+    /* ── STATUS FIREBASE ── */
     #fbStatus {
-      background: #fef3c7;
-      color: #92400e;
       font-size: 13px;
       text-align: center;
-      padding: 10px 16px;
+      padding: 9px 16px;
       display: none;
     }
     #fbStatus.error { background: #fee2e2; color: #991b1b; display: block; }
@@ -101,15 +187,15 @@
 
     /* ── CARDS ── */
     .card {
-      background: var(--white);
-      border-radius: 18px;
+      background: #fff;
+      border-radius: 16px;
       padding: 20px;
       margin-bottom: 16px;
       box-shadow: var(--shadow);
     }
     .card h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 18px;
+      font-size: 17px;
+      font-weight: 700;
       margin-bottom: 14px;
       color: var(--blue);
     }
@@ -122,32 +208,31 @@
       margin-bottom: 16px;
     }
     .dash-card {
-      background: var(--white);
-      border-radius: 16px;
+      background: #fff;
+      border-radius: 14px;
       padding: 16px;
       text-align: center;
       box-shadow: var(--shadow);
     }
     .dash-card span {
       display: block;
-      font-family: 'Syne', sans-serif;
-      font-size: 30px;
-      font-weight: 800;
+      font-size: 32px;
+      font-weight: 700;
       color: var(--blue);
     }
     .dash-card p { font-size: 13px; margin-top: 4px; color: #6b7280; }
 
     /* ── FORMS ── */
     form   { display: grid; gap: 11px; }
-    label  { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--gray); }
+    label  { display: grid; gap: 5px; font-size: 13px; font-weight: bold; color: var(--gray); }
 
     input, select {
       width: 100%;
-      padding: 13px 14px;
-      border-radius: 10px;
+      padding: 12px 14px;
+      border-radius: 9px;
       border: 1.5px solid var(--border);
       font-size: 15px;
-      font-family: 'DM Sans', sans-serif;
+      font-family: Arial, sans-serif;
       background: #fafafa;
       transition: border .2s;
     }
@@ -159,26 +244,25 @@
 
     button {
       width: 100%;
-      padding: 13px;
-      border-radius: 10px;
+      padding: 12px;
+      border-radius: 9px;
       border: none;
       background: var(--blue);
       color: #fff;
-      font-family: 'DM Sans', sans-serif;
+      font-family: Arial, sans-serif;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: bold;
       cursor: pointer;
       transition: background .2s, transform .1s;
     }
     button:hover  { background: var(--blue2); }
     button:active { transform: scale(.98); }
+    button:disabled { background: #9ca3af; cursor: not-allowed; opacity: .7; }
 
     .helper-text { font-size: 13px; color: #6b7280; margin-bottom: 12px; }
-
-    /* ── FILTROS ── */
     .filters { display: grid; gap: 10px; }
 
-    /* ── RESERVATION TABS ── */
+    /* ── AGENDA ── */
     .reservation-tabs {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -190,17 +274,17 @@
       color: var(--blue);
       font-size: 13px;
       padding: 10px;
+      font-weight: bold;
     }
     .reservation-tabs button:hover { background: var(--blue); color: #fff; }
-
     .custom-agenda-filter { display: grid; gap: 8px; margin-bottom: 10px; }
 
     .agenda-box {
       padding: 14px;
-      border-radius: 12px;
+      border-radius: 10px;
       background: #eef6ff;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.7;
     }
     .agenda-event-group {
       margin-top: 12px;
@@ -210,82 +294,91 @@
       border: 1px solid var(--border);
     }
     .agenda-event-group h3 { font-size: 15px; color: var(--blue); margin-bottom: 8px; }
-    .agenda-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .agenda-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.6; }
     .agenda-item:last-child { border-bottom: none; }
 
-    /* ── BATCH ── */
+    /* ── CHECKBOXES MARCAS ── */
     .brand-checkboxes {
       display: flex; gap: 16px; flex-wrap: wrap;
       padding: 12px 14px;
-      border-radius: 10px;
+      border-radius: 9px;
       border: 1.5px solid var(--border);
       background: #fafafa;
     }
     .brand-checkboxes label {
       display: flex; align-items: center; gap: 7px;
-      font-weight: 500; font-size: 14px; cursor: pointer;
+      font-weight: normal; font-size: 14px; cursor: pointer;
     }
     .brand-checkboxes input { width: auto; }
 
+    /* ── RESULTADO LOTE ── */
     .batch-result {
       margin-top: 12px;
       padding: 14px;
       border-radius: 10px;
       background: #eef6ff;
       font-size: 14px;
+      line-height: 1.7;
       display: none;
-      line-height: 1.6;
     }
-    .batch-result.show { display: block; }
+    .batch-result.show       { display: block; }
+    .batch-result.show.error { background: #fee2e2; }
 
-    /* ── MACHINE CARDS ── */
+    /* ── MÁQUINAS ── */
     .machine-item {
       border: 1.5px solid var(--border);
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 16px;
       background: #fafafa;
       margin-bottom: 12px;
-      transition: box-shadow .2s;
     }
-    .machine-item:hover { box-shadow: var(--shadow); }
-    .machine-item strong { font-family: 'Syne',sans-serif; font-size: 17px; display: block; margin-bottom: 6px; }
-    .machine-item p { font-size: 14px; margin: 4px 0; }
+    .machine-item strong { font-size: 17px; display: block; margin-bottom: 5px; }
+    .machine-item p { font-size: 14px; margin: 4px 0; line-height: 1.5; }
 
     .status {
       display: inline-block;
-      margin: 8px 0;
+      margin: 7px 0;
       padding: 5px 12px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .3px;
+      font-weight: bold;
     }
-    .disponivel  { background: #dcfce7; color: #166534; }
-    .em-uso      { background: #fee2e2; color: #991b1b; }
-    .manutencao  { background: #e5e7eb; color: #374151; }
-    .reservada   { background: #fff7ed; color: #92400e; }
+    .disponivel    { background: #dcfce7; color: #166534; }
+    .em-uso        { background: #fee2e2; color: #991b1b; }
+    .manutencao    { background: #e5e7eb; color: #374151; }
+    .reservada-hoje{ background: #fef3c7; color: #92400e; }
 
     .reservation-box {
       margin-top: 10px;
       padding: 10px 12px;
       background: #fff7ed;
       border: 1px solid #fed7aa;
-      border-radius: 10px;
+      border-radius: 9px;
       font-size: 13px;
       line-height: 1.7;
     }
 
-    /* ── ACTIONS ── */
+    .blocked-msg {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    /* ── BOTÕES DE AÇÃO ── */
     .actions { display: grid; gap: 8px; margin-top: 14px; }
-    .delete-btn      { background: var(--red); }
-    .delete-btn:hover{ background: #991b1b; }
-    .cancel-btn      { background: #6b7280; }
-    .cancel-btn:hover{ background: #4b5563; }
-    .maintenance-btn { background: var(--gray); }
-    .release-btn     { background: var(--green); }
+    .delete-btn       { background: var(--red); }
+    .delete-btn:hover { background: #991b1b; }
+    .cancel-btn       { background: #6b7280; }
+    .cancel-btn:hover { background: #4b5563; }
+    .maintenance-btn  { background: var(--gray); }
+    .release-btn      { background: var(--green); }
     .release-btn:hover{ background: #15803d; }
 
-    /* ── HISTORY ── */
+    /* ── HISTÓRICO ── */
     .history-box {
       margin-top: 12px;
       padding: 12px;
@@ -294,15 +387,25 @@
       border: 1px solid var(--border);
     }
     .history-item {
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #e5e7eb;
       margin-bottom: 8px;
       padding-bottom: 8px;
       font-size: 13px;
-      line-height: 1.6;
+      line-height: 1.7;
     }
     .history-item:last-child { border-bottom: none; margin: 0; padding: 0; }
+    .history-user {
+      display: inline-block;
+      background: #ede9fe;
+      color: #5b21b6;
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 3px;
+    }
 
-    /* ── MODALS ── */
+    /* ── MODAIS ── */
     .modal {
       display: none;
       position: fixed;
@@ -319,18 +422,16 @@
       width: 100%;
       max-width: 420px;
       padding: 24px;
-      border-radius: 20px;
+      border-radius: 18px;
       box-shadow: 0 24px 48px rgba(0,0,0,.25);
+      max-height: 90vh;
+      overflow-y: auto;
     }
-    .modal-content h2 {
-      font-family: 'Syne', sans-serif;
-      color: var(--blue);
-      margin-bottom: 16px;
-    }
+    .modal-content h2 { font-size: 18px; color: var(--blue); margin-bottom: 16px; }
     .modal-actions { display: grid; gap: 8px; margin-top: 8px; }
     .modal-content form { grid-template-columns: 1fr !important; }
 
-    /* ── LOADING ── */
+    /* ── LOADING BAR ── */
     #loadingBar {
       position: fixed; top: 0; left: 0;
       height: 3px; width: 0;
@@ -339,124 +440,181 @@
       z-index: 9999;
     }
 
-    /* ── RESPONSIVE ── */
+    /* ── RESPONSIVO ── */
     @media (min-width: 700px) {
-      form           { grid-template-columns: 2fr 1fr 1fr; }
-      #batchReserveForm { grid-template-columns: 2fr 1fr 1fr; }
-      .filters       { grid-template-columns: 2fr 1fr 1fr 1fr; }
-      .dashboard     { grid-template-columns: repeat(4, 1fr); }
-      .reservation-tabs { grid-template-columns: repeat(4, 1fr); }
+      form                  { grid-template-columns: 2fr 1fr 1fr; }
+      #batchReserveForm     { grid-template-columns: 2fr 1fr 1fr; }
+      #batchExitForm        { grid-template-columns: 2fr 1fr 1fr; }
+      .filters              { grid-template-columns: 2fr 1fr 1fr 1fr; }
+      .dashboard            { grid-template-columns: repeat(4, 1fr); }
+      .reservation-tabs     { grid-template-columns: repeat(4, 1fr); }
       .custom-agenda-filter { grid-template-columns: 1fr 1fr 1fr; }
-      .actions       { grid-template-columns: repeat(6, 1fr); }
+      .actions              { grid-template-columns: repeat(6, 1fr); }
+      .login-card           { padding: 44px 36px; }
     }
   </style>
 </head>
 <body>
 
 <div id="loadingBar"></div>
-<div id="fbStatus"></div>
 
-<header class="header">
-  <div class="header-icon">📟</div>
-  <div>
+<!-- ══════════════════════════════════════════ -->
+<!--  TELA DE LOGIN                            -->
+<!-- ══════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">📟</div>
     <h1>Controle de Máquinas</h1>
-    <p>Easytick · Sipag, PagBank e Stone</p>
+    <p>Easytick · Faça login para continuar</p>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="E-mail" required />
+      <input type="password" id="loginPassword" placeholder="Senha" required />
+      <div id="loginError">E-mail ou senha incorretos. Tente novamente.</div>
+      <button type="submit" id="loginBtn">Entrar</button>
+    </form>
   </div>
-</header>
+</div>
 
-<main class="app">
+<!-- ══════════════════════════════════════════ -->
+<!--  APP PRINCIPAL                            -->
+<!-- ══════════════════════════════════════════ -->
+<div id="appScreen">
 
-  <!-- DASHBOARD -->
-  <section class="dashboard">
-    <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
-    <div class="dash-card"><span id="availableCount">0</span><p>Disponíveis</p></div>
-    <div class="dash-card"><span id="inUseCount">0</span><p>Em uso</p></div>
-    <div class="dash-card"><span id="maintenanceCount">0</span><p>Manutenção</p></div>
-  </section>
+  <div id="fbStatus"></div>
 
-  <!-- AGENDA -->
-  <section class="card">
-    <h2>📅 Agenda de Reservas</h2>
-    <div class="reservation-tabs">
-      <button onclick="showReservationAgenda('today')">Hoje</button>
-      <button onclick="showReservationAgenda('week')">Esta semana</button>
-      <button onclick="showReservationAgenda('15days')">Próximos 15 dias</button>
-      <button onclick="showReservationAgenda('month')">Este mês</button>
-    </div>
-    <div class="custom-agenda-filter">
-      <input type="date" id="customStartDate" />
-      <input type="date" id="customEndDate" />
-      <button onclick="showCustomReservationAgenda()">Filtrar período</button>
-    </div>
-    <div id="reservationAgenda" class="agenda-box">Selecione um período para visualizar as reservas.</div>
-  </section>
-
-  <!-- CADASTRO -->
-  <section class="card">
-    <h2>➕ Cadastrar Máquina</h2>
-    <form id="machineForm">
-      <input type="text" id="serial" placeholder="Número de série" required />
-      <select id="brand" required>
-        <option value="">Marca</option>
-        <option value="Sipag">Sipag</option>
-        <option value="PagBank">PagBank</option>
-        <option value="Stone">Stone</option>
-      </select>
-      <button type="submit">Cadastrar</button>
-    </form>
-  </section>
-
-  <!-- RESERVA EM LOTE -->
-  <section class="card">
-    <h2>📦 Reserva em Lote</h2>
-    <p class="helper-text">Reserve várias máquinas automaticamente para um evento.</p>
-    <form id="batchReserveForm">
-      <input type="text" id="batchEvent" placeholder="Nome do evento" required />
-      <input type="text" id="batchCity" placeholder="Cidade" required />
-      <input type="text" id="batchResponsible" placeholder="Responsável" required />
-      <div class="brand-checkboxes">
-        <label><input type="checkbox" name="batchBrands" value="Sipag" checked /> Sipag</label>
-        <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
-        <label><input type="checkbox" name="batchBrands" value="Stone" checked /> Stone</label>
+  <header class="header">
+    <div class="header-left">
+      <div class="header-icon">📟</div>
+      <div>
+        <h1>Controle de Máquinas</h1>
+        <div class="header-sub">Easytick · Sipag, PagBank e Stone</div>
       </div>
-      <input type="date" id="batchStartDate" required />
-      <input type="date" id="batchEndDate" required />
-      <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" required />
-      <button type="submit">Reservar automaticamente</button>
-    </form>
-    <div id="batchResult" class="batch-result"></div>
-  </section>
-
-  <!-- FILTROS -->
-  <section class="card">
-    <h2>🔍 Filtros</h2>
-    <div class="filters">
-      <input type="text" id="searchInput" placeholder="Buscar por serial" />
-      <select id="brandFilter">
-        <option value="">Todas as marcas</option>
-        <option value="Sipag">Sipag</option>
-        <option value="PagBank">PagBank</option>
-        <option value="Stone">Stone</option>
-      </select>
-      <select id="statusFilter">
-        <option value="">Todos os status</option>
-        <option value="Disponível">Disponível</option>
-        <option value="Em uso">Em uso</option>
-        <option value="Manutenção">Manutenção</option>
-      </select>
-      <select id="eventFilter"><option value="">Todos os eventos</option></select>
     </div>
-  </section>
+    <div class="header-right">
+      <div class="user-badge">
+        <b id="headerUserName">–</b>
+        <span id="headerUserEmail" style="font-size:11px;opacity:.8"></span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
 
-  <!-- LISTA -->
-  <section class="card">
-    <h2>🖥️ Máquinas</h2>
-    <div id="machineList"><p style="color:#9ca3af">Aguardando conexão com o banco de dados…</p></div>
-  </section>
+  <main class="app">
 
-</main>
+    <!-- DASHBOARD -->
+    <section class="dashboard">
+      <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
+      <div class="dash-card"><span id="availableCount">0</span><p>Disponíveis</p></div>
+      <div class="dash-card"><span id="inUseCount">0</span><p>Em uso</p></div>
+      <div class="dash-card"><span id="maintenanceCount">0</span><p>Manutenção</p></div>
+    </section>
 
-<!-- MODAL SAÍDA -->
+    <!-- AGENDA -->
+    <section class="card">
+      <h2>📅 Agenda de Reservas</h2>
+      <div class="reservation-tabs">
+        <button onclick="showReservationAgenda('today')">Hoje</button>
+        <button onclick="showReservationAgenda('week')">Esta semana</button>
+        <button onclick="showReservationAgenda('15days')">Próximos 15 dias</button>
+        <button onclick="showReservationAgenda('month')">Este mês</button>
+      </div>
+      <div class="custom-agenda-filter">
+        <input type="date" id="customStartDate" />
+        <input type="date" id="customEndDate" />
+        <button onclick="showCustomReservationAgenda()">Filtrar período</button>
+      </div>
+      <div id="reservationAgenda" class="agenda-box">Selecione um período para visualizar as reservas.</div>
+    </section>
+
+    <!-- CADASTRO -->
+    <section class="card">
+      <h2>➕ Cadastrar Máquina</h2>
+      <form id="machineForm">
+        <input type="text" id="serial" placeholder="Número de série" required />
+        <select id="brand" required>
+          <option value="">Marca</option>
+          <option value="Sipag">Sipag</option>
+          <option value="PagBank">PagBank</option>
+          <option value="Stone">Stone</option>
+        </select>
+        <button type="submit">Cadastrar</button>
+      </form>
+    </section>
+
+    <!-- RESERVA EM LOTE -->
+    <section class="card">
+      <h2>📦 Reserva em Lote</h2>
+      <p class="helper-text">Reserve várias máquinas automaticamente para um evento.</p>
+      <form id="batchReserveForm">
+        <input type="text" id="batchEvent" placeholder="Nome do evento" required />
+        <input type="text" id="batchCity" placeholder="Cidade" required />
+        <input type="text" id="batchResponsible" placeholder="Responsável" required />
+        <div class="brand-checkboxes">
+          <label><input type="checkbox" name="batchBrands" value="Sipag" checked /> Sipag</label>
+          <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
+          <label><input type="checkbox" name="batchBrands" value="Stone" checked /> Stone</label>
+        </div>
+        <input type="date" id="batchStartDate" required />
+        <input type="date" id="batchEndDate" required />
+        <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" required />
+        <button type="submit">Reservar automaticamente</button>
+      </form>
+      <div id="batchReserveResult" class="batch-result"></div>
+    </section>
+
+    <!-- SAÍDA EM LOTE -->
+    <section class="card">
+      <h2>🚀 Saída em Lote</h2>
+      <p class="helper-text">O sistema escolhe automaticamente as máquinas que menos giraram e que não têm conflito de reserva no período.</p>
+      <form id="batchExitForm">
+        <input type="text" id="batchExitEvent" placeholder="Nome do evento" required />
+        <input type="text" id="batchExitCity" placeholder="Cidade" required />
+        <input type="text" id="batchExitResponsible" placeholder="Responsável" required />
+        <div class="brand-checkboxes">
+          <label><input type="checkbox" name="batchExitBrands" value="Sipag" checked /> Sipag</label>
+          <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked /> PagBank</label>
+          <label><input type="checkbox" name="batchExitBrands" value="Stone" checked /> Stone</label>
+        </div>
+        <label>Data de saída<input type="date" id="batchExitStartDate" required /></label>
+        <label>Data de retorno<input type="date" id="batchExitEndDate" required /></label>
+        <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" required />
+        <button type="submit">Dar saída automaticamente</button>
+      </form>
+      <div id="batchExitResult" class="batch-result"></div>
+    </section>
+
+    <!-- FILTROS -->
+    <section class="card">
+      <h2>🔍 Filtros</h2>
+      <div class="filters">
+        <input type="text" id="searchInput" placeholder="Buscar por serial" />
+        <select id="brandFilter">
+          <option value="">Todas as marcas</option>
+          <option value="Sipag">Sipag</option>
+          <option value="PagBank">PagBank</option>
+          <option value="Stone">Stone</option>
+        </select>
+        <select id="statusFilter">
+          <option value="">Todos os status</option>
+          <option value="Disponível">Disponível</option>
+          <option value="Em uso">Em uso</option>
+          <option value="Reservada hoje">Reservada hoje</option>
+          <option value="Manutenção">Manutenção</option>
+        </select>
+        <select id="eventFilter"><option value="">Todos os eventos</option></select>
+      </div>
+    </section>
+
+    <!-- LISTA -->
+    <section class="card">
+      <h2>🖥️ Máquinas</h2>
+      <div id="machineList"><p style="color:#9ca3af">Aguardando conexão…</p></div>
+    </section>
+
+  </main>
+</div><!-- fim #appScreen -->
+
+<!-- MODAL SAÍDA INDIVIDUAL -->
 <div id="exitModal" class="modal">
   <div class="modal-content">
     <h2>Registrar Saída</h2>
@@ -465,15 +623,18 @@
       <label>Evento<input type="text" id="exitEvent" placeholder="Ex: Festa do Café" required /></label>
       <label>Cidade<input type="text" id="exitCity" placeholder="Ex: Nepomuceno" required /></label>
       <label>Responsável<input type="text" id="exitResponsible" placeholder="Nome do responsável" required /></label>
+      <label>Data de saída<input type="date" id="exitStartDate" required /></label>
+      <label>Data de retorno<input type="date" id="exitEndDate" required /></label>
+      <div id="exitConflictMsg" class="blocked-msg" style="display:none"></div>
       <div class="modal-actions">
-        <button type="submit">Confirmar Saída</button>
+        <button type="submit" id="exitConfirmBtn">Confirmar Saída</button>
         <button type="button" class="cancel-btn" onclick="closeExitModal()">Cancelar</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- MODAL RESERVA -->
+<!-- MODAL RESERVA INDIVIDUAL -->
 <div id="reserveModal" class="modal">
   <div class="modal-content">
     <h2>Reservar Máquina</h2>
@@ -490,22 +651,75 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  JAVASCRIPT PRINCIPAL                             -->
-<!-- ══════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
+<!--  JAVASCRIPT PRINCIPAL                     -->
+<!-- ══════════════════════════════════════════ -->
 <script>
-// ── ESTADO ────────────────────────────────────────────
 let machines = [];
 
-// ── FIREBASE ──────────────────────────────────────────
+// ── HELPERS DE USUÁRIO ────────────────────────────────
+function getCurrentUserName() {
+  const user = window._currentUser;
+  if (!user) return "Desconhecido";
+  return user.displayName || user.email || "Usuário";
+}
+
+function getCurrentUserEmail() {
+  const user = window._currentUser;
+  if (!user) return "";
+  return user.email || "";
+}
+
+// ── LOGIN / LOGOUT ────────────────────────────────────
+function showLogin() {
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("appScreen").classList.remove("visible");
+}
+
+function showApp() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("appScreen").classList.add("visible");
+
+  const user = window._currentUser;
+  if (user) {
+    document.getElementById("headerUserName").textContent  = user.displayName || user.email;
+    document.getElementById("headerUserEmail").textContent = user.displayName ? user.email : "";
+  }
+}
+
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const email    = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const btn      = document.getElementById("loginBtn");
+  const errEl    = document.getElementById("loginError");
+
+  btn.textContent = "Entrando…";
+  btn.disabled    = true;
+  errEl.classList.remove("show");
+
+  try {
+    await window._signIn(email, password);
+    // onAuthStateChanged vai chamar showApp automaticamente
+  } catch(err) {
+    errEl.classList.add("show");
+    btn.textContent = "Entrar";
+    btn.disabled    = false;
+  }
+});
+
+function doLogout() {
+  if (!confirm("Deseja sair do sistema?")) return;
+  window._signOut();
+}
+
+// ── FIREBASE LISTENER ────────────────────────────────
 function startFirebaseListener() {
-  const fbStatus = document.getElementById("fbStatus");
+  const fbStatus   = document.getElementById("fbStatus");
   const loadingBar = document.getElementById("loadingBar");
 
   try {
-    const db = window._db;
-    const dbRef = window._ref(db, "machines");
-
+    const dbRef = window._ref(window._db, "machines");
     loadingBar.style.width = "60%";
 
     window._onValue(dbRef, (snapshot) => {
@@ -513,35 +727,30 @@ function startFirebaseListener() {
       setTimeout(() => loadingBar.style.width = "0", 400);
 
       const data = snapshot.val();
-      if (data) {
-        machines = Object.values(data).map(m => ({
-          ...m,
-          history: m.history || [],
-          reservations: m.reservations || [],
-          showHistory: false
-        }));
-      } else {
-        machines = [];
-      }
+      machines = data
+        ? Object.values(data).map(m => ({
+            ...m,
+            history:      m.history      || [],
+            reservations: m.reservations || [],
+            showHistory:  false
+          }))
+        : [];
 
-      fbStatus.className = "ok";
-      fbStatus.textContent = "✅ Conectado ao Firebase – dados sincronizados em tempo real";
+      fbStatus.className   = "ok";
+      fbStatus.textContent = "✅ Conectado – dados em tempo real";
       setTimeout(() => fbStatus.className = "", 3000);
-
       render();
-    }, (error) => {
-      fbStatus.className = "error";
-      fbStatus.textContent = "⚠️ Erro Firebase: " + error.message + " – Verifique as configurações.";
+    }, (err) => {
+      fbStatus.className   = "error";
+      fbStatus.textContent = "⚠️ Erro Firebase: " + err.message;
       loadingBar.style.width = "0";
     });
 
-  } catch (e) {
-    fbStatus.className = "error";
-    fbStatus.textContent = "⚠️ Firebase não configurado. Cole suas credenciais no topo do arquivo HTML.";
-    loadingBar.style.width = "0";
-    // Fallback para localStorage durante desenvolvimento
+  } catch(e) {
+    fbStatus.className   = "error";
+    fbStatus.textContent = "⚠️ Firebase não configurado.";
     machines = JSON.parse(localStorage.getItem("machines") || "[]").map(m => ({
-      ...m, history: m.history||[], reservations: m.reservations||[], showHistory:false
+      ...m, history: m.history||[], reservations: m.reservations||[], showHistory: false
     }));
     render();
   }
@@ -549,22 +758,13 @@ function startFirebaseListener() {
 
 function save() {
   try {
-    const db = window._db;
-    if (!db) throw new Error("no db");
-    const machinesObj = {};
+    const obj = {};
     machines.forEach(m => {
       const key = m.serial.replace(/[.#$/[\]]/g, "_");
-      machinesObj[key] = {
-        serial: m.serial,
-        brand: m.brand,
-        status: m.status,
-        history: m.history,
-        reservations: m.reservations
-      };
+      obj[key]  = { serial: m.serial, brand: m.brand, status: m.status, history: m.history, reservations: m.reservations };
     });
-    window._set(window._ref(db, "machines"), machinesObj);
+    window._set(window._ref(window._db, "machines"), obj);
   } catch(e) {
-    // fallback localStorage
     localStorage.setItem("machines", JSON.stringify(machines));
   }
 }
@@ -577,7 +777,6 @@ function addDays(d, n) {
   dt.setDate(dt.getDate() + n);
   return dt.toISOString().split("T")[0];
 }
-
 function getWeekRange() {
   const today = new Date(getToday() + "T00:00:00");
   const day = today.getDay();
@@ -586,99 +785,103 @@ function getWeekRange() {
   const sun = new Date(mon); sun.setDate(mon.getDate()+6);
   return { start: mon.toISOString().split("T")[0], end: sun.toISOString().split("T")[0] };
 }
-
 function getMonthRange() {
-  const today = new Date(getToday() + "T00:00:00");
-  const first = new Date(today.getFullYear(), today.getMonth(), 1);
-  const last  = new Date(today.getFullYear(), today.getMonth()+1, 0);
-  return { start: first.toISOString().split("T")[0], end: last.toISOString().split("T")[0] };
+  const t = new Date(getToday() + "T00:00:00");
+  const f = new Date(t.getFullYear(), t.getMonth(), 1);
+  const l = new Date(t.getFullYear(), t.getMonth()+1, 0);
+  return { start: f.toISOString().split("T")[0], end: l.toISOString().split("T")[0] };
+}
+function formatDate(d)     { return d ? new Date(d+"T00:00:00").toLocaleDateString("pt-BR") : "-"; }
+function formatDateTime(d) { return d ? new Date(d).toLocaleString("pt-BR") : "-"; }
+function hasDateOverlap(sA,eA,sB,eB) { return sA<=eB && eA>=sB; }
+
+// ── STATUS REAL (considera reservas de hoje) ─────────
+function getRealStatus(m) {
+  if (m.status==="Em uso")     return "Em uso";
+  if (m.status==="Manutenção") return "Manutenção";
+  const today = getToday();
+  if (m.reservations.some(r => hasDateOverlap(r.startDate, r.endDate, today, today)))
+    return "Reservada hoje";
+  return "Disponível";
 }
 
-function formatDate(d) {
-  if (!d) return "-";
-  return new Date(d + "T00:00:00").toLocaleDateString("pt-BR");
-}
-function formatDateTime(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleString("pt-BR");
-}
-function hasDateOverlap(sA, eA, sB, eB) { return sA <= eB && eA >= sB; }
-function isReservationActive(r) { const t=getToday(); return hasDateOverlap(r.startDate, r.endDate, t, t); }
-
-// ── DASHBOARD ─────────────────────────────────────────
-function updateDashboard() {
-  document.getElementById("totalCount").textContent       = machines.length;
-  document.getElementById("availableCount").textContent   = machines.filter(m=>m.status==="Disponível").length;
-  document.getElementById("inUseCount").textContent       = machines.filter(m=>m.status==="Em uso").length;
-  document.getElementById("maintenanceCount").textContent = machines.filter(m=>m.status==="Manutenção").length;
-}
-
-// ── STATUS CLASS ──────────────────────────────────────
 function getStatusClass(s) {
-  if (s==="Disponível") return "disponivel";
-  if (s==="Em uso")     return "em-uso";
-  if (s==="Manutenção") return "manutencao";
+  if (s==="Disponível")     return "disponivel";
+  if (s==="Em uso")         return "em-uso";
+  if (s==="Manutenção")     return "manutencao";
+  if (s==="Reservada hoje") return "reservada-hoje";
   return "";
 }
 
-// ── CONFLITO ──────────────────────────────────────────
 function hasReservationConflict(machine, start, end) {
   return machine.reservations.some(r => hasDateOverlap(start, end, r.startDate, r.endDate));
 }
 
+function isBlockedForExit(machine, startDate, endDate) {
+  if (machine.status==="Em uso")     return "Máquina já está em uso.";
+  if (machine.status==="Manutenção") return "Máquina em manutenção.";
+  const conflict = machine.reservations.find(r => hasDateOverlap(startDate, endDate, r.startDate, r.endDate));
+  if (conflict) return `Conflito com reserva: ${conflict.event} (${formatDate(conflict.startDate)} → ${formatDate(conflict.endDate)})`;
+  return null;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function updateDashboard() {
+  const st = machines.map(getRealStatus);
+  document.getElementById("totalCount").textContent       = machines.length;
+  document.getElementById("availableCount").textContent   = st.filter(s=>s==="Disponível").length;
+  document.getElementById("inUseCount").textContent       = st.filter(s=>s==="Em uso").length;
+  document.getElementById("maintenanceCount").textContent = st.filter(s=>s==="Manutenção").length;
+}
+
 // ── AGENDA ───────────────────────────────────────────
 function getReservationsByRange(start, end, label) {
-  const reservations = [];
+  const list = [];
   machines.forEach(m => {
     m.reservations.forEach(r => {
-      if (hasDateOverlap(r.startDate, r.endDate, start, end)) {
-        reservations.push({ ...r, serial: m.serial, brand: m.brand, status: m.status });
-      }
+      if (hasDateOverlap(r.startDate, r.endDate, start, end))
+        list.push({ ...r, serial: m.serial, brand: m.brand, status: getRealStatus(m) });
     });
   });
-  return { reservations, start, end, label };
+  return { reservations: list, start, end, label };
 }
 
 function groupByEvent(list) {
-  return list.reduce((g, r) => { g[r.event] = g[r.event]||[]; g[r.event].push(r); return g; }, {});
+  return list.reduce((g,r) => { g[r.event]=g[r.event]||[]; g[r.event].push(r); return g; }, {});
 }
 
 function renderReservationAgenda({ reservations, start, end, label }) {
   const box = document.getElementById("reservationAgenda");
   if (!reservations.length) {
-    box.innerHTML = `<b>${label}</b><br>Período: ${formatDate(start)} até ${formatDate(end)}<br><br>Nenhuma reserva encontrada.`;
+    box.innerHTML = `<b>${label}</b><br>${formatDate(start)} até ${formatDate(end)}<br><br>Nenhuma reserva encontrada.`;
     return;
   }
   const grouped = groupByEvent(reservations);
-  box.innerHTML = `
-    <b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br>
-    Total de máquinas: <b>${reservations.length}</b> · Eventos: <b>${Object.keys(grouped).length}</b>
-    ${Object.entries(grouped).map(([ev, items]) => `
+  box.innerHTML = `<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br>
+    Máquinas: <b>${reservations.length}</b> · Eventos: <b>${Object.keys(grouped).length}</b>
+    ${Object.entries(grouped).map(([ev,items]) => `
       <div class="agenda-event-group">
-        <h3>${ev} <small style="font-weight:400;font-size:12px">(${items.length} máquina${items.length>1?'s':''})</small></h3>
-        ${items.map(i => `
-          <div class="agenda-item">
-            <b>${i.serial}</b> · ${i.brand}
-            ${i.city ? `· ${i.city}` : ""}
-            ${i.responsible ? `· ${i.responsible}` : ""}<br>
-            ${formatDate(i.startDate)} → ${formatDate(i.endDate)} · ${i.status}
-          </div>`).join("")}
+        <h3>${ev} <small style="font-weight:normal;font-size:12px">(${items.length} máquina${items.length>1?'s':''})</small></h3>
+        ${items.map(i=>`<div class="agenda-item">
+          <b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>
+          ${formatDate(i.startDate)} → ${formatDate(i.endDate)} · ${i.status}
+          ${i.createdByEmail?`<br><span class="history-user">👤 ${i.createdByEmail}</span>`:""}
+        </div>`).join("")}
       </div>`).join("")}`;
 }
 
 function showReservationAgenda(type) {
   const today = getToday();
   if (type==="today")  renderReservationAgenda(getReservationsByRange(today, today, "Hoje"));
-  if (type==="week")   { const w=getWeekRange(); renderReservationAgenda(getReservationsByRange(w.start, w.end, "Esta semana")); }
+  if (type==="week")   { const w=getWeekRange();  renderReservationAgenda(getReservationsByRange(w.start, w.end, "Esta semana")); }
   if (type==="15days") renderReservationAgenda(getReservationsByRange(today, addDays(today,15), "Próximos 15 dias"));
   if (type==="month")  { const m=getMonthRange(); renderReservationAgenda(getReservationsByRange(m.start, m.end, "Este mês")); }
 }
-
 function showCustomReservationAgenda() {
-  const s = document.getElementById("customStartDate").value;
-  const e = document.getElementById("customEndDate").value;
-  if (!s||!e) { alert("Selecione a data inicial e a data final."); return; }
-  if (e<s)    { alert("A data final não pode ser menor que a inicial."); return; }
+  const s=document.getElementById("customStartDate").value;
+  const e=document.getElementById("customEndDate").value;
+  if (!s||!e) { alert("Selecione as duas datas."); return; }
+  if (e<s)    { alert("Data final não pode ser menor."); return; }
   renderReservationAgenda(getReservationsByRange(s, e, "Período personalizado"));
 }
 
@@ -689,82 +892,162 @@ document.getElementById("machineForm").addEventListener("submit", function(e) {
   const brand  = document.getElementById("brand").value;
   if (!serial||!brand) { alert("Preencha todos os dados."); return; }
   if (machines.some(m=>m.serial===serial)) { alert("Máquina já cadastrada!"); return; }
-  machines.push({ serial, brand, status:"Disponível", history:[], reservations:[], showHistory:false });
-  save();
-  this.reset();
+  machines.push({
+    serial, brand, status:"Disponível", history:[], reservations:[], showHistory:false
+  });
+  save(); this.reset();
 });
 
+// ── HELPERS LOTE ─────────────────────────────────────
+function getSelectedBrands(name) {
+  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value);
+}
+
 // ── RESERVA EM LOTE ──────────────────────────────────
-function getSelectedBatchBrands() {
-  return Array.from(document.querySelectorAll('input[name="batchBrands"]:checked')).map(i=>i.value);
-}
-
-function getEligibleMachines({ brands, startDate, endDate }) {
-  return machines
-    .filter(m => brands.includes(m.brand) && m.status!=="Em uso" && m.status!=="Manutenção" && !hasReservationConflict(m, startDate, endDate))
-    .sort((a,b) => (a.reservations.length - b.reservations.length) || (a.history.length - b.history.length));
-}
-
 document.getElementById("batchReserveForm").addEventListener("submit", function(e) {
   e.preventDefault();
   const eventName   = document.getElementById("batchEvent").value.trim();
   const city        = document.getElementById("batchCity").value.trim();
   const responsible = document.getElementById("batchResponsible").value.trim();
-  const brands      = getSelectedBatchBrands();
+  const brands      = getSelectedBrands("batchBrands");
   const startDate   = document.getElementById("batchStartDate").value;
   const endDate     = document.getElementById("batchEndDate").value;
   const quantity    = Number(document.getElementById("batchQuantity").value);
-  const batchResult = document.getElementById("batchResult");
+  const result      = document.getElementById("batchReserveResult");
 
   if (!eventName||!city||!responsible||!startDate||!endDate||quantity<=0) { alert("Preencha todos os dados."); return; }
   if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
-  if (endDate<startDate) { alert("Data final não pode ser menor que a inicial."); return; }
+  if (endDate<startDate) { alert("Data final não pode ser menor."); return; }
 
-  const eligible = getEligibleMachines({ brands, startDate, endDate });
+  const eligible = machines
+    .filter(m => brands.includes(m.brand) && m.status!=="Em uso" && m.status!=="Manutenção" && !hasReservationConflict(m,startDate,endDate))
+    .sort((a,b) => (a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
+
   if (eligible.length < quantity) {
-    batchResult.className = "batch-result show";
-    batchResult.innerHTML = `<b>Reserva não realizada.</b><br>Pedido: ${quantity} máquina(s) · Disponíveis: ${eligible.length}`;
+    result.className = "batch-result show error";
+    result.innerHTML = `<b>Reserva não realizada.</b><br>Pedido: ${quantity} · Disponíveis sem conflito: ${eligible.length}`;
     return;
   }
 
   const selected = eligible.slice(0, quantity);
+  const userEmail = getCurrentUserEmail();
+  const userName  = getCurrentUserName();
+
   selected.forEach(m => {
-    m.reservations.push({ event:eventName, city, responsible, startDate, endDate, createdAt:new Date().toISOString(), batch:true });
-    m.history.push({ type:"reserva", event:eventName, city, responsible, startDate, endDate, date:new Date().toISOString(), batch:true });
+    m.reservations.push({ event:eventName, city, responsible, startDate, endDate, createdAt:new Date().toISOString(), batch:true, createdBy:userName, createdByEmail:userEmail });
+    m.history.push({ type:"reserva", event:eventName, city, responsible, startDate, endDate, date:new Date().toISOString(), batch:true, user:userName, userEmail });
   });
 
-  batchResult.className = "batch-result show";
-  batchResult.innerHTML = `<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>Período: ${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-
+  result.className = "batch-result show";
+  result.innerHTML = `<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
   this.reset();
   document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true);
   save();
 });
 
-// ── SAÍDA ─────────────────────────────────────────────
+// ── SAÍDA EM LOTE ─────────────────────────────────────
+document.getElementById("batchExitForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const eventName   = document.getElementById("batchExitEvent").value.trim();
+  const city        = document.getElementById("batchExitCity").value.trim();
+  const responsible = document.getElementById("batchExitResponsible").value.trim();
+  const brands      = getSelectedBrands("batchExitBrands");
+  const startDate   = document.getElementById("batchExitStartDate").value;
+  const endDate     = document.getElementById("batchExitEndDate").value;
+  const quantity    = Number(document.getElementById("batchExitQuantity").value);
+  const result      = document.getElementById("batchExitResult");
+
+  if (!eventName||!city||!responsible||!startDate||!endDate||quantity<=0) { alert("Preencha todos os dados."); return; }
+  if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
+  if (endDate<startDate) { alert("Data de retorno não pode ser menor."); return; }
+
+  const eligible = machines
+    .filter(m => brands.includes(m.brand) && m.status!=="Em uso" && m.status!=="Manutenção" && !hasReservationConflict(m,startDate,endDate))
+    .sort((a,b) => (a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
+
+  if (eligible.length < quantity) {
+    result.className = "batch-result show error";
+    result.innerHTML = `<b>Saída não realizada.</b><br>Pedido: ${quantity} · Disponíveis sem conflito: ${eligible.length}`;
+    return;
+  }
+
+  const selected  = eligible.slice(0, quantity);
+  const userName  = getCurrentUserName();
+  const userEmail = getCurrentUserEmail();
+
+  selected.forEach(m => {
+    m.status = "Em uso";
+    m.history.push({ type:"saida", event:eventName, city, responsible, startDate, endDate, date:new Date().toISOString(), batch:true, user:userName, userEmail });
+  });
+
+  result.className = "batch-result show";
+  result.innerHTML = `<b>✅ Saída realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  this.reset();
+  document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.checked=true);
+  save();
+});
+
+// ── SAÍDA INDIVIDUAL ──────────────────────────────────
 function openExitModal(serial) {
   const m = machines.find(m=>m.serial===serial);
   if (!m) return;
-  if (m.status==="Em uso")     { alert("Essa máquina já está em uso."); return; }
+  if (m.status==="Em uso")     { alert("Já está em uso."); return; }
   if (m.status==="Manutenção") { alert("Máquina em manutenção."); return; }
   document.getElementById("exitForm").reset();
   document.getElementById("exitSerial").value = serial;
+  document.getElementById("exitStartDate").min = getToday();
+  document.getElementById("exitEndDate").min   = getToday();
+  document.getElementById("exitConflictMsg").style.display = "none";
+  document.getElementById("exitConfirmBtn").disabled = false;
   document.getElementById("exitModal").classList.add("open");
 }
 function closeExitModal() { document.getElementById("exitModal").classList.remove("open"); }
 
-document.getElementById("exitForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-  const serial = document.getElementById("exitSerial").value;
+function checkExitConflict() {
+  const serial    = document.getElementById("exitSerial").value;
+  const startDate = document.getElementById("exitStartDate").value;
+  const endDate   = document.getElementById("exitEndDate").value;
+  const msgEl     = document.getElementById("exitConflictMsg");
+  const btnEl     = document.getElementById("exitConfirmBtn");
+  if (!startDate||!endDate) return;
   const m = machines.find(m=>m.serial===serial);
   if (!m) return;
+  const blocked = isBlockedForExit(m, startDate, endDate);
+  if (blocked) { msgEl.style.display="block"; msgEl.textContent="⚠️ "+blocked; btnEl.disabled=true; }
+  else         { msgEl.style.display="none";  btnEl.disabled=false; }
+}
+
+document.getElementById("exitStartDate").addEventListener("change", function() {
+  document.getElementById("exitEndDate").min = this.value;
+  checkExitConflict();
+});
+document.getElementById("exitEndDate").addEventListener("change", checkExitConflict);
+
+document.getElementById("exitForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const serial    = document.getElementById("exitSerial").value;
+  const startDate = document.getElementById("exitStartDate").value;
+  const endDate   = document.getElementById("exitEndDate").value;
+  const m = machines.find(m=>m.serial===serial);
+  if (!m) return;
+  const blocked = isBlockedForExit(m, startDate, endDate);
+  if (blocked) { alert("⚠️ "+blocked); return; }
+
+  const userName  = getCurrentUserName();
+  const userEmail = getCurrentUserEmail();
+
   m.status = "Em uso";
-  m.history.push({ type:"saida", event:document.getElementById("exitEvent").value.trim(),
-    city:document.getElementById("exitCity").value.trim(),
-    responsible:document.getElementById("exitResponsible").value.trim(),
-    date:new Date().toISOString() });
-  closeExitModal();
-  save();
+  m.history.push({
+    type:        "saida",
+    event:       document.getElementById("exitEvent").value.trim(),
+    city:        document.getElementById("exitCity").value.trim(),
+    responsible: document.getElementById("exitResponsible").value.trim(),
+    startDate, endDate,
+    date:        new Date().toISOString(),
+    user:        userName,
+    userEmail
+  });
+  closeExitModal(); save();
 });
 
 // ── ENTRADA ───────────────────────────────────────────
@@ -772,10 +1055,12 @@ function registerEntry(serial) {
   const m = machines.find(m=>m.serial===serial);
   if (!m) return;
   if (m.status==="Disponível") { alert("Já está disponível."); return; }
-  if (m.status==="Manutenção") { alert("Use o botão Liberar para retornar ao estoque."); return; }
-  const obs = prompt("Observação da devolução (opcional):");
+  if (m.status==="Manutenção") { alert("Use o botão Liberar."); return; }
+  const obs      = prompt("Observação da devolução (opcional):");
+  const userName = getCurrentUserName();
+  const userEmail= getCurrentUserEmail();
   m.status = "Disponível";
-  m.history.push({ type:"entrada", observation:obs||"", date:new Date().toISOString() });
+  m.history.push({ type:"entrada", observation:obs||"", date:new Date().toISOString(), user:userName, userEmail });
   save();
 }
 
@@ -799,18 +1084,19 @@ document.getElementById("reserveStartDate").addEventListener("change", function(
 
 document.getElementById("reserveForm").addEventListener("submit", function(e) {
   e.preventDefault();
-  const serial = document.getElementById("reserveSerial").value;
-  const m = machines.find(m=>m.serial===serial);
+  const serial    = document.getElementById("reserveSerial").value;
+  const m         = machines.find(m=>m.serial===serial);
   if (!m) return;
   const eventName = document.getElementById("reserveEvent").value.trim();
   const startDate = document.getElementById("reserveStartDate").value;
   const endDate   = document.getElementById("reserveEndDate").value;
-  if (endDate<startDate) { alert("Data final não pode ser menor que a inicial."); return; }
+  if (endDate<startDate) { alert("Data final não pode ser menor."); return; }
   if (hasReservationConflict(m, startDate, endDate)) { alert("Conflito: máquina já reservada nesse período."); return; }
-  m.reservations.push({ event:eventName, startDate, endDate, createdAt:new Date().toISOString() });
-  m.history.push({ type:"reserva", event:eventName, startDate, endDate, date:new Date().toISOString() });
-  closeReserveModal();
-  save();
+  const userName  = getCurrentUserName();
+  const userEmail = getCurrentUserEmail();
+  m.reservations.push({ event:eventName, startDate, endDate, createdAt:new Date().toISOString(), createdBy:userName, createdByEmail:userEmail });
+  m.history.push({ type:"reserva", event:eventName, startDate, endDate, date:new Date().toISOString(), user:userName, userEmail });
+  closeReserveModal(); save();
 });
 
 // ── MANUTENÇÃO ────────────────────────────────────────
@@ -818,18 +1104,22 @@ function sendToMaintenance(serial) {
   const m = machines.find(m=>m.serial===serial);
   if (!m) return;
   if (m.status==="Em uso") { alert("Não é possível colocar em manutenção uma máquina em uso."); return; }
-  const reason = prompt("Motivo da manutenção:");
+  const reason    = prompt("Motivo da manutenção:");
+  const userName  = getCurrentUserName();
+  const userEmail = getCurrentUserEmail();
   m.status = "Manutenção";
-  m.history.push({ type:"manutenção", observation:reason||"", date:new Date().toISOString() });
+  m.history.push({ type:"manutenção", observation:reason||"", date:new Date().toISOString(), user:userName, userEmail });
   save();
 }
 
 function returnFromMaintenance(serial) {
   const m = machines.find(m=>m.serial===serial);
   if (!m) return;
-  const obs = prompt("Observação da liberação:");
+  const obs       = prompt("Observação da liberação:");
+  const userName  = getCurrentUserName();
+  const userEmail = getCurrentUserEmail();
   m.status = "Disponível";
-  m.history.push({ type:"retorno manutenção", observation:obs||"", date:new Date().toISOString() });
+  m.history.push({ type:"retorno manutenção", observation:obs||"", date:new Date().toISOString(), user:userName, userEmail });
   save();
 }
 
@@ -851,94 +1141,93 @@ function toggleHistory(serial) {
 
 // ── FILTROS ───────────────────────────────────────────
 function getEvents() {
-  const events = new Set();
+  const ev = new Set();
   machines.forEach(m => {
-    m.history.forEach(h => h.event && events.add(h.event));
-    m.reservations.forEach(r => r.event && events.add(r.event));
+    m.history.forEach(h => h.event && ev.add(h.event));
+    m.reservations.forEach(r => r.event && ev.add(r.event));
   });
-  return [...events];
+  return [...ev];
 }
-
 function refreshEventFilter(selected="") {
   const ef = document.getElementById("eventFilter");
   ef.innerHTML = `<option value="">Todos os eventos</option>` +
-    getEvents().map(ev => `<option value="${ev}" ${ev===selected?"selected":""}>${ev}</option>`).join("");
+    getEvents().map(e=>`<option value="${e}" ${e===selected?"selected":""}>${e}</option>`).join("");
 }
 
-// ── HELPERS DE DISPLAY ────────────────────────────────
 function getCurrentEvent(m) {
-  if (m.status==="Em uso") {
-    const last = [...m.history].reverse().find(h=>h.type==="saida");
-    return last ? last.event : "-";
+  const s = getRealStatus(m);
+  if (s==="Em uso") { const l=[...m.history].reverse().find(h=>h.type==="saida"); return l?l.event:"-"; }
+  if (s==="Manutenção") return "Em manutenção";
+  if (s==="Reservada hoje") {
+    const today = getToday();
+    const a = m.reservations.find(r=>hasDateOverlap(r.startDate,r.endDate,today,today));
+    return a ? `Reservada: ${a.event}` : "-";
   }
-  if (m.status==="Manutenção") return "Em manutenção";
-  const active = m.reservations.find(isReservationActive);
-  return active ? `Reservada: ${active.event}` : "-";
+  return "-";
 }
 
 function getNextReservation(m) {
   const today = getToday();
-  return m.reservations
-    .filter(r => r.endDate >= today)
-    .sort((a,b) => a.startDate.localeCompare(b.startDate))[0] || null;
+  return m.reservations.filter(r=>r.endDate>=today).sort((a,b)=>a.startDate.localeCompare(b.startDate))[0]||null;
 }
 
-// ── RENDER PRINCIPAL ──────────────────────────────────
+// ── RENDER ────────────────────────────────────────────
 function render() {
   updateDashboard();
-  const selectedEvent = document.getElementById("eventFilter").value;
-  refreshEventFilter(selectedEvent);
+  const selEv  = document.getElementById("eventFilter").value;
+  refreshEventFilter(selEv);
 
-  const search    = document.getElementById("searchInput").value.toLowerCase();
-  const brand     = document.getElementById("brandFilter").value;
-  const status    = document.getElementById("statusFilter").value;
-  const evFilter  = document.getElementById("eventFilter").value;
+  const search  = document.getElementById("searchInput").value.toLowerCase();
+  const brand   = document.getElementById("brandFilter").value;
+  const status  = document.getElementById("statusFilter").value;
+  const evFilt  = document.getElementById("eventFilter").value;
 
   const filtered = machines.filter(m => {
-    const matchSearch  = m.serial.toLowerCase().includes(search);
-    const matchBrand   = !brand  || m.brand  === brand;
-    const matchStatus  = !status || m.status === status;
-    const matchEvent   = !evFilter ||
-      m.history.some(h => h.event===evFilter) ||
-      m.reservations.some(r => r.event===evFilter);
-    return matchSearch && matchBrand && matchStatus && matchEvent;
+    const rs = getRealStatus(m);
+    return m.serial.toLowerCase().includes(search) &&
+           (!brand  || m.brand===brand) &&
+           (!status || rs===status) &&
+           (!evFilt || m.history.some(h=>h.event===evFilt) || m.reservations.some(r=>r.event===evFilt));
   });
 
   const list = document.getElementById("machineList");
   list.innerHTML = "";
-
-  if (!filtered.length) {
-    list.innerHTML = "<p style='color:#9ca3af'>Nenhuma máquina encontrada.</p>";
-    return;
-  }
+  if (!filtered.length) { list.innerHTML="<p style='color:#9ca3af'>Nenhuma máquina encontrada.</p>"; return; }
 
   filtered.forEach(m => {
+    const rs      = getRealStatus(m);
     const nextRes = getNextReservation(m);
 
     const reservationsHtml = m.reservations.length
       ? `<div class="reservation-box"><b>Reservas:</b>
-          ${m.reservations.map(r => `<p>📌 ${r.event} · ${formatDate(r.startDate)} → ${formatDate(r.endDate)}${r.city?` · ${r.city}`:""}</p>`).join("")}
+          ${m.reservations.map(r=>`<p>📌 ${r.event} · ${formatDate(r.startDate)} → ${formatDate(r.endDate)}${r.city?` · ${r.city}`:""}${r.createdBy?` <span class="history-user">👤 ${r.createdBy}</span>`:""}</p>`).join("")}
          </div>` : "";
 
     const nextResHtml = nextRes
       ? `<p><b>Próxima reserva:</b> ${nextRes.event} · ${formatDate(nextRes.startDate)} → ${formatDate(nextRes.endDate)}</p>`
       : `<p><b>Próxima reserva:</b> –</p>`;
 
+    const reservadaMsg = rs==="Reservada hoje"
+      ? `<div class="blocked-msg">📌 Reservada para hoje — botão de saída bloqueado</div>` : "";
+
     const historyHtml = m.showHistory
       ? `<div class="history-box">
           ${!m.history.length ? "<p>Sem histórico.</p>" :
-            m.history.map(h => `<div class="history-item">
+            [...m.history].reverse().map(h=>`<div class="history-item">
               <b>${h.type.toUpperCase()}${h.batch?" EM LOTE":""}</b>
-              ${h.event ? `<br>Evento: ${h.event}` : ""}
-              ${h.city  ? `<br>Cidade: ${h.city}`  : ""}
+              ${h.event       ? `<br>Evento: ${h.event}` : ""}
+              ${h.city        ? `<br>Cidade: ${h.city}` : ""}
               ${h.responsible ? `<br>Responsável: ${h.responsible}` : ""}
-              ${h.startDate ? `<br>${formatDate(h.startDate)} → ${formatDate(h.endDate)}` : ""}
+              ${h.startDate   ? `<br>${formatDate(h.startDate)} → ${formatDate(h.endDate)}` : ""}
               ${h.observation ? `<br>Obs: ${h.observation}` : ""}
               <br><small style="color:#9ca3af">${formatDateTime(h.date)}</small>
+              ${h.user ? `<br><span class="history-user">👤 ${h.user}</span>` : ""}
             </div>`).join("")}
          </div>` : "";
 
-    const maintBtn = m.status==="Manutenção"
+    const exitDisabled = (rs==="Em uso"||rs==="Reservada hoje"||rs==="Manutenção");
+    const exitTitle    = rs==="Reservada hoje" ? "Reservada para hoje — saída bloqueada" : "";
+    const maintBtn     = rs==="Manutenção"
       ? `<button class="release-btn"     onclick="returnFromMaintenance('${m.serial}')">Liberar</button>`
       : `<button class="maintenance-btn" onclick="sendToMaintenance('${m.serial}')">Manutenção</button>`;
 
@@ -947,12 +1236,13 @@ function render() {
     div.innerHTML = `
       <strong>${m.serial}</strong>
       <p><b>Marca:</b> ${m.brand}</p>
-      <span class="status ${getStatusClass(m.status)}">${m.status}</span>
+      <span class="status ${getStatusClass(rs)}">${rs}</span>
       <p><b>Evento atual:</b> ${getCurrentEvent(m)}</p>
       ${nextResHtml}
+      ${reservadaMsg}
       ${reservationsHtml}
       <div class="actions">
-        <button onclick="openExitModal('${m.serial}')">Saída</button>
+        <button onclick="openExitModal('${m.serial}')" ${exitDisabled?"disabled":""} title="${exitTitle}">Saída</button>
         <button onclick="registerEntry('${m.serial}')">Entrada</button>
         <button onclick="openReserveModal('${m.serial}')">Reservar</button>
         <button onclick="toggleHistory('${m.serial}')">${m.showHistory?"Ocultar histórico":"Ver histórico"}</button>
@@ -965,19 +1255,16 @@ function render() {
 }
 
 // ── DATAS MÍNIMAS ─────────────────────────────────────
-const today = new Date().toISOString().split("T")[0];
-["batchStartDate","batchEndDate","customStartDate","customEndDate"].forEach(id => {
-  document.getElementById(id).min = today;
+const _today = getToday();
+["batchStartDate","batchEndDate","customStartDate","customEndDate","batchExitStartDate","batchExitEndDate"].forEach(id=>{
+  document.getElementById(id).min = _today;
 });
-document.getElementById("batchStartDate").addEventListener("change", function() {
-  document.getElementById("batchEndDate").min = this.value;
-});
-document.getElementById("customStartDate").addEventListener("change", function() {
-  document.getElementById("customEndDate").min = this.value;
-});
+document.getElementById("batchStartDate").addEventListener("change",    function(){ document.getElementById("batchEndDate").min=this.value; });
+document.getElementById("batchExitStartDate").addEventListener("change",function(){ document.getElementById("batchExitEndDate").min=this.value; });
+document.getElementById("customStartDate").addEventListener("change",   function(){ document.getElementById("customEndDate").min=this.value; });
 
 // ── FILTROS LIVE ──────────────────────────────────────
-["searchInput","brandFilter","statusFilter","eventFilter"].forEach(id => {
+["searchInput","brandFilter","statusFilter","eventFilter"].forEach(id=>{
   document.getElementById(id).addEventListener("input",  render);
   document.getElementById(id).addEventListener("change", render);
 });
