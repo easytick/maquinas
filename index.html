@@ -14,7 +14,7 @@
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+       apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
       authDomain:        "easytick-maquinas.firebaseapp.com",
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
@@ -238,6 +238,17 @@
     .batch-result.show       { display: block; }
     .batch-result.show.error { background: #fee2e2; }
 
+    .mode-selector { border-top: 1px solid var(--border); padding-top: 12px; }
+    .mode-btn { font-size: 13px; padding: 9px 8px; background: #f3f4f6; color: #374151; border: 1.5px solid var(--border); }
+    .mode-btn-active { background: #eef6ff; color: var(--blue); border-color: var(--blue); }
+    .mode-info { font-size: 13px; color: #374151; background: #eef6ff; padding: 9px 12px; border-radius: 9px; margin-bottom: 10px; }
+    .machine-select-box { border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; }
+    .machine-select-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: #f9fafb; border-bottom: 1px solid var(--border); font-size: 13px; color: #374151; }
+    .machine-select-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; }
+    .machine-select-item:last-child { border-bottom: none; }
+    .machine-select-item.selected { background: #eef6ff; }
+    .machine-select-item input { width: auto; }
+
     /* ── MACHINE CARDS ── */
     .machine-item {
       border: 1.5px solid var(--border); border-radius: 14px;
@@ -434,7 +445,6 @@
     <!-- RESERVA EM LOTE -->
     <section class="card">
       <h2>📦 Reserva em Lote</h2>
-      <p class="helper-text">Reserve várias máquinas automaticamente para um evento.</p>
       <form id="batchReserveForm">
         <input type="text" id="batchEvent"       placeholder="Nome do evento"  required />
         <input type="text" id="batchCity"        placeholder="Cidade"          required />
@@ -444,10 +454,29 @@
           <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
           <label><input type="checkbox" name="batchBrands" value="Stone"   checked /> Stone</label>
         </div>
-        <input type="date"   id="batchStartDate" required />
-        <input type="date"   id="batchEndDate"   required />
-        <input type="number" id="batchQuantity"  placeholder="Quantidade" min="1" required />
-        <button type="submit">Reservar automaticamente</button>
+        <label>Data inicial<input type="date" id="batchStartDate" required /></label>
+        <label>Data final  <input type="date" id="batchEndDate"   required /></label>
+        <div class="mode-selector">
+          <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <button type="button" id="reserveAutoBtn"   onclick="setReserveMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
+            <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+          </div>
+          <div id="reserveAutoSection">
+            <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
+            <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" />
+          </div>
+          <div id="reserveManualSection" style="display:none">
+            <div class="machine-select-box">
+              <div class="machine-select-header">
+                <span id="reserveSelCount">0 selecionadas</span>
+                <button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+              </div>
+              <div id="reserveMachineList" style="max-height:220px;overflow-y:auto"></div>
+            </div>
+          </div>
+        </div>
+        <button type="submit">Reservar</button>
       </form>
       <div id="batchReserveResult" class="batch-result"></div>
     </section>
@@ -455,7 +484,6 @@
     <!-- SAÍDA EM LOTE -->
     <section class="card">
       <h2>🚀 Saída em Lote</h2>
-      <p class="helper-text">O sistema escolhe automaticamente as máquinas que menos giraram e sem conflito de reserva.</p>
       <form id="batchExitForm">
         <input type="text" id="batchExitEvent"       placeholder="Nome do evento"  required />
         <input type="text" id="batchExitCity"        placeholder="Cidade"          required />
@@ -467,8 +495,27 @@
         </div>
         <label>Data de saída  <input type="date" id="batchExitStartDate" required /></label>
         <label>Data de retorno<input type="date" id="batchExitEndDate"   required /></label>
-        <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" required />
-        <button type="submit">Dar saída automaticamente</button>
+        <div class="mode-selector">
+          <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <button type="button" id="exitAutoBtn"   onclick="setExitMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
+            <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+          </div>
+          <div id="exitAutoSection">
+            <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
+            <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" />
+          </div>
+          <div id="exitManualSection" style="display:none">
+            <div class="machine-select-box">
+              <div class="machine-select-header">
+                <span id="exitSelCount">0 selecionadas</span>
+                <button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+              </div>
+              <div id="exitMachineList" style="max-height:220px;overflow-y:auto"></div>
+            </div>
+          </div>
+        </div>
+        <button type="submit">Dar saída</button>
       </form>
       <div id="batchExitResult" class="batch-result"></div>
     </section>
@@ -890,55 +937,191 @@ function getSelectedBrands(name) {
   return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value);
 }
 
+// ── MODO DE SELEÇÃO ───────────────────────────────────
+let reserveMode = 'auto';
+let exitMode    = 'auto';
+let reserveSelected = new Set();
+let exitSelected    = new Set();
+
+function setReserveMode(mode) {
+  reserveMode = mode;
+  document.getElementById('reserveAutoBtn').className   = mode==='auto'   ? 'mode-btn mode-btn-active' : 'mode-btn';
+  document.getElementById('reserveManualBtn').className = mode==='manual' ? 'mode-btn mode-btn-active' : 'mode-btn';
+  document.getElementById('reserveAutoSection').style.display   = mode==='auto'   ? 'block' : 'none';
+  document.getElementById('reserveManualSection').style.display = mode==='manual' ? 'block' : 'none';
+  if (mode==='manual') refreshReserveMachineList();
+}
+
+function setExitMode(mode) {
+  exitMode = mode;
+  document.getElementById('exitAutoBtn').className   = mode==='auto'   ? 'mode-btn mode-btn-active' : 'mode-btn';
+  document.getElementById('exitManualBtn').className = mode==='manual' ? 'mode-btn mode-btn-active' : 'mode-btn';
+  document.getElementById('exitAutoSection').style.display   = mode==='auto'   ? 'block' : 'none';
+  document.getElementById('exitManualSection').style.display = mode==='manual' ? 'block' : 'none';
+  if (mode==='manual') refreshExitMachineList();
+}
+
+function getEligibleForReserve() {
+  const brands    = getSelectedBrands('batchBrands');
+  const startDate = document.getElementById('batchStartDate').value;
+  const endDate   = document.getElementById('batchEndDate').value;
+  if (!startDate||!endDate) return [];
+  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,startDate,endDate))
+    .sort((a,b)=>(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
+}
+
+function getEligibleForExit() {
+  const brands    = getSelectedBrands('batchExitBrands');
+  const startDate = document.getElementById('batchExitStartDate').value;
+  const endDate   = document.getElementById('batchExitEndDate').value;
+  if (!startDate||!endDate) return [];
+  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,startDate,endDate))
+    .sort((a,b)=>(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
+}
+
+function refreshReserveMachineList() {
+  const eligible = getEligibleForReserve();
+  const list = document.getElementById('reserveMachineList');
+  if (!eligible.length) { list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período selecionado.</p>'; return; }
+  list.innerHTML = eligible.map(m=>`
+    <label class="machine-select-item ${reserveSelected.has(m.serial)?'selected':''}" onclick="toggleReserveSel('${m.serial}')">
+      <input type="checkbox" ${reserveSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleReserveSel('${m.serial}')" />
+      <div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div>
+      <span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span>
+    </label>`).join('');
+  document.getElementById('reserveSelCount').textContent = reserveSelected.size + ' selecionadas';
+}
+
+function toggleReserveSel(serial) {
+  if (reserveSelected.has(serial)) reserveSelected.delete(serial);
+  else reserveSelected.add(serial);
+  refreshReserveMachineList();
+}
+
+function toggleAllReserve() {
+  const eligible = getEligibleForReserve();
+  if (reserveSelected.size === eligible.length) reserveSelected.clear();
+  else eligible.forEach(m=>reserveSelected.add(m.serial));
+  refreshReserveMachineList();
+}
+
+function refreshExitMachineList() {
+  const eligible = getEligibleForExit();
+  const list = document.getElementById('exitMachineList');
+  if (!eligible.length) { list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período selecionado.</p>'; return; }
+  list.innerHTML = eligible.map(m=>`
+    <label class="machine-select-item ${exitSelected.has(m.serial)?'selected':''}" onclick="toggleExitSel('${m.serial}')">
+      <input type="checkbox" ${exitSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleExitSel('${m.serial}')" />
+      <div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div>
+      <span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span>
+    </label>`).join('');
+  document.getElementById('exitSelCount').textContent = exitSelected.size + ' selecionadas';
+}
+
+function toggleExitSel(serial) {
+  if (exitSelected.has(serial)) exitSelected.delete(serial);
+  else exitSelected.add(serial);
+  refreshExitMachineList();
+}
+
+function toggleAllExit() {
+  const eligible = getEligibleForExit();
+  if (exitSelected.size === eligible.length) exitSelected.clear();
+  else eligible.forEach(m=>exitSelected.add(m.serial));
+  refreshExitMachineList();
+}
+
+// Atualiza lista manual quando datas/marcas mudam
+['batchStartDate','batchEndDate'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); });
+});
+['batchExitStartDate','batchExitEndDate'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); });
+});
+document.querySelectorAll('input[name="batchBrands"]').forEach(i=>{
+  i.addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); });
+});
+document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>{
+  i.addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); });
+});
+
 // ── RESERVA EM LOTE ──────────────────────────────────
 document.getElementById("batchReserveForm").addEventListener("submit", function(e) {
   e.preventDefault();
-  const eventName=document.getElementById("batchEvent").value.trim();
-  const city=document.getElementById("batchCity").value.trim();
-  const responsible=document.getElementById("batchResponsible").value.trim();
-  const brands=getSelectedBrands("batchBrands");
-  const startDate=document.getElementById("batchStartDate").value;
-  const endDate=document.getElementById("batchEndDate").value;
-  const quantity=Number(document.getElementById("batchQuantity").value);
-  const result=document.getElementById("batchReserveResult");
-  if (!eventName||!city||!responsible||!startDate||!endDate||quantity<=0) { alert("Preencha todos os dados."); return; }
+  const eventName  = document.getElementById("batchEvent").value.trim();
+  const city       = document.getElementById("batchCity").value.trim();
+  const responsible= document.getElementById("batchResponsible").value.trim();
+  const brands     = getSelectedBrands("batchBrands");
+  const startDate  = document.getElementById("batchStartDate").value;
+  const endDate    = document.getElementById("batchEndDate").value;
+  const result     = document.getElementById("batchReserveResult");
+
+  if (!eventName||!city||!responsible||!startDate||!endDate) { alert("Preencha todos os dados."); return; }
   if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
   if (endDate<startDate) { alert("Data final não pode ser menor."); return; }
-  const eligible=machines.filter(m=>brands.includes(m.brand)&&m.status!=="Em uso"&&m.status!=="Manutenção"&&!hasReservationConflict(m,startDate,endDate))
-    .sort((a,b)=>(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
-  if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Reserva não realizada.</b><br>Pedido: ${quantity} · Disponíveis sem conflito: ${eligible.length}`; return; }
-  const selected=eligible.slice(0,quantity);
+
   const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  let selected = [];
+
+  if (reserveMode==='auto') {
+    const quantity=Number(document.getElementById("batchQuantity").value);
+    if (!quantity||quantity<=0) { alert("Informe a quantidade."); return; }
+    const eligible=getEligibleForReserve();
+    if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Reserva não realizada.</b><br>Pedido: ${quantity} · Disponíveis: ${eligible.length}`; return; }
+    selected=eligible.slice(0,quantity);
+  } else {
+    if (!reserveSelected.size) { alert("Selecione ao menos uma máquina."); return; }
+    selected=machines.filter(m=>reserveSelected.has(m.serial));
+  }
+
   selected.forEach(m=>{
     m.reservations.push({event:eventName,city,responsible,startDate,endDate,createdAt:new Date().toISOString(),batch:true,createdBy:userName,createdByEmail:userEmail});
     m.history.push({type:"reserva",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail});
   });
-  result.className="batch-result show"; result.innerHTML=`<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  this.reset(); document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true); save();
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  this.reset();
+  document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true);
+  reserveSelected.clear();
+  save();
 });
 
 // ── SAÍDA EM LOTE ─────────────────────────────────────
 document.getElementById("batchExitForm").addEventListener("submit", function(e) {
   e.preventDefault();
-  const eventName=document.getElementById("batchExitEvent").value.trim();
-  const city=document.getElementById("batchExitCity").value.trim();
-  const responsible=document.getElementById("batchExitResponsible").value.trim();
-  const brands=getSelectedBrands("batchExitBrands");
-  const startDate=document.getElementById("batchExitStartDate").value;
-  const endDate=document.getElementById("batchExitEndDate").value;
-  const quantity=Number(document.getElementById("batchExitQuantity").value);
-  const result=document.getElementById("batchExitResult");
-  if (!eventName||!city||!responsible||!startDate||!endDate||quantity<=0) { alert("Preencha todos os dados."); return; }
+  const eventName  = document.getElementById("batchExitEvent").value.trim();
+  const city       = document.getElementById("batchExitCity").value.trim();
+  const responsible= document.getElementById("batchExitResponsible").value.trim();
+  const brands     = getSelectedBrands("batchExitBrands");
+  const startDate  = document.getElementById("batchExitStartDate").value;
+  const endDate    = document.getElementById("batchExitEndDate").value;
+  const result     = document.getElementById("batchExitResult");
+
+  if (!eventName||!city||!responsible||!startDate||!endDate) { alert("Preencha todos os dados."); return; }
   if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
   if (endDate<startDate) { alert("Data de retorno não pode ser menor."); return; }
-  const eligible=machines.filter(m=>brands.includes(m.brand)&&m.status!=="Em uso"&&m.status!=="Manutenção"&&!hasReservationConflict(m,startDate,endDate))
-    .sort((a,b)=>(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
-  if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Saída não realizada.</b><br>Pedido: ${quantity} · Disponíveis: ${eligible.length}`; return; }
-  const selected=eligible.slice(0,quantity);
+
   const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  let selected = [];
+
+  if (exitMode==='auto') {
+    const quantity=Number(document.getElementById("batchExitQuantity").value);
+    if (!quantity||quantity<=0) { alert("Informe a quantidade."); return; }
+    const eligible=getEligibleForExit();
+    if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Saída não realizada.</b><br>Pedido: ${quantity} · Disponíveis: ${eligible.length}`; return; }
+    selected=eligible.slice(0,quantity);
+  } else {
+    if (!exitSelected.size) { alert("Selecione ao menos uma máquina."); return; }
+    selected=machines.filter(m=>exitSelected.has(m.serial));
+  }
+
   selected.forEach(m=>{ m.status="Em uso"; m.history.push({type:"saida",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail}); });
-  result.className="batch-result show"; result.innerHTML=`<b>✅ Saída realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  this.reset(); document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.checked=true); save();
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Saída realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  this.reset();
+  document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.checked=true);
+  exitSelected.clear();
+  save();
 });
 
 // ── SAÍDA INDIVIDUAL ──────────────────────────────────
