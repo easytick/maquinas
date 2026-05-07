@@ -39,7 +39,52 @@
         else      { window._currentUser = null;  if(window.showLogin) window.showLogin(); }
       });
     });
-  </script>
+  
+// ── EXPOE FUNCOES AO WINDOW (onclick no HTML precisa disso) ──
+window.doLogin               = doLogin;
+window.doLogout              = doLogout;
+window.showDayResume         = showDayResume;
+window.showCustomDayResume   = showCustomDayResume;
+window.confirmarSaidaLote    = confirmarSaidaLote;
+window.confirmarEntradaLote  = confirmarEntradaLote;
+window.setLoteAba            = setLoteAba;
+window.refreshEntradaList    = refreshEntradaList;
+window.toggleAllEntrada      = toggleAllEntrada;
+window.confirmarEntradaEmLote= confirmarEntradaEmLote;
+window.refreshRenovarList    = refreshRenovarList;
+window.toggleAllRenovar      = toggleAllRenovar;
+window.confirmarRenovacao    = confirmarRenovacao;
+window.refreshCancelarList   = refreshCancelarList;
+window.toggleAllCancelar     = toggleAllCancelar;
+window.confirmarCancelamentoLote = confirmarCancelamentoLote;
+window.refreshManutList      = refreshManutList;
+window.toggleAllManut        = toggleAllManut;
+window.confirmarManutencaoLote = confirmarManutencaoLote;
+window.setReserveMode        = setReserveMode;
+window.setExitMode           = setExitMode;
+window.toggleAllReserve      = toggleAllReserve;
+window.toggleAllExit         = toggleAllExit;
+window.toggleReserveSel      = toggleReserveSel;
+window.toggleExitSel         = toggleExitSel;
+window.toggleEntradaSel      = toggleEntradaSel;
+window.toggleRenovarSel      = toggleRenovarSel;
+window.toggleCancelarSel     = toggleCancelarSel;
+window.toggleManutSel        = toggleManutSel;
+window.openExitModal         = openExitModal;
+window.closeExitModal        = closeExitModal;
+window.confirmarSaidaDaReserva = confirmarSaidaDaReserva;
+window.registerEntry         = registerEntry;
+window.openReserveModal      = openReserveModal;
+window.closeReserveModal     = closeReserveModal;
+window.openViewReservesModal = openViewReservesModal;
+window.closeViewReservesModal= closeViewReservesModal;
+window.cancelReservation     = cancelReservation;
+window.sendToMaintenance     = sendToMaintenance;
+window.returnFromMaintenance = returnFromMaintenance;
+window.deleteMachine         = deleteMachine;
+window.toggleHistory         = toggleHistory;
+window.startFirebaseListener = startFirebaseListener;
+</script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
