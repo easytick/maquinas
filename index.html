@@ -5,93 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Controle de Máquinas – Easytick</title>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
-      authDomain:        "easytick-maquinas.firebaseapp.com",
-      databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
-      projectId:         "easytick-maquinas",
-      storageBucket:     "easytick-maquinas.firebasestorage.app",
-      messagingSenderId: "1096291599566",
-      appId:             "1:1096291599566:web:6e96b6ebec057fd37afc9f"
-    };
-
-    const app  = initializeApp(firebaseConfig);
-    const db   = getDatabase(app);
-    const auth = getAuth(app);
-
-    window._db      = db;
-    window._auth    = auth;
-    window._ref     = ref;
-    window._set     = set;
-    window._onValue = onValue;
-    window._signIn  = (e,p) => signInWithEmailAndPassword(auth,e,p);
-    window._signOut = () => signOut(auth);
-    window._onAuth  = (cb) => onAuthStateChanged(auth, cb);
-
-    window.addEventListener("DOMContentLoaded", () => {
-      window._onAuth((user) => {
-        if (user) { window._currentUser = user; if(window.showApp) window.showApp(); if(window.startFirebaseListener) window.startFirebaseListener(); }
-        else      { window._currentUser = null;  if(window.showLogin) window.showLogin(); }
-      });
-    });
-  
-// ── EXPOE FUNCOES AO WINDOW (onclick no HTML precisa disso) ──
-window.doLogin               = doLogin;
-window.doLogout              = doLogout;
-window.showDayResume         = showDayResume;
-window.showCustomDayResume   = showCustomDayResume;
-window.confirmarSaidaLote    = confirmarSaidaLote;
-window.confirmarEntradaLote  = confirmarEntradaLote;
-window.setLoteAba            = setLoteAba;
-window.refreshEntradaList    = refreshEntradaList;
-window.toggleAllEntrada      = toggleAllEntrada;
-window.confirmarEntradaEmLote= confirmarEntradaEmLote;
-window.refreshRenovarList    = refreshRenovarList;
-window.toggleAllRenovar      = toggleAllRenovar;
-window.confirmarRenovacao    = confirmarRenovacao;
-window.refreshCancelarList   = refreshCancelarList;
-window.toggleAllCancelar     = toggleAllCancelar;
-window.confirmarCancelamentoLote = confirmarCancelamentoLote;
-window.refreshManutList      = refreshManutList;
-window.toggleAllManut        = toggleAllManut;
-window.confirmarManutencaoLote = confirmarManutencaoLote;
-window.setReserveMode        = setReserveMode;
-window.setExitMode           = setExitMode;
-window.toggleAllReserve      = toggleAllReserve;
-window.toggleAllExit         = toggleAllExit;
-window.toggleReserveSel      = toggleReserveSel;
-window.toggleExitSel         = toggleExitSel;
-window.toggleEntradaSel      = toggleEntradaSel;
-window.toggleRenovarSel      = toggleRenovarSel;
-window.toggleCancelarSel     = toggleCancelarSel;
-window.toggleManutSel        = toggleManutSel;
-window.openExitModal         = openExitModal;
-window.closeExitModal        = closeExitModal;
-window.confirmarSaidaDaReserva = confirmarSaidaDaReserva;
-window.registerEntry         = registerEntry;
-window.openReserveModal      = openReserveModal;
-window.closeReserveModal     = closeReserveModal;
-window.openViewReservesModal = openViewReservesModal;
-window.closeViewReservesModal= closeViewReservesModal;
-window.cancelReservation     = cancelReservation;
-window.sendToMaintenance     = sendToMaintenance;
-window.returnFromMaintenance = returnFromMaintenance;
-window.deleteMachine         = deleteMachine;
-window.toggleHistory         = toggleHistory;
-window.startFirebaseListener = startFirebaseListener;
-</script>
+  <!-- Firebase via CDN (sem type=module para evitar problemas de escopo) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; min-height: 100vh; font-size: 15px; line-height: 1.5; }
     :root { --blue:#004aad; --blue2:#003b8a; --green:#16a34a; --red:#dc2626; --gray:#374151; --border:#e5e7eb; --shadow:0 2px 12px rgba(0,74,173,.08); }
 
-    /* LOGIN */
     #loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--blue); padding:20px; }
     #loginScreen.hidden { display:none; }
     .login-card { background:#fff; border-radius:18px; padding:36px 28px; width:100%; max-width:360px; box-shadow:0 20px 60px rgba(0,0,0,.25); text-align:center; }
@@ -102,16 +25,14 @@ window.startFirebaseListener = startFirebaseListener;
     #loginError { background:#fee2e2; color:#991b1b; border-radius:8px; padding:10px; font-size:13px; display:none; }
     #loginError.show { display:block; }
 
-    /* APP */
     #appScreen { display:none; }
     #appScreen.visible { display:block; }
 
-    /* HEADER */
     .header { background:var(--blue); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .header-left { display:flex; align-items:center; gap:12px; }
     .header-icon { width:40px; height:40px; background:rgba(255,255,255,.15); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
-    .header h1   { font-size:19px; line-height:1.2; }
-    .header-sub  { font-size:12px; opacity:.8; margin-top:1px; }
+    .header h1 { font-size:19px; line-height:1.2; }
+    .header-sub { font-size:12px; opacity:.8; margin-top:1px; }
     .header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
     .user-badge { background:rgba(255,255,255,.15); border-radius:8px; padding:5px 10px; font-size:12px; color:#fff; line-height:1.4; }
     .user-badge b { display:block; font-size:13px; }
@@ -124,28 +45,24 @@ window.startFirebaseListener = startFirebaseListener;
 
     .app { max-width:900px; margin:0 auto; padding:14px; }
 
-    /* ALERTAS */
     .day-alert { border-radius:14px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     .day-alert.saida   { background:#fef3c7; border:1.5px solid #fcd34d; }
     .day-alert.retorno { background:#dbeafe; border:1.5px solid #93c5fd; }
-    .day-alert-text b  { display:block; font-size:15px; margin-bottom:3px; }
-    .day-alert-text p  { font-size:13px; color:#374151; margin:0; }
+    .day-alert-text b { display:block; font-size:15px; margin-bottom:3px; }
+    .day-alert-text p { font-size:13px; color:#374151; margin:0; }
     .day-alert.saida .day-alert-text b   { color:#92400e; }
     .day-alert.retorno .day-alert-text b { color:#1e40af; }
     .day-alert button { white-space:nowrap; font-size:13px; padding:9px 16px; width:auto; flex-shrink:0; }
 
-    /* CARDS */
     .card { background:#fff; border-radius:16px; padding:18px; margin-bottom:14px; box-shadow:var(--shadow); }
     .card h2 { font-size:16px; font-weight:bold; margin-bottom:14px; color:var(--blue); }
 
-    /* DASHBOARD */
     .dashboard { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
     .dash-card { background:#fff; border-radius:14px; padding:14px; text-align:center; box-shadow:var(--shadow); }
     .dash-card span { display:block; font-size:30px; font-weight:bold; color:var(--blue); }
-    .dash-card p    { font-size:12px; margin-top:3px; color:#6b7280; }
+    .dash-card p { font-size:12px; margin-top:3px; color:#6b7280; }
 
-    /* FORMS */
-    form  { display:grid; gap:10px; }
+    form { display:grid; gap:10px; }
     label { display:grid; gap:4px; font-size:13px; font-weight:bold; color:var(--gray); }
     input, select { width:100%; padding:11px 13px; border-radius:9px; border:1.5px solid var(--border); font-size:14px; font-family:Arial,sans-serif; background:#fafafa; transition:border .2s; }
     input:focus, select:focus { outline:none; border-color:var(--blue); background:#fff; }
@@ -157,7 +74,6 @@ window.startFirebaseListener = startFirebaseListener;
     .helper-text { font-size:13px; color:#6b7280; margin-bottom:10px; }
     .filters { display:grid; gap:9px; }
 
-    /* RESUMO DO DIA */
     .day-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:10px; }
     .day-tabs button { background:#eef2ff; color:var(--blue); font-size:13px; padding:9px; }
     .day-tabs button:hover { background:var(--blue); color:#fff; }
@@ -173,7 +89,6 @@ window.startFirebaseListener = startFirebaseListener;
     .retorno-group h3 { font-size:14px; color:#1e40af; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
     .retorno-group h3 button { font-size:12px; padding:5px 12px; width:auto; }
 
-    /* ACOES EM LOTE - ABAS */
     .lote-tabs { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--border); margin:-18px -18px 16px; }
     .lote-tab-btn { padding:12px 6px; font-size:12px; border:none; border-right:1px solid var(--border); background:#f9fafb; color:#6b7280; cursor:pointer; font-family:Arial,sans-serif; width:100%; line-height:1.4; transition:all .15s; }
     .lote-tab-btn:last-child { border-right:none; }
@@ -182,17 +97,14 @@ window.startFirebaseListener = startFirebaseListener;
     .lote-tab-content { display:none; }
     .lote-tab-content.active { display:block; }
 
-    /* BRAND CHECKBOXES */
     .brand-checkboxes { display:flex; gap:14px; flex-wrap:wrap; padding:11px 13px; border-radius:9px; border:1.5px solid var(--border); background:#fafafa; }
     .brand-checkboxes label { display:flex; align-items:center; gap:6px; font-weight:normal; font-size:14px; cursor:pointer; }
     .brand-checkboxes input { width:auto; }
 
-    /* BATCH RESULT */
     .batch-result { margin-top:10px; padding:12px; border-radius:9px; background:#eef6ff; font-size:13px; line-height:1.6; display:none; }
-    .batch-result.show       { display:block; }
+    .batch-result.show { display:block; }
     .batch-result.show.error { background:#fee2e2; }
 
-    /* MODO SELECAO */
     .mode-selector { border-top:1px solid var(--border); padding-top:12px; }
     .mode-btn { font-size:13px; padding:9px 8px; background:#f3f4f6; color:#374151; border:1.5px solid var(--border); }
     .mode-btn-active { background:#eef6ff; color:var(--blue); border-color:var(--blue); }
@@ -204,7 +116,6 @@ window.startFirebaseListener = startFirebaseListener;
     .machine-select-item.selected { background:#eef6ff; }
     .machine-select-item input { width:auto; }
 
-    /* MACHINE CARDS */
     .machine-item { border:1.5px solid var(--border); border-radius:14px; padding:14px; background:#fafafa; margin-bottom:10px; }
     .machine-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
     .machine-serial { font-size:16px; font-weight:bold; color:#111827; }
@@ -218,8 +129,7 @@ window.startFirebaseListener = startFirebaseListener;
     .machine-info p { margin:2px 0; }
     .alert-reservada { margin-top:8px; padding:7px 11px; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#92400e; }
 
-    /* ACOES BOTOES */
-    .actions     { display:grid; gap:7px; margin-top:10px; }
+    .actions { display:grid; gap:7px; margin-top:10px; }
     .actions-row { display:flex; gap:7px; flex-wrap:wrap; }
     .actions-row button { flex:1; min-width:70px; font-size:13px; padding:9px 8px; }
     .btn-confirmar-saida { background:var(--green) !important; }
@@ -231,20 +141,15 @@ window.startFirebaseListener = startFirebaseListener;
     .btn-danger:hover { background:#991b1b !important; }
     .btn-gray      { background:#374151 !important; }
     .btn-yellow    { background:#fef3c7 !important; color:#92400e !important; border:1.5px solid #fcd34d !important; }
-    .btn-yellow:hover { background:#fde68a !important; }
     .btn-green-soft { background:#dcfce7 !important; color:#166534 !important; border:1.5px solid #86efac !important; }
-    .btn-green-soft:hover { background:#bbf7d0 !important; }
 
-    /* HISTORICO */
     .history-box { margin-top:10px; padding:11px; background:#f9fafb; border-radius:9px; border:1px solid var(--border); }
     .history-item { border-bottom:1px solid #e5e7eb; margin-bottom:7px; padding-bottom:7px; font-size:13px; line-height:1.6; }
     .history-item:last-child { border-bottom:none; margin:0; padding:0; }
     .history-user { display:inline-block; background:#ede9fe; color:#5b21b6; border-radius:5px; padding:1px 6px; font-size:11px; font-weight:bold; margin-top:2px; }
-
     .reservation-detail { margin-top:8px; padding:9px 11px; background:#fff7ed; border:1px solid #fed7aa; border-radius:9px; font-size:13px; line-height:1.6; }
     .blocked-msg { margin-top:7px; padding:7px 11px; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#92400e; }
 
-    /* MODAIS */
     .modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); padding:16px; z-index:999; align-items:center; justify-content:center; }
     .modal.open { display:flex; }
     .modal-content { background:#fff; width:100%; max-width:400px; padding:22px; border-radius:18px; box-shadow:0 24px 48px rgba(0,0,0,.25); max-height:90vh; overflow-y:auto; }
@@ -266,22 +171,20 @@ window.startFirebaseListener = startFirebaseListener;
 <body>
 <div id="loadingBar"></div>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">📟</div>
     <h1>Controle de Máquinas</h1>
     <p>Easytick · Faça login para continuar</p>
-    <form id="loginForm">
-      <input type="email"    id="loginEmail"    placeholder="E-mail"  required />
-      <input type="password" id="loginPassword" placeholder="Senha"   required />
+    <div style="display:grid;gap:11px">
+      <input type="email"    id="loginEmail"    placeholder="E-mail" />
+      <input type="password" id="loginPassword" placeholder="Senha" />
       <div id="loginError">E-mail ou senha incorretos.</div>
-      <button type="button" id="loginBtn" onclick="doLogin()">Entrar</button>
-    </form>
+      <button id="loginBtn" onclick="doLogin()">Entrar</button>
+    </div>
   </div>
 </div>
 
-<!-- APP -->
 <div id="appScreen">
   <div id="fbStatus"></div>
   <header class="header">
@@ -294,20 +197,15 @@ window.startFirebaseListener = startFirebaseListener;
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
-
   <main class="app">
-    <div id="alertaSaida"   style="display:none"></div>
+    <div id="alertaSaida" style="display:none"></div>
     <div id="alertaRetorno" style="display:none"></div>
-
-    <!-- DASHBOARD -->
     <section class="dashboard">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
       <div class="dash-card"><span id="availableCount">0</span><p>Disponíveis</p></div>
       <div class="dash-card"><span id="inUseCount">0</span><p>Em uso</p></div>
       <div class="dash-card"><span id="maintenanceCount">0</span><p>Manutenção</p></div>
     </section>
-
-    <!-- RESUMO DO DIA -->
     <section class="card">
       <h2>📋 Resumo do Dia</h2>
       <div class="day-tabs">
@@ -323,11 +221,9 @@ window.startFirebaseListener = startFirebaseListener;
       </div>
       <div id="dayResumeBox" class="day-box">Selecione um período para visualizar.</div>
     </section>
-
-    <!-- CADASTRO -->
     <section class="card">
       <h2>➕ Cadastrar Máquina</h2>
-      <form id="machineForm">
+      <form onsubmit="cadastrarMaquina(event)">
         <input type="text" id="serial" placeholder="Número de série" required />
         <select id="brand" required>
           <option value="">Marca</option>
@@ -338,8 +234,6 @@ window.startFirebaseListener = startFirebaseListener;
         <button type="submit">Cadastrar</button>
       </form>
     </section>
-
-    <!-- ACOES EM LOTE -->
     <section class="card">
       <div class="lote-tabs">
         <button class="lote-tab-btn active" onclick="setLoteAba('reservar')">📦 Reservar</button>
@@ -349,37 +243,29 @@ window.startFirebaseListener = startFirebaseListener;
         <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">❌ Cancelar</button>
         <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">🔧 Manutenção</button>
       </div>
-
-      <!-- ABA RESERVAR -->
       <div id="lote-reservar" class="lote-tab-content active">
         <h2>📦 Reserva em Lote</h2>
-        <form id="batchReserveForm">
-          <input type="text" id="batchEvent"       placeholder="Nome do evento"  required />
-          <input type="text" id="batchCity"        placeholder="Cidade"          required />
-          <input type="text" id="batchResponsible" placeholder="Responsável"     required />
+        <form onsubmit="submitReservaLote(event)">
+          <input type="text" id="batchEvent" placeholder="Nome do evento" required />
+          <input type="text" id="batchCity" placeholder="Cidade" required />
+          <input type="text" id="batchResponsible" placeholder="Responsável" required />
           <div class="brand-checkboxes">
-            <label><input type="checkbox" name="batchBrands" value="Sipag"   checked /> Sipag</label>
+            <label><input type="checkbox" name="batchBrands" value="Sipag" checked /> Sipag</label>
             <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
-            <label><input type="checkbox" name="batchBrands" value="Stone"   checked /> Stone</label>
+            <label><input type="checkbox" name="batchBrands" value="Stone" checked /> Stone</label>
           </div>
           <label>Data inicial<input type="date" id="batchStartDate" required /></label>
-          <label>Data final  <input type="date" id="batchEndDate"   required /></label>
+          <label>Data final<input type="date" id="batchEndDate" required /></label>
           <div class="mode-selector">
             <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <button type="button" id="reserveAutoBtn"   onclick="setReserveMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
-              <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+              <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn mode-btn-active">🤖 Automático</button>
+              <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Manual</button>
             </div>
-            <div id="reserveAutoSection">
-              <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
-              <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" />
-            </div>
+            <div id="reserveAutoSection"><p class="mode-info">O sistema escolherá as máquinas que menos giraram.</p><input type="number" id="batchQuantity" placeholder="Quantidade" min="1" /></div>
             <div id="reserveManualSection" style="display:none">
               <div class="machine-select-box">
-                <div class="machine-select-header">
-                  <span id="reserveSelCount">0 selecionadas</span>
-                  <button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-                </div>
+                <div class="machine-select-header"><span id="reserveSelCount">0 selecionadas</span><button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
                 <div id="reserveMachineList" style="max-height:220px;overflow-y:auto"></div>
               </div>
             </div>
@@ -388,37 +274,29 @@ window.startFirebaseListener = startFirebaseListener;
         </form>
         <div id="batchReserveResult" class="batch-result"></div>
       </div>
-
-      <!-- ABA SAIDA -->
       <div id="lote-saida" class="lote-tab-content">
         <h2>🚀 Saída em Lote</h2>
-        <form id="batchExitForm">
-          <input type="text" id="batchExitEvent"       placeholder="Nome do evento"  required />
-          <input type="text" id="batchExitCity"        placeholder="Cidade"          required />
-          <input type="text" id="batchExitResponsible" placeholder="Responsável"     required />
+        <form onsubmit="submitSaidaLote(event)">
+          <input type="text" id="batchExitEvent" placeholder="Nome do evento" required />
+          <input type="text" id="batchExitCity" placeholder="Cidade" required />
+          <input type="text" id="batchExitResponsible" placeholder="Responsável" required />
           <div class="brand-checkboxes">
-            <label><input type="checkbox" name="batchExitBrands" value="Sipag"   checked /> Sipag</label>
+            <label><input type="checkbox" name="batchExitBrands" value="Sipag" checked /> Sipag</label>
             <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked /> PagBank</label>
-            <label><input type="checkbox" name="batchExitBrands" value="Stone"   checked /> Stone</label>
+            <label><input type="checkbox" name="batchExitBrands" value="Stone" checked /> Stone</label>
           </div>
-          <label>Data de saída  <input type="date" id="batchExitStartDate" required /></label>
-          <label>Data de retorno<input type="date" id="batchExitEndDate"   required /></label>
+          <label>Data de saída<input type="date" id="batchExitStartDate" required /></label>
+          <label>Data de retorno<input type="date" id="batchExitEndDate" required /></label>
           <div class="mode-selector">
             <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <button type="button" id="exitAutoBtn"   onclick="setExitMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
-              <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+              <button type="button" id="exitAutoBtn" onclick="setExitMode('auto')" class="mode-btn mode-btn-active">🤖 Automático</button>
+              <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Manual</button>
             </div>
-            <div id="exitAutoSection">
-              <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
-              <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" />
-            </div>
+            <div id="exitAutoSection"><p class="mode-info">O sistema escolherá as máquinas que menos giraram.</p><input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" /></div>
             <div id="exitManualSection" style="display:none">
               <div class="machine-select-box">
-                <div class="machine-select-header">
-                  <span id="exitSelCount">0 selecionadas</span>
-                  <button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-                </div>
+                <div class="machine-select-header"><span id="exitSelCount">0 selecionadas</span><button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
                 <div id="exitMachineList" style="max-height:220px;overflow-y:auto"></div>
               </div>
             </div>
@@ -427,123 +305,81 @@ window.startFirebaseListener = startFirebaseListener;
         </form>
         <div id="batchExitResult" class="batch-result"></div>
       </div>
-
-      <!-- ABA ENTRADA -->
       <div id="lote-entrada" class="lote-tab-content">
         <h2>📥 Entrada em Lote</h2>
-        <p class="helper-text">Registre a devolução de várias máquinas de um evento antes da data prevista.</p>
+        <p class="helper-text">Registre a devolução de várias máquinas de um evento.</p>
         <div style="display:grid;gap:10px">
-          <select id="entradaEventoSelect" onchange="refreshEntradaList()">
-            <option value="">Selecione o evento</option>
-          </select>
+          <select id="entradaEventoSelect" onchange="refreshEntradaList()"><option value="">Selecione o evento</option></select>
           <div id="entradaMachineBox" style="display:none">
             <div class="machine-select-box">
-              <div class="machine-select-header">
-                <span id="entradaSelCount">0 selecionadas</span>
-                <button type="button" onclick="toggleAllEntrada()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-              </div>
+              <div class="machine-select-header"><span id="entradaSelCount">0 selecionadas</span><button type="button" onclick="toggleAllEntrada()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
               <div id="entradaMachineList" style="max-height:220px;overflow-y:auto"></div>
             </div>
           </div>
           <input type="text" id="entradaObservacao" placeholder="Observação (opcional)" />
-          <button onclick="confirmarEntradaEmLote()" class="btn-green-soft" style="border:none">📥 Registrar entrada</button>
+          <button onclick="confirmarEntradaEmLote()" style="background:var(--green)">📥 Registrar entrada</button>
         </div>
         <div id="entradaResult" class="batch-result"></div>
       </div>
-
-      <!-- ABA RENOVAR -->
       <div id="lote-renovar" class="lote-tab-content">
         <h2>🔄 Renovar Prazo</h2>
-        <p class="helper-text">Estenda o prazo de uso de várias máquinas sem dar entrada e saída novamente.</p>
+        <p class="helper-text">Estenda o prazo sem dar entrada e saída novamente.</p>
         <div style="display:grid;gap:10px">
-          <select id="renovarEventoSelect" onchange="refreshRenovarList()">
-            <option value="">Selecione o evento</option>
-          </select>
+          <select id="renovarEventoSelect" onchange="refreshRenovarList()"><option value="">Selecione o evento</option></select>
           <div id="renovarMachineBox" style="display:none">
             <div class="machine-select-box">
-              <div class="machine-select-header">
-                <span id="renovarSelCount">0 selecionadas</span>
-                <button type="button" onclick="toggleAllRenovar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-              </div>
+              <div class="machine-select-header"><span id="renovarSelCount">0 selecionadas</span><button type="button" onclick="toggleAllRenovar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
               <div id="renovarMachineList" style="max-height:220px;overflow-y:auto"></div>
             </div>
           </div>
           <label>Nova data de retorno<input type="date" id="novaDataRetorno" /></label>
-          <button onclick="confirmarRenovacao()" class="btn-yellow" style="border:none">🔄 Renovar prazo</button>
+          <button onclick="confirmarRenovacao()" style="background:#92400e;color:#fff">🔄 Renovar prazo</button>
         </div>
         <div id="renovarResult" class="batch-result"></div>
       </div>
-
-      <!-- ABA CANCELAR -->
       <div id="lote-cancelar" class="lote-tab-content">
         <h2>❌ Cancelar Reservas em Lote</h2>
         <p class="helper-text">Cancele todas as reservas de um evento de uma vez.</p>
         <div style="display:grid;gap:10px">
-          <select id="cancelarEventoSelect" onchange="refreshCancelarList()">
-            <option value="">Selecione o evento</option>
-          </select>
+          <select id="cancelarEventoSelect" onchange="refreshCancelarList()"><option value="">Selecione o evento</option></select>
           <div id="cancelarMachineBox" style="display:none">
             <div class="machine-select-box">
-              <div class="machine-select-header">
-                <span id="cancelarSelCount">0 selecionadas</span>
-                <button type="button" onclick="toggleAllCancelar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-              </div>
+              <div class="machine-select-header"><span id="cancelarSelCount">0 selecionadas</span><button type="button" onclick="toggleAllCancelar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
               <div id="cancelarMachineList" style="max-height:220px;overflow-y:auto"></div>
             </div>
           </div>
-          <button onclick="confirmarCancelamentoLote()" class="btn-danger" style="border:none">❌ Cancelar reservas selecionadas</button>
+          <button onclick="confirmarCancelamentoLote()" style="background:var(--red);color:#fff">❌ Cancelar selecionadas</button>
         </div>
         <div id="cancelarResult" class="batch-result"></div>
       </div>
-
-      <!-- ABA MANUTENCAO -->
       <div id="lote-manutencao" class="lote-tab-content">
         <h2>🔧 Manutenção em Lote</h2>
         <p class="helper-text">Envie várias máquinas para manutenção de uma vez.</p>
         <div style="display:grid;gap:10px">
           <div class="brand-checkboxes">
-            <label><input type="checkbox" name="manutBrands" value="Sipag"   checked onchange="refreshManutList()" /> Sipag</label>
+            <label><input type="checkbox" name="manutBrands" value="Sipag" checked onchange="refreshManutList()" /> Sipag</label>
             <label><input type="checkbox" name="manutBrands" value="PagBank" checked onchange="refreshManutList()" /> PagBank</label>
-            <label><input type="checkbox" name="manutBrands" value="Stone"   checked onchange="refreshManutList()" /> Stone</label>
+            <label><input type="checkbox" name="manutBrands" value="Stone" checked onchange="refreshManutList()" /> Stone</label>
           </div>
           <div class="machine-select-box">
-            <div class="machine-select-header">
-              <span id="manutSelCount">0 selecionadas</span>
-              <button type="button" onclick="toggleAllManut()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-            </div>
+            <div class="machine-select-header"><span id="manutSelCount">0 selecionadas</span><button type="button" onclick="toggleAllManut()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
             <div id="manutMachineList" style="max-height:220px;overflow-y:auto"></div>
           </div>
           <input type="text" id="manutMotivo" placeholder="Motivo da manutenção (opcional)" />
-          <button onclick="confirmarManutencaoLote()" class="btn-gray" style="border:none">🔧 Enviar para manutenção</button>
+          <button onclick="confirmarManutencaoLote()" style="background:var(--gray);color:#fff">🔧 Enviar para manutenção</button>
         </div>
         <div id="manutResult" class="batch-result"></div>
       </div>
-
     </section>
-
-    <!-- FILTROS -->
     <section class="card">
       <h2>🔍 Filtros</h2>
       <div class="filters">
         <input type="text" id="searchInput" placeholder="Buscar por serial" />
-        <select id="brandFilter">
-          <option value="">Todas as marcas</option>
-          <option value="Sipag">Sipag</option>
-          <option value="PagBank">PagBank</option>
-          <option value="Stone">Stone</option>
-        </select>
-        <select id="statusFilter">
-          <option value="">Todos os status</option>
-          <option value="Disponível">Disponível</option>
-          <option value="Em uso">Em uso</option>
-          <option value="Reservada hoje">Reservada hoje</option>
-          <option value="Manutenção">Manutenção</option>
-        </select>
+        <select id="brandFilter"><option value="">Todas as marcas</option><option value="Sipag">Sipag</option><option value="PagBank">PagBank</option><option value="Stone">Stone</option></select>
+        <select id="statusFilter"><option value="">Todos os status</option><option value="Disponível">Disponível</option><option value="Em uso">Em uso</option><option value="Reservada hoje">Reservada hoje</option><option value="Manutenção">Manutenção</option></select>
         <select id="eventFilter"><option value="">Todos os eventos</option></select>
       </div>
     </section>
-
-    <!-- LISTA -->
     <section class="card">
       <h2>🖥️ Máquinas</h2>
       <div id="machineList"><p style="color:#9ca3af">Aguardando conexão…</p></div>
@@ -551,17 +387,16 @@ window.startFirebaseListener = startFirebaseListener;
   </main>
 </div>
 
-<!-- MODAL SAÍDA INDIVIDUAL -->
 <div id="exitModal" class="modal">
   <div class="modal-content">
     <h2>Registrar Saída</h2>
-    <form id="exitForm">
+    <form onsubmit="submitSaidaIndividual(event)">
       <input type="hidden" id="exitSerial" />
-      <label>Evento      <input type="text" id="exitEvent"       placeholder="Ex: Festa do Café" required /></label>
-      <label>Cidade      <input type="text" id="exitCity"        placeholder="Ex: Nepomuceno"    required /></label>
-      <label>Responsável <input type="text" id="exitResponsible" placeholder="Nome"              required /></label>
-      <label>Data de saída  <input type="date" id="exitStartDate" required /></label>
-      <label>Data de retorno<input type="date" id="exitEndDate"   required /></label>
+      <label>Evento<input type="text" id="exitEvent" placeholder="Ex: Festa do Café" required /></label>
+      <label>Cidade<input type="text" id="exitCity" placeholder="Ex: Nepomuceno" required /></label>
+      <label>Responsável<input type="text" id="exitResponsible" placeholder="Nome" required /></label>
+      <label>Data de saída<input type="date" id="exitStartDate" onchange="checkExitConflict()" required /></label>
+      <label>Data de retorno<input type="date" id="exitEndDate" onchange="checkExitConflict()" required /></label>
       <div id="exitConflictMsg" class="blocked-msg" style="display:none"></div>
       <div class="modal-actions">
         <button type="submit" id="exitConfirmBtn">Confirmar Saída</button>
@@ -570,16 +405,14 @@ window.startFirebaseListener = startFirebaseListener;
     </form>
   </div>
 </div>
-
-<!-- MODAL RESERVA INDIVIDUAL -->
 <div id="reserveModal" class="modal">
   <div class="modal-content">
     <h2>Reservar Máquina</h2>
-    <form id="reserveForm">
+    <form onsubmit="submitReservaIndividual(event)">
       <input type="hidden" id="reserveSerial" />
-      <label>Evento      <input type="text" id="reserveEvent"     placeholder="Ex: Rodeio Ijaci" required /></label>
-      <label>Data inicial<input type="date" id="reserveStartDate" required /></label>
-      <label>Data final  <input type="date" id="reserveEndDate"   required /></label>
+      <label>Evento<input type="text" id="reserveEvent" placeholder="Ex: Rodeio Ijaci" required /></label>
+      <label>Data inicial<input type="date" id="reserveStartDate" onchange="document.getElementById('reserveEndDate').min=this.value" required /></label>
+      <label>Data final<input type="date" id="reserveEndDate" required /></label>
       <div class="modal-actions">
         <button type="submit">Confirmar Reserva</button>
         <button type="button" class="btn-secundario" onclick="closeReserveModal()">Cancelar</button>
@@ -587,445 +420,214 @@ window.startFirebaseListener = startFirebaseListener;
     </form>
   </div>
 </div>
-
-<!-- MODAL VER RESERVAS -->
 <div id="viewReservesModal" class="modal">
   <div class="modal-content">
     <h2>Reservas da Máquina</h2>
     <div id="viewReservesContent" style="font-size:14px;line-height:1.7"></div>
-    <div class="modal-actions" style="margin-top:14px">
-      <button class="btn-secundario" onclick="closeViewReservesModal()">Fechar</button>
-    </div>
+    <div class="modal-actions" style="margin-top:14px"><button class="btn-secundario" onclick="closeViewReservesModal()">Fechar</button></div>
   </div>
 </div>
 
 <script>
+// ════════════════════════════════════════════════════
+// CONFIGURAÇÃO FIREBASE
+// ════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+      authDomain:        "easytick-maquinas.firebaseapp.com",
+      databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
+      projectId:         "easytick-maquinas",
+      storageBucket:     "easytick-maquinas.firebasestorage.app",
+      messagingSenderId: "1096291599566",
+      appId:             "1:1096291599566:web:6e96b6ebec057fd37afc9f"
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.database();
+
 let machines = [];
+let currentUser = null;
 
-// EXPOE FUNCOES AO WINDOW (necessario para o modulo Firebase)
-function showApp() {
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("appScreen").classList.add("visible");
-  const u=window._currentUser;
-  if(u){ document.getElementById("headerUserName").textContent=u.displayName||u.email; document.getElementById("headerUserEmail").textContent=u.displayName?u.email:""; }
-}
-window.showApp = showApp;
-
-function showLogin() {
-  document.getElementById("loginScreen").classList.remove("hidden");
-  document.getElementById("appScreen").classList.remove("visible");
-}
-window.showLogin = showLogin;
-
-window.startFirebaseListener = function() { startFirebaseListener(); };
-
-// USUARIO
-function getCurrentUserName()  { const u=window._currentUser; return u?(u.displayName||u.email||"Usuário"):"Desconhecido"; }
-function getCurrentUserEmail() { const u=window._currentUser; return u?(u.email||""):""; }
-
-// LOGIN
-
-async function doLogin() {
-  const email=document.getElementById("loginEmail").value.trim();
-  const pass=document.getElementById("loginPassword").value;
-  const btn=document.getElementById("loginBtn");
-  const err=document.getElementById("loginError");
-  if(!email||!pass){ alert("Preencha e-mail e senha."); return; }
-  btn.textContent="Entrando…"; btn.disabled=true; err.classList.remove("show");
-  try {
-    if(!window._signIn){ alert("Sistema ainda carregando. Aguarde e tente novamente."); btn.textContent="Entrar"; btn.disabled=false; return; }
-    await window._signIn(email, pass);
-  } catch(ex) {
-    err.classList.add("show"); btn.textContent="Entrar"; btn.disabled=false;
+// ── AUTH ──────────────────────────────────────────────
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    currentUser = user;
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.add("visible");
+    document.getElementById("headerUserName").textContent  = user.displayName || user.email;
+    document.getElementById("headerUserEmail").textContent = user.displayName ? user.email : "";
+    startFirebaseListener();
+  } else {
+    currentUser = null;
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.remove("visible");
   }
-}
-function doLogout() { if(confirm("Deseja sair do sistema?")) window._signOut(); }
+});
 
-// FIREBASE
+function doLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass  = document.getElementById("loginPassword").value;
+  const btn   = document.getElementById("loginBtn");
+  const err   = document.getElementById("loginError");
+  if (!email || !pass) { alert("Preencha e-mail e senha."); return; }
+  btn.textContent = "Entrando…"; btn.disabled = true; err.classList.remove("show");
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(function() { err.classList.add("show"); btn.textContent = "Entrar"; btn.disabled = false; });
+}
+
+function doLogout() { if (confirm("Deseja sair?")) auth.signOut(); }
+
+function getCurrentUserName()  { return currentUser ? (currentUser.displayName || currentUser.email || "Usuário") : "Desconhecido"; }
+function getCurrentUserEmail() { return currentUser ? (currentUser.email || "") : ""; }
+
+// ── FIREBASE DATABASE ─────────────────────────────────
 function startFirebaseListener() {
-  const fbStatus=document.getElementById("fbStatus"); const loadingBar=document.getElementById("loadingBar");
-  try {
-    const dbRef=window._ref(window._db,"machines"); loadingBar.style.width="60%";
-    window._onValue(dbRef,(snapshot)=>{
-      loadingBar.style.width="100%"; setTimeout(()=>loadingBar.style.width="0",400);
-      const data=snapshot.val();
-      machines=data?Object.values(data).map(m=>({...m,history:m.history||[],reservations:m.reservations||[],showHistory:false})):[];
-      fbStatus.className="ok"; fbStatus.textContent="✅ Conectado – dados em tempo real";
-      setTimeout(()=>fbStatus.className="",3000);
-      render();
-    },(err)=>{ fbStatus.className="error"; fbStatus.textContent="⚠️ Erro Firebase: "+err.message; loadingBar.style.width="0"; });
-  } catch(e) {
-    fbStatus.className="error"; fbStatus.textContent="⚠️ Firebase não configurado.";
-    machines=JSON.parse(localStorage.getItem("machines")||"[]").map(m=>({...m,history:m.history||[],reservations:m.reservations||[],showHistory:false}));
+  const fbStatus   = document.getElementById("fbStatus");
+  const loadingBar = document.getElementById("loadingBar");
+  loadingBar.style.width = "60%";
+  db.ref("machines").on("value", function(snapshot) {
+    loadingBar.style.width = "100%";
+    setTimeout(function(){ loadingBar.style.width = "0"; }, 400);
+    var data = snapshot.val();
+    machines = data ? Object.values(data).map(function(m){ return Object.assign({history:[],reservations:[],showHistory:false}, m); }) : [];
+    fbStatus.className = "ok"; fbStatus.textContent = "✅ Conectado – dados em tempo real";
+    setTimeout(function(){ fbStatus.className = ""; }, 3000);
     render();
-  }
+  }, function(err) {
+    fbStatus.className = "error"; fbStatus.textContent = "⚠️ Erro: " + err.message;
+    loadingBar.style.width = "0";
+  });
 }
 
 function save() {
-  try {
-    const obj={};
-    machines.forEach(m=>{ const k=m.serial.replace(/[.#$/[\]]/g,"_"); obj[k]={serial:m.serial,brand:m.brand,status:m.status,history:m.history,reservations:m.reservations}; });
-    window._set(window._ref(window._db,"machines"),obj);
-  } catch(e){ localStorage.setItem("machines",JSON.stringify(machines)); }
+  var obj = {};
+  machines.forEach(function(m) {
+    var k = m.serial.replace(/[.#$\/\[\]]/g, "_");
+    obj[k] = { serial:m.serial, brand:m.brand, status:m.status, history:m.history, reservations:m.reservations };
+  });
+  db.ref("machines").set(obj);
 }
 
-// UTILITARIOS
+// ── UTILITÁRIOS ───────────────────────────────────────
 function getToday() { return new Date().toISOString().split("T")[0]; }
-function addDays(d,n) { const dt=new Date(d+"T00:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; }
-function getWeekRange() {
-  const t=new Date(getToday()+"T00:00:00"); const day=t.getDay();
-  const mon=new Date(t); mon.setDate(t.getDate()+(day===0?-6:1-day));
-  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  return {start:mon.toISOString().split("T")[0],end:sun.toISOString().split("T")[0]};
-}
-function getMonthRange() {
-  const t=new Date(getToday()+"T00:00:00");
-  const f=new Date(t.getFullYear(),t.getMonth(),1);
-  const l=new Date(t.getFullYear(),t.getMonth()+1,0);
-  return {start:f.toISOString().split("T")[0],end:l.toISOString().split("T")[0]};
-}
-function formatDate(d)     { return d?new Date(d+"T00:00:00").toLocaleDateString("pt-BR"):"-"; }
-function formatDateTime(d) { return d?new Date(d).toLocaleString("pt-BR"):"-"; }
-function hasDateOverlap(sA,eA,sB,eB) { return sA<=eB&&eA>=sB; }
+function addDays(d,n) { var dt=new Date(d+"T00:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; }
+function getWeekRange() { var t=new Date(getToday()+"T00:00:00"),day=t.getDay(),mon=new Date(t); mon.setDate(t.getDate()+(day===0?-6:1-day)); var sun=new Date(mon); sun.setDate(mon.getDate()+6); return {start:mon.toISOString().split("T")[0],end:sun.toISOString().split("T")[0]}; }
+function getMonthRange() { var t=new Date(getToday()+"T00:00:00"),f=new Date(t.getFullYear(),t.getMonth(),1),l=new Date(t.getFullYear(),t.getMonth()+1,0); return {start:f.toISOString().split("T")[0],end:l.toISOString().split("T")[0]}; }
+function formatDate(d)     { return d ? new Date(d+"T00:00:00").toLocaleDateString("pt-BR") : "-"; }
+function formatDateTime(d) { return d ? new Date(d).toLocaleString("pt-BR") : "-"; }
+function hasDateOverlap(sA,eA,sB,eB) { return sA<=eB && eA>=sB; }
 
-// STATUS REAL
 function getRealStatus(m) {
-  if(m.status==="Em uso")     return "Em uso";
-  if(m.status==="Manutenção") return "Manutenção";
-  const t=getToday();
-  if(m.reservations.some(r=>hasDateOverlap(r.startDate,r.endDate,t,t))) return "Reservada hoje";
+  if (m.status==="Em uso")     return "Em uso";
+  if (m.status==="Manutenção") return "Manutenção";
+  var t=getToday();
+  if (m.reservations.some(function(r){ return hasDateOverlap(r.startDate,r.endDate,t,t); })) return "Reservada hoje";
   return "Disponível";
 }
-function getStatusClass(s) {
-  if(s==="Disponível")     return "disponivel";
-  if(s==="Em uso")         return "em-uso";
-  if(s==="Manutenção")     return "manutencao";
-  if(s==="Reservada hoje") return "reservada-hoje";
-  return "";
-}
-function hasReservationConflict(m,s,e) { return m.reservations.some(r=>hasDateOverlap(s,e,r.startDate,r.endDate)); }
+function getStatusClass(s) { return s==="Disponível"?"disponivel":s==="Em uso"?"em-uso":s==="Manutenção"?"manutencao":s==="Reservada hoje"?"reservada-hoje":""; }
+function hasReservationConflict(m,s,e) { return m.reservations.some(function(r){ return hasDateOverlap(s,e,r.startDate,r.endDate); }); }
 function isBlockedForExit(m,s,e) {
-  if(m.status==="Em uso")     return "Máquina já está em uso.";
-  if(m.status==="Manutenção") return "Máquina em manutenção.";
-  const c=m.reservations.find(r=>hasDateOverlap(s,e,r.startDate,r.endDate));
-  if(c) return `Conflito com reserva: ${c.event} (${formatDate(c.startDate)} → ${formatDate(c.endDate)})`;
+  if (m.status==="Em uso")     return "Máquina já está em uso.";
+  if (m.status==="Manutenção") return "Máquina em manutenção.";
+  var c=m.reservations.find(function(r){ return hasDateOverlap(s,e,r.startDate,r.endDate); });
+  if (c) return "Conflito com reserva: "+c.event+" ("+formatDate(c.startDate)+" → "+formatDate(c.endDate)+")";
   return null;
 }
+function getSelectedBrands(name) { return Array.from(document.querySelectorAll('input[name="'+name+'"]:checked')).map(function(i){ return i.value; }); }
 
-// DASHBOARD
+// ── DASHBOARD ─────────────────────────────────────────
 function updateDashboard() {
-  const st=machines.map(getRealStatus);
+  var st=machines.map(getRealStatus);
   document.getElementById("totalCount").textContent       = machines.length;
-  document.getElementById("availableCount").textContent   = st.filter(s=>s==="Disponível").length;
-  document.getElementById("inUseCount").textContent       = st.filter(s=>s==="Em uso").length;
-  document.getElementById("maintenanceCount").textContent = st.filter(s=>s==="Manutenção").length;
+  document.getElementById("availableCount").textContent   = st.filter(function(s){ return s==="Disponível"; }).length;
+  document.getElementById("inUseCount").textContent       = st.filter(function(s){ return s==="Em uso"; }).length;
+  document.getElementById("maintenanceCount").textContent = st.filter(function(s){ return s==="Manutenção"; }).length;
 }
 
-// ALERTAS DO DIA
+// ── ALERTAS ───────────────────────────────────────────
 function renderDayAlerts() {
-  const today=getToday();
-  const saidasHoje={};
-  machines.forEach(m=>{
-    if(m.status==="Em uso"||m.status==="Manutenção") return;
-    m.reservations.forEach(r=>{
-      if(hasDateOverlap(r.startDate,r.endDate,today,today)){
-        if(!saidasHoje[r.event]) saidasHoje[r.event]=[];
-        saidasHoje[r.event].push({machine:m,reservation:r});
-      }
+  var today=getToday(), saidasHoje={}, retornosHoje={};
+  machines.forEach(function(m) {
+    if (m.status==="Em uso"||m.status==="Manutenção") return;
+    m.reservations.forEach(function(r) {
+      if (hasDateOverlap(r.startDate,r.endDate,today,today)) { if(!saidasHoje[r.event]) saidasHoje[r.event]=[]; saidasHoje[r.event].push(m); }
     });
   });
-  const retornosHoje={};
-  machines.forEach(m=>{
-    if(m.status!=="Em uso") return;
-    const last=[...m.history].reverse().find(h=>h.type==="saida");
-    if(last&&last.endDate===today){ const ev=last.event||"Evento"; if(!retornosHoje[ev]) retornosHoje[ev]=[]; retornosHoje[ev].push({machine:m,history:last}); }
+  machines.forEach(function(m) {
+    if (m.status!=="Em uso") return;
+    var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){ last=m.history[i]; break; } }
+    if (last&&last.endDate===today) { var ev=last.event||"Evento"; if(!retornosHoje[ev]) retornosHoje[ev]=[]; retornosHoje[ev].push(m); }
   });
-  const elS=document.getElementById("alertaSaida"); const elR=document.getElementById("alertaRetorno");
-  const ts=Object.values(saidasHoje).flat().length;
-  if(ts>0){ elS.style.display="block"; elS.innerHTML=`<div class="day-alert saida"><div class="day-alert-text"><b>🚨 ${ts} máquina${ts>1?'s':''} sai${ts>1?'em':''} hoje</b><p>${Object.keys(saidasHoje).join(", ")}</p></div><button onclick="showDayResume('today')">Ver no Resumo do Dia</button></div>`; }
+  var elS=document.getElementById("alertaSaida"), elR=document.getElementById("alertaRetorno");
+  var ts=Object.values(saidasHoje).reduce(function(a,b){ return a+b.length; },0);
+  if (ts>0) { elS.style.display="block"; elS.innerHTML='<div class="day-alert saida"><div class="day-alert-text"><b>🚨 '+ts+' máquina'+(ts>1?'s':'')+' sai'+(ts>1?'em':'')+' hoje</b><p>'+Object.keys(saidasHoje).join(", ")+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo do Dia</button></div>'; }
   else elS.style.display="none";
-  const tr=Object.values(retornosHoje).flat().length;
-  if(tr>0){ elR.style.display="block"; elR.innerHTML=`<div class="day-alert retorno"><div class="day-alert-text"><b>📥 ${tr} máquina${tr>1?'s':''} retorna${tr>1?'m':''} hoje</b><p>${Object.keys(retornosHoje).join(", ")}</p></div><button onclick="showDayResume('today')">Ver no Resumo do Dia</button></div>`; }
+  var tr=Object.values(retornosHoje).reduce(function(a,b){ return a+b.length; },0);
+  if (tr>0) { elR.style.display="block"; elR.innerHTML='<div class="day-alert retorno"><div class="day-alert-text"><b>📥 '+tr+' máquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(", ")+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo do Dia</button></div>'; }
   else elR.style.display="none";
 }
 
-// RESUMO DO DIA — apenas reservas e retornos (sem "em uso")
-function getReservationsByRange(start,end) {
-  const list=[];
-  machines.forEach(m=>{
-    m.reservations.forEach(r=>{
-      if(hasDateOverlap(r.startDate,r.endDate,start,end))
-        list.push({...r,serial:m.serial,brand:m.brand,status:getRealStatus(m)});
-    });
-  });
-  return list;
-}
-function getRetornosByRange(start,end) {
-  const list=[];
-  machines.forEach(m=>{
-    if(m.status!=="Em uso") return;
-    const last=[...m.history].reverse().find(h=>h.type==="saida");
-    if(last&&hasDateOverlap(last.endDate,last.endDate,start,end))
-      list.push({...last,serial:m.serial,brand:m.brand});
-  });
-  return list;
-}
-function groupByEvent(list) { return list.reduce((g,r)=>{g[r.event]=g[r.event]||[];g[r.event].push(r);return g;},{}); }
+// ── RESUMO DO DIA ─────────────────────────────────────
+function getReservationsByRange(s,e) { var l=[]; machines.forEach(function(m){ m.reservations.forEach(function(r){ if(hasDateOverlap(r.startDate,r.endDate,s,e)) l.push(Object.assign({},r,{serial:m.serial,brand:m.brand,status:getRealStatus(m)})); }); }); return l; }
+function getRetornosByRange(s,e) { var l=[]; machines.forEach(function(m){ if(m.status!=="Em uso") return; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } if(last&&hasDateOverlap(last.endDate,last.endDate,s,e)) l.push(Object.assign({},last,{serial:m.serial,brand:m.brand})); }); return l; }
+function groupByEvent(list) { return list.reduce(function(g,r){ if(!g[r.event]) g[r.event]=[]; g[r.event].push(r); return g; },{}); }
 
 function renderDayResume(start,end,label) {
-  const box=document.getElementById("dayResumeBox");
-  const reservations=getReservationsByRange(start,end);
-  const retornos=getRetornosByRange(start,end);
-  const today=getToday(); const isToday=(start===today&&end===today);
-  if(!reservations.length&&!retornos.length){ box.innerHTML=`<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br><br>Nenhuma movimentação encontrada.`; return; }
-  const grouped=groupByEvent(reservations);
-  const grRetorno=groupByEvent(retornos.map(r=>({...r,event:r.event||"Evento"})));
-  let html=`<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br>`;
-  if(reservations.length) html+=`Saídas previstas: <b>${reservations.length}</b> &nbsp;`;
-  if(retornos.length)     html+=`Retornos previstos: <b>${retornos.length}</b>`;
-  Object.entries(grouped).forEach(([ev,items])=>{
-    const pendentes=isToday?items.filter(i=>i.status==="Reservada hoje"):items;
-    const btnS=(isToday&&pendentes.length)?`<button onclick="confirmarSaidaLote('${ev}')" style="background:var(--green)">Dar saída em todas (${pendentes.length})</button>`:"";
-    html+=`<div class="day-event-group"><h3>${ev} <small style="font-weight:normal;font-size:12px">(${items.length} máquina${items.length>1?'s':''})</small> ${btnS}</h3>${items.map(i=>`<div class="day-item"><b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>${formatDate(i.startDate)} → ${formatDate(i.endDate)} · <span class="status ${getStatusClass(i.status)}" style="font-size:11px;padding:2px 8px">${i.status}</span>${i.createdBy?`<br><span class="history-user">👤 ${i.createdBy}</span>`:""}</div>`).join("")}</div>`;
+  var box=document.getElementById("dayResumeBox"), res=getReservationsByRange(start,end), ret=getRetornosByRange(start,end), today=getToday(), isToday=(start===today&&end===today);
+  if (!res.length&&!ret.length) { box.innerHTML="<b>"+label+"</b> — "+formatDate(start)+" até "+formatDate(end)+"<br><br>Nenhuma movimentação encontrada."; return; }
+  var grouped=groupByEvent(res), grRet=groupByEvent(ret.map(function(r){ return Object.assign({},r,{event:r.event||"Evento"}); }));
+  var html="<b>"+label+"</b> — "+formatDate(start)+" até "+formatDate(end)+"<br>";
+  if(res.length) html+="Saídas previstas: <b>"+res.length+"</b> &nbsp;";
+  if(ret.length) html+="Retornos: <b>"+ret.length+"</b>";
+  Object.keys(grouped).forEach(function(ev) {
+    var items=grouped[ev], pendentes=isToday?items.filter(function(i){ return i.status==="Reservada hoje"; }):items;
+    var btnS=(isToday&&pendentes.length)?'<button onclick="confirmarSaidaLote(\''+ev+'\')" style="background:var(--green)">Dar saída em todas ('+pendentes.length+')</button>':"";
+    html+='<div class="day-event-group"><h3>'+ev+' <small style="font-weight:normal;font-size:12px">('+items.length+' máquina'+(items.length>1?'s':'')+')</small> '+btnS+'</h3>'+items.map(function(i){ return '<div class="day-item"><b>'+i.serial+'</b> · '+i.brand+(i.city?' · '+i.city:'')+(i.responsible?' · '+i.responsible:'')+'<br>'+formatDate(i.startDate)+' → '+formatDate(i.endDate)+' · <span class="status '+getStatusClass(i.status)+'" style="font-size:11px;padding:2px 8px">'+i.status+'</span>'+(i.createdBy?'<br><span class="history-user">👤 '+i.createdBy+'</span>':'')+'</div>'; }).join("")+'</div>';
   });
-  if(retornos.length){
-    Object.entries(grRetorno).forEach(([ev,items])=>{
-      const btnE=isToday?`<button class="entrada-btn" onclick="confirmarEntradaLote('${ev}')">Dar entrada em todas (${items.length})</button>`:"";
-      html+=`<div class="retorno-group"><h3>📥 Retorno: ${ev} ${btnE}</h3>${items.map(i=>`<div class="day-item"><b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>Retorno previsto: ${formatDate(i.endDate)}</div>`).join("")}</div>`;
-    });
-  }
+  if(ret.length){ Object.keys(grRet).forEach(function(ev){ var items=grRet[ev]; var btnE=isToday?'<button class="entrada-btn" onclick="confirmarEntradaLote(\''+ev+'\')">Dar entrada em todas ('+items.length+')</button>':""; html+='<div class="retorno-group"><h3>📥 Retorno: '+ev+' '+btnE+'</h3>'+items.map(function(i){ return '<div class="day-item"><b>'+i.serial+'</b> · '+i.brand+(i.city?' · '+i.city:'')+'<br>Retorno previsto: '+formatDate(i.endDate)+'</div>'; }).join("")+'</div>'; }); }
   box.innerHTML=html;
 }
-function showDayResume(type) {
-  const today=getToday();
-  if(type==="today")  renderDayResume(today,today,"Hoje");
-  if(type==="week")   { const w=getWeekRange(); renderDayResume(w.start,w.end,"Esta semana"); }
-  if(type==="15days") renderDayResume(today,addDays(today,15),"Próximos 15 dias");
-  if(type==="month")  { const m=getMonthRange(); renderDayResume(m.start,m.end,"Este mês"); }
-}
-function showCustomDayResume() {
-  const s=document.getElementById("customStartDate").value; const e=document.getElementById("customEndDate").value;
-  if(!s||!e){ alert("Selecione as duas datas."); return; }
-  if(e<s){ alert("Data final não pode ser menor."); return; }
-  renderDayResume(s,e,"Período personalizado");
-}
+function showDayResume(type) { var today=getToday(); if(type==="today") renderDayResume(today,today,"Hoje"); else if(type==="week"){var w=getWeekRange();renderDayResume(w.start,w.end,"Esta semana");} else if(type==="15days") renderDayResume(today,addDays(today,15),"Próximos 15 dias"); else {var mo=getMonthRange();renderDayResume(mo.start,mo.end,"Este mês");} }
+function showCustomDayResume() { var s=document.getElementById("customStartDate").value,e=document.getElementById("customEndDate").value; if(!s||!e){alert("Selecione as duas datas.");return;} if(e<s){alert("Data final não pode ser menor.");return;} renderDayResume(s,e,"Período personalizado"); }
 
-// CONFIRMAR SAIDA/ENTRADA VIA RESUMO
 function confirmarSaidaLote(eventName) {
-  const today=getToday();
-  const maquinas=machines.filter(m=>{ if(m.status==="Em uso"||m.status==="Manutenção") return false; return m.reservations.some(r=>r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today)); });
-  if(!maquinas.length){ alert("Nenhuma máquina disponível."); return; }
-  if(!confirm(`Confirmar saída de ${maquinas.length} máquina(s) para "${eventName}"?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  maquinas.forEach(m=>{ const res=m.reservations.find(r=>r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today)); m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:res?.city||"",responsible:res?.responsible||"",startDate:res?.startDate||today,endDate:res?.endDate||today,date:new Date().toISOString(),user:userName,userEmail,fromReservation:true}); });
-  save(); alert(`✅ Saída confirmada para ${maquinas.length} máquina(s)!`);
+  var today=getToday(), maquinas=machines.filter(function(m){ if(m.status==="Em uso"||m.status==="Manutenção") return false; return m.reservations.some(function(r){ return r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today); }); });
+  if(!maquinas.length){alert("Nenhuma máquina disponível.");return;} if(!confirm("Confirmar saída de "+maquinas.length+" máquina(s) para \""+eventName+"\"?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  maquinas.forEach(function(m){ var res=m.reservations.find(function(r){ return r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today); }); m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:res?res.city||"":"",responsible:res?res.responsible||"":"",startDate:res?res.startDate:today,endDate:res?res.endDate:today,date:new Date().toISOString(),user:un,userEmail:ue,fromReservation:true}); });
+  save(); alert("✅ Saída confirmada para "+maquinas.length+" máquina(s)!");
 }
 function confirmarEntradaLote(eventName) {
-  const today=getToday();
-  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&(last.event===eventName)&&(last.endDate===today); });
-  if(!maquinas.length){ alert("Nenhuma máquina encontrada."); return; }
-  if(!confirm(`Confirmar entrada de ${maquinas.length} máquina(s) do evento "${eventName}"?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  maquinas.forEach(m=>{ m.status="Disponível"; m.history.push({type:"entrada",observation:"Entrada em lote via Resumo do Dia",date:new Date().toISOString(),user:userName,userEmail}); });
-  save(); alert(`✅ Entrada confirmada para ${maquinas.length} máquina(s)!`);
+  var today=getToday(), maquinas=machines.filter(function(m){ if(m.status!=="Em uso") return false; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last&&last.event===eventName&&last.endDate===today; });
+  if(!maquinas.length){alert("Nenhuma máquina encontrada.");return;} if(!confirm("Confirmar entrada de "+maquinas.length+" máquina(s)?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  maquinas.forEach(function(m){ m.status="Disponível"; m.history.push({type:"entrada",observation:"Entrada via Resumo do Dia",date:new Date().toISOString(),user:un,userEmail:ue}); });
+  save(); alert("✅ Entrada confirmada!");
 }
 
-// ABAS DE LOTE
-const LOTE_ABAS = ['reservar','saida','entrada','renovar','cancelar','manutencao'];
+// ── ABAS LOTE ─────────────────────────────────────────
+var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao'];
 function setLoteAba(aba) {
-  LOTE_ABAS.forEach(a=>{
-    document.getElementById('lote-'+a).classList.toggle('active',a===aba);
-  });
-  document.querySelectorAll('.lote-tab-btn').forEach((btn,i)=>{ btn.classList.toggle('active',LOTE_ABAS[i]===aba); });
-  if(aba==='entrada')   refreshEntradaEventos();
-  if(aba==='renovar')   refreshRenovarEventos();
-  if(aba==='cancelar')  refreshCancelarEventos();
-  if(aba==='manutencao')refreshManutList();
+  LOTE_ABAS.forEach(function(a){ document.getElementById('lote-'+a).classList.toggle('active',a===aba); });
+  document.querySelectorAll('.lote-tab-btn').forEach(function(btn,i){ btn.classList.toggle('active',LOTE_ABAS[i]===aba); });
+  if(aba==='entrada')    refreshEntradaEventos();
+  if(aba==='renovar')    refreshRenovarEventos();
+  if(aba==='cancelar')   refreshCancelarEventos();
+  if(aba==='manutencao') refreshManutList();
 }
 
-// ABA ENTRADA EM LOTE
-let entradaSelected = new Set();
-function refreshEntradaEventos() {
-  const sel=document.getElementById("entradaEventoSelect");
-  const eventos=new Set();
-  machines.forEach(m=>{ if(m.status!=="Em uso") return; const last=[...m.history].reverse().find(h=>h.type==="saida"); if(last&&last.event) eventos.add(last.event); });
-  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
-  document.getElementById("entradaMachineBox").style.display="none";
-  entradaSelected.clear();
-}
-function refreshEntradaList() {
-  const ev=document.getElementById("entradaEventoSelect").value;
-  const box=document.getElementById("entradaMachineBox");
-  if(!ev){ box.style.display="none"; return; }
-  box.style.display="block";
-  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
-  const list=document.getElementById("entradaMachineList");
-  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso neste evento.</p>'; return; }
-  list.innerHTML=maquinas.map(m=>{ const last=[...m.history].reverse().find(h=>h.type==="saida"); return `<label class="machine-select-item ${entradaSelected.has(m.serial)?'selected':''}" onclick="toggleEntradaSel('${m.serial}')"><input type="checkbox" ${entradaSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleEntradaSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">Retorno: ${formatDate(last?.endDate)}</span></label>`; }).join("");
-  document.getElementById("entradaSelCount").textContent=entradaSelected.size+" selecionadas";
-}
-function toggleEntradaSel(serial) { if(entradaSelected.has(serial)) entradaSelected.delete(serial); else entradaSelected.add(serial); refreshEntradaList(); }
-function toggleAllEntrada() {
-  const ev=document.getElementById("entradaEventoSelect").value;
-  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
-  if(entradaSelected.size===maquinas.length) entradaSelected.clear(); else maquinas.forEach(m=>entradaSelected.add(m.serial));
-  refreshEntradaList();
-}
-function confirmarEntradaEmLote() {
-  if(!entradaSelected.size){ alert("Selecione ao menos uma máquina."); return; }
-  const obs=document.getElementById("entradaObservacao").value.trim();
-  const result=document.getElementById("entradaResult");
-  if(!confirm(`Confirmar entrada de ${entradaSelected.size} máquina(s)?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  const selected=machines.filter(m=>entradaSelected.has(m.serial));
-  selected.forEach(m=>{ m.status="Disponível"; m.history.push({type:"entrada",observation:obs||"",date:new Date().toISOString(),user:userName,userEmail}); });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Entrada registrada!</b><br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  entradaSelected.clear(); document.getElementById("entradaObservacao").value="";
-  refreshEntradaEventos(); save();
-}
-
-// ABA RENOVAR
-let renovarSelected = new Set();
-function refreshRenovarEventos() {
-  const sel=document.getElementById("renovarEventoSelect");
-  const eventos=new Set();
-  machines.forEach(m=>{ if(m.status!=="Em uso") return; const last=[...m.history].reverse().find(h=>h.type==="saida"); if(last&&last.event) eventos.add(last.event); });
-  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
-  document.getElementById("renovarMachineBox").style.display="none";
-  renovarSelected.clear();
-}
-function refreshRenovarList() {
-  const ev=document.getElementById("renovarEventoSelect").value;
-  const box=document.getElementById("renovarMachineBox");
-  if(!ev){ box.style.display="none"; return; }
-  box.style.display="block";
-  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
-  const list=document.getElementById("renovarMachineList");
-  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso neste evento.</p>'; return; }
-  list.innerHTML=maquinas.map(m=>{ const last=[...m.history].reverse().find(h=>h.type==="saida"); return `<label class="machine-select-item ${renovarSelected.has(m.serial)?'selected':''}" onclick="toggleRenovarSel('${m.serial}')"><input type="checkbox" ${renovarSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleRenovarSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">Vence: ${formatDate(last?.endDate)}</span></label>`; }).join("");
-  document.getElementById("renovarSelCount").textContent=renovarSelected.size+" selecionadas";
-}
-function toggleRenovarSel(serial) { if(renovarSelected.has(serial)) renovarSelected.delete(serial); else renovarSelected.add(serial); refreshRenovarList(); }
-function toggleAllRenovar() {
-  const ev=document.getElementById("renovarEventoSelect").value;
-  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
-  if(renovarSelected.size===maquinas.length) renovarSelected.clear(); else maquinas.forEach(m=>renovarSelected.add(m.serial));
-  refreshRenovarList();
-}
-function confirmarRenovacao() {
-  if(!renovarSelected.size){ alert("Selecione ao menos uma máquina."); return; }
-  const novaData=document.getElementById("novaDataRetorno").value;
-  if(!novaData){ alert("Informe a nova data de retorno."); return; }
-  const result=document.getElementById("renovarResult");
-  if(!confirm(`Renovar prazo de ${renovarSelected.size} máquina(s) até ${formatDate(novaData)}?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  const selected=machines.filter(m=>renovarSelected.has(m.serial));
-  selected.forEach(m=>{
-    const last=[...m.history].reverse().find(h=>h.type==="saida");
-    if(last) last.endDate=novaData;
-    m.history.push({type:"renovação de prazo",endDate:novaData,date:new Date().toISOString(),user:userName,userEmail});
-  });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Prazo renovado!</b><br>Nova data de retorno: ${formatDate(novaData)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  renovarSelected.clear(); document.getElementById("novaDataRetorno").value="";
-  refreshRenovarEventos(); save();
-}
-
-// ABA CANCELAR EM LOTE
-let cancelarSelected = new Set();
-function refreshCancelarEventos() {
-  const sel=document.getElementById("cancelarEventoSelect");
-  const eventos=new Set();
-  machines.forEach(m=>m.reservations.forEach(r=>r.event&&eventos.add(r.event)));
-  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
-  document.getElementById("cancelarMachineBox").style.display="none";
-  cancelarSelected.clear();
-}
-function refreshCancelarList() {
-  const ev=document.getElementById("cancelarEventoSelect").value;
-  const box=document.getElementById("cancelarMachineBox");
-  if(!ev){ box.style.display="none"; return; }
-  box.style.display="block";
-  const items=[];
-  machines.forEach(m=>m.reservations.forEach((r,idx)=>{ if(r.event===ev) items.push({machine:m,reservation:r,idx}); }));
-  const list=document.getElementById("cancelarMachineList");
-  if(!items.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma reserva encontrada para este evento.</p>'; return; }
-  list.innerHTML=items.map(({machine:m,reservation:r})=>`<label class="machine-select-item ${cancelarSelected.has(m.serial)?'selected':''}" onclick="toggleCancelarSel('${m.serial}')"><input type="checkbox" ${cancelarSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleCancelarSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${formatDate(r.startDate)} → ${formatDate(r.endDate)}</span></label>`).join("");
-  document.getElementById("cancelarSelCount").textContent=cancelarSelected.size+" selecionadas";
-}
-function toggleCancelarSel(serial) { if(cancelarSelected.has(serial)) cancelarSelected.delete(serial); else cancelarSelected.add(serial); refreshCancelarList(); }
-function toggleAllCancelar() {
-  const ev=document.getElementById("cancelarEventoSelect").value;
-  const seriais=machines.filter(m=>m.reservations.some(r=>r.event===ev)).map(m=>m.serial);
-  if(cancelarSelected.size===seriais.length) cancelarSelected.clear(); else seriais.forEach(s=>cancelarSelected.add(s));
-  refreshCancelarList();
-}
-function confirmarCancelamentoLote() {
-  if(!cancelarSelected.size){ alert("Selecione ao menos uma máquina."); return; }
-  const ev=document.getElementById("cancelarEventoSelect").value;
-  const result=document.getElementById("cancelarResult");
-  if(!confirm(`Cancelar reservas de ${cancelarSelected.size} máquina(s) para o evento "${ev}"?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  const serials=[...cancelarSelected];
-  serials.forEach(serial=>{
-    const m=machines.find(m=>m.serial===serial); if(!m) return;
-    const idx=m.reservations.findIndex(r=>r.event===ev); if(idx===-1) return;
-    const res=m.reservations[idx];
-    m.history.push({type:"cancelamento de reserva",event:res.event,startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:userName,userEmail});
-    m.reservations.splice(idx,1);
-  });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Reservas canceladas!</b><br>Evento: ${ev}<br>Máquinas: ${serials.join(", ")}`;
-  cancelarSelected.clear(); refreshCancelarEventos(); save();
-}
-
-// ABA MANUTENCAO EM LOTE
-let manutSelected = new Set();
-function refreshManutList() {
-  const brands=Array.from(document.querySelectorAll('input[name="manutBrands"]:checked')).map(i=>i.value);
-  const maquinas=machines.filter(m=>brands.includes(m.brand)&&m.status==="Disponível");
-  const list=document.getElementById("manutMachineList");
-  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível.</p>'; return; }
-  list.innerHTML=maquinas.map(m=>`<label class="machine-select-item ${manutSelected.has(m.serial)?'selected':''}" onclick="toggleManutSel('${m.serial}')"><input type="checkbox" ${manutSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleManutSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==="saida").length} uso(s)</span></label>`).join("");
-  document.getElementById("manutSelCount").textContent=manutSelected.size+" selecionadas";
-}
-function toggleManutSel(serial) { if(manutSelected.has(serial)) manutSelected.delete(serial); else manutSelected.add(serial); refreshManutList(); }
-function toggleAllManut() {
-  const brands=Array.from(document.querySelectorAll('input[name="manutBrands"]:checked')).map(i=>i.value);
-  const maquinas=machines.filter(m=>brands.includes(m.brand)&&m.status==="Disponível");
-  if(manutSelected.size===maquinas.length) manutSelected.clear(); else maquinas.forEach(m=>manutSelected.add(m.serial));
-  refreshManutList();
-}
-function confirmarManutencaoLote() {
-  if(!manutSelected.size){ alert("Selecione ao menos uma máquina."); return; }
-  const motivo=document.getElementById("manutMotivo").value.trim();
-  const result=document.getElementById("manutResult");
-  if(!confirm(`Enviar ${manutSelected.size} máquina(s) para manutenção?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  const selected=machines.filter(m=>manutSelected.has(m.serial));
-  selected.forEach(m=>{ m.status="Manutenção"; m.history.push({type:"manutenção",observation:motivo||"",date:new Date().toISOString(),user:userName,userEmail,batch:true}); });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Enviadas para manutenção!</b><br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  manutSelected.clear(); document.getElementById("manutMotivo").value="";
-  refreshManutList(); save();
-}
-
-// CADASTRO
-document.getElementById("machineForm").addEventListener("submit",function(e){
+// ── CADASTRO ─────────────────────────────────────────
+function cadastrarMaquina(e) {
   e.preventDefault();
-  const serial=document.getElementById("serial").value.trim().toUpperCase();
-  const brand=document.getElementById("brand").value;
-  if(!serial||!brand){ alert("Preencha todos os dados."); return; }
-  if(machines.some(m=>m.serial===serial)){ alert("Máquina já cadastrada!"); return; }
-  machines.push({serial,brand,status:"Disponível",history:[],reservations:[],showHistory:false});
-  save(); this.reset();
-});
+  var serial=document.getElementById("serial").value.trim().toUpperCase(), brand=document.getElementById("brand").value;
+  if(!serial||!brand){alert("Preencha todos os dados.");return;}
+  if(machines.some(function(m){ return m.serial===serial; })){alert("Máquina já cadastrada!");return;}
+  machines.push({serial:serial,brand:brand,status:"Disponível",history:[],reservations:[],showHistory:false});
+  save(); document.getElementById("serial").value=""; document.getElementById("brand").value="";
+}
 
-// MODO SELECAO (RESERVA E SAIDA)
-function getSelectedBrands(name){ return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value); }
-let reserveMode='auto', exitMode='auto', reserveSelected=new Set(), exitSelected=new Set();
-
+// ── MODO SELECAO ──────────────────────────────────────
+var reserveMode='auto', exitMode='auto', reserveSelected=new Set(), exitSelected=new Set();
 function setReserveMode(mode) {
   reserveMode=mode;
   document.getElementById('reserveAutoBtn').className   = mode==='auto'   ?'mode-btn mode-btn-active':'mode-btn';
@@ -1043,58 +645,341 @@ function setExitMode(mode) {
   if(mode==='manual') refreshExitMachineList();
 }
 function getEligibleForReserve() {
-  const brands=getSelectedBrands('batchBrands'); const s=document.getElementById('batchStartDate').value; const e=document.getElementById('batchEndDate').value;
+  var brands=getSelectedBrands('batchBrands'),s=document.getElementById('batchStartDate').value,e=document.getElementById('batchEndDate').value;
   if(!s||!e) return [];
-  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e)).sort((a,b)=>(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
+  return machines.filter(function(m){ return brands.indexOf(m.brand)>-1&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e); }).sort(function(a,b){ return (a.reservations.length-b.reservations.length)||(a.history.length-b.history.length); });
 }
 function getEligibleForExit() {
-  const brands=getSelectedBrands('batchExitBrands'); const s=document.getElementById('batchExitStartDate').value; const e=document.getElementById('batchExitEndDate').value;
+  var brands=getSelectedBrands('batchExitBrands'),s=document.getElementById('batchExitStartDate').value,e=document.getElementById('batchExitEndDate').value;
   if(!s||!e) return [];
-  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e)).sort((a,b)=>(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
+  return machines.filter(function(m){ return brands.indexOf(m.brand)>-1&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e); }).sort(function(a,b){ return (a.history.length-b.history.length)||(a.reservations.length-b.reservations.length); });
 }
 function refreshReserveMachineList() {
-  const eligible=getEligibleForReserve(); const list=document.getElementById('reserveMachineList');
-  if(!eligible.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período.</p>'; return; }
-  list.innerHTML=eligible.map(m=>`<label class="machine-select-item ${reserveSelected.has(m.serial)?'selected':''}" onclick="toggleReserveSel('${m.serial}')"><input type="checkbox" ${reserveSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleReserveSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span></label>`).join('');
+  var el=getEligibleForReserve(),list=document.getElementById('reserveMachineList');
+  if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível.</p>';return;}
+  list.innerHTML=el.map(function(m){ return '<label class="machine-select-item'+(reserveSelected.has(m.serial)?' selected':'')+'" onclick="toggleReserveSel(\''+m.serial+'\')"><input type="checkbox"'+(reserveSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleReserveSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">'+m.history.filter(function(h){return h.type==='saida';}).length+' uso(s)</span></label>'; }).join('');
   document.getElementById('reserveSelCount').textContent=reserveSelected.size+' selecionadas';
 }
 function toggleReserveSel(s){ if(reserveSelected.has(s)) reserveSelected.delete(s); else reserveSelected.add(s); refreshReserveMachineList(); }
-function toggleAllReserve(){ const el=getEligibleForReserve(); if(reserveSelected.size===el.length) reserveSelected.clear(); else el.forEach(m=>reserveSelected.add(m.serial)); refreshReserveMachineList(); }
+function toggleAllReserve(){ var el=getEligibleForReserve(); if(reserveSelected.size===el.length) reserveSelected.clear(); else el.forEach(function(m){ reserveSelected.add(m.serial); }); refreshReserveMachineList(); }
 function refreshExitMachineList() {
-  const eligible=getEligibleForExit(); const list=document.getElementById('exitMachineList');
-  if(!eligible.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período.</p>'; return; }
-  list.innerHTML=eligible.map(m=>`<label class="machine-select-item ${exitSelected.has(m.serial)?'selected':''}" onclick="toggleExitSel('${m.serial}')"><input type="checkbox" ${exitSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleExitSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span></label>`).join('');
+  var el=getEligibleForExit(),list=document.getElementById('exitMachineList');
+  if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível.</p>';return;}
+  list.innerHTML=el.map(function(m){ return '<label class="machine-select-item'+(exitSelected.has(m.serial)?' selected':'')+'" onclick="toggleExitSel(\''+m.serial+'\')"><input type="checkbox"'+(exitSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleExitSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">'+m.history.filter(function(h){return h.type==='saida';}).length+' uso(s)</span></label>'; }).join('');
   document.getElementById('exitSelCount').textContent=exitSelected.size+' selecionadas';
 }
 function toggleExitSel(s){ if(exitSelected.has(s)) exitSelected.delete(s); else exitSelected.add(s); refreshExitMachineList(); }
-function toggleAllExit(){ const el=getEligibleForExit(); if(exitSelected.size===el.length) exitSelected.clear(); else el.forEach(m=>exitSelected.add(m.serial)); refreshExitMachineList(); }
+function toggleAllExit(){ var el=getEligibleForExit(); if(exitSelected.size===el.length) exitSelected.clear(); else el.forEach(function(m){ exitSelected.add(m.serial); }); refreshExitMachineList(); }
 
-['batchStartDate','batchEndDate'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); }));
-['batchExitStartDate','batchExitEndDate'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); }));
-document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); }));
-document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); }));
-
-// RESERVA EM LOTE
-document.getElementById("batchReserveForm").addEventListener("submit",function(e){
+// ── RESERVA EM LOTE ───────────────────────────────────
+function submitReservaLote(e) {
   e.preventDefault();
-  const eventName=document.getElementById("batchEvent").value.trim(); const city=document.getElementById("batchCity").value.trim(); const responsible=document.getElementById("batchResponsible").value.trim();
-  const brands=getSelectedBrands("batchBrands"); const startDate=document.getElementById("batchStartDate").value; const endDate=document.getElementById("batchEndDate").value;
-  const result=document.getElementById("batchReserveResult");
-  if(!eventName||!city||!responsible||!startDate||!endDate){ alert("Preencha todos os dados."); return; }
-  if(!brands.length){ alert("Selecione ao menos uma marca."); return; }
-  if(endDate<startDate){ alert("Data final não pode ser menor."); return; }
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail(); let selected=[];
+  var eventName=document.getElementById("batchEvent").value.trim(),city=document.getElementById("batchCity").value.trim(),responsible=document.getElementById("batchResponsible").value.trim();
+  var brands=getSelectedBrands("batchBrands"),startDate=document.getElementById("batchStartDate").value,endDate=document.getElementById("batchEndDate").value;
+  var result=document.getElementById("batchReserveResult");
+  if(!eventName||!city||!responsible||!startDate||!endDate){alert("Preencha todos os dados.");return;}
+  if(!brands.length){alert("Selecione ao menos uma marca.");return;}
+  if(endDate<startDate){alert("Data final não pode ser menor.");return;}
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=[];
   if(reserveMode==='auto'){
-    const qty=Number(document.getElementById("batchQuantity").value); if(!qty||qty<=0){ alert("Informe a quantidade."); return; }
-    const el=getEligibleForReserve(); if(el.length<qty){ result.className="batch-result show error"; result.innerHTML=`<b>Reserva não realizada.</b><br>Pedido: ${qty} · Disponíveis: ${el.length}`; return; }
+    var qty=Number(document.getElementById("batchQuantity").value); if(!qty||qty<=0){alert("Informe a quantidade.");return;}
+    var el=getEligibleForReserve(); if(el.length<qty){result.className="batch-result show error";result.innerHTML="<b>Reserva não realizada.</b><br>Pedido: "+qty+" · Disponíveis: "+el.length;return;}
     selected=el.slice(0,qty);
-  } else { if(!reserveSelected.size){ alert("Selecione ao menos uma máquina."); return; } selected=machines.filter(m=>reserveSelected.has(m.serial)); }
-  selected.forEach(m=>{ m.reservations.push({event:eventName,city,responsible,startDate,endDate,createdAt:new Date().toISOString(),batch:true,createdBy:userName,createdByEmail:userEmail}); m.history.push({type:"reserva",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail}); });
-  result.className="batch-result show"; result.innerHTML=`<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  this.reset(); document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true); reserveSelected.clear(); save();
-});
+  } else { if(!reserveSelected.size){alert("Selecione ao menos uma máquina.");return;} selected=machines.filter(function(m){ return reserveSelected.has(m.serial); }); }
+  selected.forEach(function(m){ m.reservations.push({event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,createdAt:new Date().toISOString(),batch:true,createdBy:un,createdByEmail:ue}); m.history.push({type:"reserva",event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Reserva realizada!</b><br>Evento: "+eventName+"<br>"+formatDate(startDate)+" → "+formatDate(endDate)+"<br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
+  document.querySelectorAll('input[name="batchBrands"]').forEach(function(i){ i.checked=true; }); reserveSelected.clear(); save();
+}
 
-// SAIDA EM LOTE
-document.getElementById("batchExitForm").addEventListener("submit",function(e){
+// ── SAÍDA EM LOTE ─────────────────────────────────────
+function submitSaidaLote(e) {
   e.preventDefault();
-  const eventName=document.getEl
+  var eventName=document.getElementById("batchExitEvent").value.trim(),city=document.getElementById("batchExitCity").value.trim(),responsible=document.getElementById("batchExitResponsible").value.trim();
+  var brands=getSelectedBrands("batchExitBrands"),startDate=document.getElementById("batchExitStartDate").value,endDate=document.getElementById("batchExitEndDate").value;
+  var result=document.getElementById("batchExitResult");
+  if(!eventName||!city||!responsible||!startDate||!endDate){alert("Preencha todos os dados.");return;}
+  if(!brands.length){alert("Selecione ao menos uma marca.");return;}
+  if(endDate<startDate){alert("Data de retorno não pode ser menor.");return;}
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=[];
+  if(exitMode==='auto'){
+    var qty=Number(document.getElementById("batchExitQuantity").value); if(!qty||qty<=0){alert("Informe a quantidade.");return;}
+    var el=getEligibleForExit(); if(el.length<qty){result.className="batch-result show error";result.innerHTML="<b>Saída não realizada.</b><br>Pedido: "+qty+" · Disponíveis: "+el.length;return;}
+    selected=el.slice(0,qty);
+  } else { if(!exitSelected.size){alert("Selecione ao menos uma máquina.");return;} selected=machines.filter(function(m){ return exitSelected.has(m.serial); }); }
+  selected.forEach(function(m){ m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Saída realizada!</b><br>Evento: "+eventName+"<br>"+formatDate(startDate)+" → "+formatDate(endDate)+"<br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
+  document.querySelectorAll('input[name="batchExitBrands"]').forEach(function(i){ i.checked=true; }); exitSelected.clear(); save();
+}
+
+// ── ENTRADA EM LOTE ───────────────────────────────────
+var entradaSelected=new Set();
+function refreshEntradaEventos() {
+  var sel=document.getElementById("entradaEventoSelect"),eventos=new Set();
+  machines.forEach(function(m){ if(m.status!=="Em uso") return; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } if(last&&last.event) eventos.add(last.event); });
+  sel.innerHTML='<option value="">Selecione o evento</option>'+Array.from(eventos).map(function(ev){ return '<option value="'+ev+'">'+ev+'</option>'; }).join("");
+  document.getElementById("entradaMachineBox").style.display="none"; entradaSelected.clear();
+}
+function refreshEntradaList() {
+  var ev=document.getElementById("entradaEventoSelect").value,box=document.getElementById("entradaMachineBox");
+  if(!ev){box.style.display="none";return;} box.style.display="block";
+  var maquinas=machines.filter(function(m){ if(m.status!=="Em uso") return false; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last&&last.event===ev; });
+  var list=document.getElementById("entradaMachineList");
+  if(!maquinas.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso.</p>';return;}
+  list.innerHTML=maquinas.map(function(m){ var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return '<label class="machine-select-item'+(entradaSelected.has(m.serial)?' selected':'')+'" onclick="toggleEntradaSel(\''+m.serial+'\')"><input type="checkbox"'+(entradaSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleEntradaSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">Retorno: '+formatDate(last?last.endDate:'')+'</span></label>'; }).join("");
+  document.getElementById("entradaSelCount").textContent=entradaSelected.size+" selecionadas";
+}
+function toggleEntradaSel(s){ if(entradaSelected.has(s)) entradaSelected.delete(s); else entradaSelected.add(s); refreshEntradaList(); }
+function toggleAllEntrada(){ var ev=document.getElementById("entradaEventoSelect").value,maquinas=machines.filter(function(m){ if(m.status!=="Em uso") return false; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last&&last.event===ev; }); if(entradaSelected.size===maquinas.length) entradaSelected.clear(); else maquinas.forEach(function(m){ entradaSelected.add(m.serial); }); refreshEntradaList(); }
+function confirmarEntradaEmLote(){
+  if(!entradaSelected.size){alert("Selecione ao menos uma máquina.");return;}
+  var obs=document.getElementById("entradaObservacao").value.trim(),result=document.getElementById("entradaResult");
+  if(!confirm("Confirmar entrada de "+entradaSelected.size+" máquina(s)?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){ return entradaSelected.has(m.serial); });
+  selected.forEach(function(m){ m.status="Disponível"; m.history.push({type:"entrada",observation:obs||"",date:new Date().toISOString(),user:un,userEmail:ue}); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Entrada registrada!</b><br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
+  entradaSelected.clear(); document.getElementById("entradaObservacao").value=""; refreshEntradaEventos(); save();
+}
+
+// ── RENOVAR ───────────────────────────────────────────
+var renovarSelected=new Set();
+function refreshRenovarEventos() {
+  var sel=document.getElementById("renovarEventoSelect"),eventos=new Set();
+  machines.forEach(function(m){ if(m.status!=="Em uso") return; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } if(last&&last.event) eventos.add(last.event); });
+  sel.innerHTML='<option value="">Selecione o evento</option>'+Array.from(eventos).map(function(ev){ return '<option value="'+ev+'">'+ev+'</option>'; }).join("");
+  document.getElementById("renovarMachineBox").style.display="none"; renovarSelected.clear();
+}
+function refreshRenovarList() {
+  var ev=document.getElementById("renovarEventoSelect").value,box=document.getElementById("renovarMachineBox");
+  if(!ev){box.style.display="none";return;} box.style.display="block";
+  var maquinas=machines.filter(function(m){ if(m.status!=="Em uso") return false; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last&&last.event===ev; });
+  var list=document.getElementById("renovarMachineList");
+  if(!maquinas.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso.</p>';return;}
+  list.innerHTML=maquinas.map(function(m){ var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return '<label class="machine-select-item'+(renovarSelected.has(m.serial)?' selected':'')+'" onclick="toggleRenovarSel(\''+m.serial+'\')"><input type="checkbox"'+(renovarSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleRenovarSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">Vence: '+formatDate(last?last.endDate:'')+'</span></label>'; }).join("");
+  document.getElementById("renovarSelCount").textContent=renovarSelected.size+" selecionadas";
+}
+function toggleRenovarSel(s){ if(renovarSelected.has(s)) renovarSelected.delete(s); else renovarSelected.add(s); refreshRenovarList(); }
+function toggleAllRenovar(){ var ev=document.getElementById("renovarEventoSelect").value,maquinas=machines.filter(function(m){ if(m.status!=="Em uso") return false; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last&&last.event===ev; }); if(renovarSelected.size===maquinas.length) renovarSelected.clear(); else maquinas.forEach(function(m){ renovarSelected.add(m.serial); }); refreshRenovarList(); }
+function confirmarRenovacao(){
+  if(!renovarSelected.size){alert("Selecione ao menos uma máquina.");return;}
+  var novaData=document.getElementById("novaDataRetorno").value,result=document.getElementById("renovarResult");
+  if(!novaData){alert("Informe a nova data de retorno.");return;}
+  if(!confirm("Renovar prazo de "+renovarSelected.size+" máquina(s) até "+formatDate(novaData)+"?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){ return renovarSelected.has(m.serial); });
+  selected.forEach(function(m){ for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){m.history[i].endDate=novaData;break;} } m.history.push({type:"renovação de prazo",endDate:novaData,date:new Date().toISOString(),user:un,userEmail:ue}); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Prazo renovado!</b><br>Nova data: "+formatDate(novaData)+"<br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
+  renovarSelected.clear(); document.getElementById("novaDataRetorno").value=""; refreshRenovarEventos(); save();
+}
+
+// ── CANCELAR EM LOTE ──────────────────────────────────
+var cancelarSelected=new Set();
+function refreshCancelarEventos() {
+  var sel=document.getElementById("cancelarEventoSelect"),eventos=new Set();
+  machines.forEach(function(m){ m.reservations.forEach(function(r){ if(r.event) eventos.add(r.event); }); });
+  sel.innerHTML='<option value="">Selecione o evento</option>'+Array.from(eventos).map(function(ev){ return '<option value="'+ev+'">'+ev+'</option>'; }).join("");
+  document.getElementById("cancelarMachineBox").style.display="none"; cancelarSelected.clear();
+}
+function refreshCancelarList() {
+  var ev=document.getElementById("cancelarEventoSelect").value,box=document.getElementById("cancelarMachineBox");
+  if(!ev){box.style.display="none";return;} box.style.display="block";
+  var items=[]; machines.forEach(function(m){ m.reservations.forEach(function(r,idx){ if(r.event===ev) items.push({machine:m,reservation:r,idx:idx}); }); });
+  var list=document.getElementById("cancelarMachineList");
+  if(!items.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma reserva encontrada.</p>';return;}
+  list.innerHTML=items.map(function(item){ var m=item.machine,r=item.reservation; return '<label class="machine-select-item'+(cancelarSelected.has(m.serial)?' selected':'')+'" onclick="toggleCancelarSel(\''+m.serial+'\')"><input type="checkbox"'+(cancelarSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleCancelarSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">'+formatDate(r.startDate)+' → '+formatDate(r.endDate)+'</span></label>'; }).join("");
+  document.getElementById("cancelarSelCount").textContent=cancelarSelected.size+" selecionadas";
+}
+function toggleCancelarSel(s){ if(cancelarSelected.has(s)) cancelarSelected.delete(s); else cancelarSelected.add(s); refreshCancelarList(); }
+function toggleAllCancelar(){ var ev=document.getElementById("cancelarEventoSelect").value,seriais=machines.filter(function(m){ return m.reservations.some(function(r){ return r.event===ev; }); }).map(function(m){ return m.serial; }); if(cancelarSelected.size===seriais.length) cancelarSelected.clear(); else seriais.forEach(function(s){ cancelarSelected.add(s); }); refreshCancelarList(); }
+function confirmarCancelamentoLote(){
+  if(!cancelarSelected.size){alert("Selecione ao menos uma máquina.");return;}
+  var ev=document.getElementById("cancelarEventoSelect").value,result=document.getElementById("cancelarResult");
+  if(!confirm("Cancelar reservas de "+cancelarSelected.size+" máquina(s) para \""+ev+"\"?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),serials=Array.from(cancelarSelected);
+  serials.forEach(function(serial){ var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return; var idx=m.reservations.findIndex(function(r){ return r.event===ev; }); if(idx===-1) return; var res=m.reservations[idx]; m.history.push({type:"cancelamento de reserva",event:res.event,startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:un,userEmail:ue}); m.reservations.splice(idx,1); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Reservas canceladas!</b><br>Evento: "+ev+"<br>Máquinas: "+serials.join(", ");
+  cancelarSelected.clear(); refreshCancelarEventos(); save();
+}
+
+// ── MANUTENCAO EM LOTE ────────────────────────────────
+var manutSelected=new Set();
+function refreshManutList() {
+  var brands=getSelectedBrands("manutBrands"),maquinas=machines.filter(function(m){ return brands.indexOf(m.brand)>-1&&m.status==="Disponível"; });
+  var list=document.getElementById("manutMachineList");
+  if(!maquinas.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível.</p>';return;}
+  list.innerHTML=maquinas.map(function(m){ return '<label class="machine-select-item'+(manutSelected.has(m.serial)?' selected':'')+'" onclick="toggleManutSel(\''+m.serial+'\')"><input type="checkbox"'+(manutSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleManutSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">· '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">'+m.history.filter(function(h){ return h.type==='saida'; }).length+' uso(s)</span></label>'; }).join("");
+  document.getElementById("manutSelCount").textContent=manutSelected.size+" selecionadas";
+}
+function toggleManutSel(s){ if(manutSelected.has(s)) manutSelected.delete(s); else manutSelected.add(s); refreshManutList(); }
+function toggleAllManut(){ var brands=getSelectedBrands("manutBrands"),maquinas=machines.filter(function(m){ return brands.indexOf(m.brand)>-1&&m.status==="Disponível"; }); if(manutSelected.size===maquinas.length) manutSelected.clear(); else maquinas.forEach(function(m){ manutSelected.add(m.serial); }); refreshManutList(); }
+function confirmarManutencaoLote(){
+  if(!manutSelected.size){alert("Selecione ao menos uma máquina.");return;}
+  var motivo=document.getElementById("manutMotivo").value.trim(),result=document.getElementById("manutResult");
+  if(!confirm("Enviar "+manutSelected.size+" máquina(s) para manutenção?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){ return manutSelected.has(m.serial); });
+  selected.forEach(function(m){ m.status="Manutenção"; m.history.push({type:"manutenção",observation:motivo||"",date:new Date().toISOString(),user:un,userEmail:ue,batch:true}); });
+  result.className="batch-result show"; result.innerHTML="<b>✅ Enviadas para manutenção!</b><br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
+  manutSelected.clear(); document.getElementById("manutMotivo").value=""; refreshManutList(); save();
+}
+
+// ── SAÍDA INDIVIDUAL ──────────────────────────────────
+function openExitModal(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  if(m.status==="Em uso"){alert("Já está em uso.");return;} if(m.status==="Manutenção"){alert("Máquina em manutenção.");return;}
+  document.getElementById("exitSerial").value=serial; document.getElementById("exitEvent").value=""; document.getElementById("exitCity").value=""; document.getElementById("exitResponsible").value=""; document.getElementById("exitStartDate").value=""; document.getElementById("exitEndDate").value="";
+  document.getElementById("exitStartDate").min=getToday(); document.getElementById("exitEndDate").min=getToday();
+  document.getElementById("exitConflictMsg").style.display="none"; document.getElementById("exitConfirmBtn").disabled=false;
+  document.getElementById("exitModal").classList.add("open");
+}
+function closeExitModal(){ document.getElementById("exitModal").classList.remove("open"); }
+function checkExitConflict(){
+  var serial=document.getElementById("exitSerial").value,s=document.getElementById("exitStartDate").value,e=document.getElementById("exitEndDate").value;
+  if(!s||!e) return; document.getElementById("exitEndDate").min=s;
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var blocked=isBlockedForExit(m,s,e);
+  if(blocked){ document.getElementById("exitConflictMsg").style.display="block"; document.getElementById("exitConflictMsg").textContent="⚠️ "+blocked; document.getElementById("exitConfirmBtn").disabled=true; }
+  else { document.getElementById("exitConflictMsg").style.display="none"; document.getElementById("exitConfirmBtn").disabled=false; }
+}
+function submitSaidaIndividual(e) {
+  e.preventDefault();
+  var serial=document.getElementById("exitSerial").value,s=document.getElementById("exitStartDate").value,en=document.getElementById("exitEndDate").value;
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var blocked=isBlockedForExit(m,s,en); if(blocked){alert("⚠️ "+blocked);return;}
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Em uso"; m.history.push({type:"saida",event:document.getElementById("exitEvent").value.trim(),city:document.getElementById("exitCity").value.trim(),responsible:document.getElementById("exitResponsible").value.trim(),startDate:s,endDate:en,date:new Date().toISOString(),user:un,userEmail:ue});
+  closeExitModal(); save();
+}
+
+// ── CONFIRMAR SAÍDA DA RESERVA ────────────────────────
+function confirmarSaidaDaReserva(serial) {
+  var today=getToday(),m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var res=m.reservations.find(function(r){ return hasDateOverlap(r.startDate,r.endDate,today,today); });
+  if(!res){alert("Nenhuma reserva ativa para hoje.");return;} if(!confirm("Confirmar saída de "+serial+" para \""+res.event+"\"?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Em uso"; m.history.push({type:"saida",event:res.event,city:res.city||"",responsible:res.responsible||"",startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:un,userEmail:ue,fromReservation:true});
+  save();
+}
+
+// ── ENTRADA INDIVIDUAL ────────────────────────────────
+function registerEntry(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  if(m.status==="Disponível"){alert("Já está disponível.");return;} if(m.status==="Manutenção"){alert("Use o botão Liberar.");return;}
+  var obs=prompt("Observação da devolução (opcional):"),un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Disponível"; m.history.push({type:"entrada",observation:obs||"",date:new Date().toISOString(),user:un,userEmail:ue}); save();
+}
+
+// ── RESERVA INDIVIDUAL ────────────────────────────────
+function openReserveModal(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  if(m.status==="Em uso"){alert("Não é possível reservar uma máquina em uso.");return;} if(m.status==="Manutenção"){alert("Máquina em manutenção.");return;}
+  document.getElementById("reserveSerial").value=serial; document.getElementById("reserveEvent").value=""; document.getElementById("reserveStartDate").value=""; document.getElementById("reserveEndDate").value="";
+  document.getElementById("reserveStartDate").min=getToday(); document.getElementById("reserveEndDate").min=getToday();
+  document.getElementById("reserveModal").classList.add("open");
+}
+function closeReserveModal(){ document.getElementById("reserveModal").classList.remove("open"); }
+function submitReservaIndividual(e) {
+  e.preventDefault();
+  var serial=document.getElementById("reserveSerial").value,m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var eventName=document.getElementById("reserveEvent").value.trim(),s=document.getElementById("reserveStartDate").value,en=document.getElementById("reserveEndDate").value;
+  if(en<s){alert("Data final não pode ser menor.");return;} if(hasReservationConflict(m,s,en)){alert("Conflito: máquina já reservada nesse período.");return;}
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.reservations.push({event:eventName,startDate:s,endDate:en,createdAt:new Date().toISOString(),createdBy:un,createdByEmail:ue});
+  m.history.push({type:"reserva",event:eventName,startDate:s,endDate:en,date:new Date().toISOString(),user:un,userEmail:ue});
+  closeReserveModal(); save();
+}
+
+// ── VER RESERVAS ──────────────────────────────────────
+function openViewReservesModal(serial) {
+  document.getElementById("viewReservesModal").dataset.serial=serial;
+  refreshViewReservesContent(serial);
+  document.getElementById("viewReservesModal").classList.add("open");
+}
+function refreshViewReservesContent(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var content=document.getElementById("viewReservesContent");
+  if(!m.reservations.length){content.innerHTML="<p style='color:#6b7280'>Nenhuma reserva cadastrada.</p>";return;}
+  content.innerHTML=m.reservations.map(function(r,idx){ return '<div class="reservation-detail" style="position:relative"><div style="margin-bottom:6px"><b>'+r.event+'</b><br>'+formatDate(r.startDate)+' → '+formatDate(r.endDate)+(r.city?'<br>Cidade: '+r.city:'')+(r.responsible?'<br>Responsável: '+r.responsible:'')+(r.createdBy?'<br><span class="history-user">👤 '+r.createdBy+'</span>':'')+'</div><button onclick="cancelReservation(\''+serial+'\','+idx+')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">Cancelar reserva</button></div>'; }).join("");
+}
+function cancelReservation(serial,idx) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var res=m.reservations[idx]; if(!res) return;
+  if(!confirm("Cancelar a reserva \""+res.event+"\" ("+formatDate(res.startDate)+" → "+formatDate(res.endDate)+")?")) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.history.push({type:"cancelamento de reserva",event:res.event,startDate:res.startDate,endDate:res.endDate,city:res.city||"",responsible:res.responsible||"",date:new Date().toISOString(),user:un,userEmail:ue});
+  m.reservations.splice(idx,1); save(); refreshViewReservesContent(serial);
+}
+function closeViewReservesModal(){ document.getElementById("viewReservesModal").classList.remove("open"); }
+
+// ── MANUTENÇÃO INDIVIDUAL ─────────────────────────────
+function sendToMaintenance(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  if(m.status==="Em uso"){alert("Não é possível colocar em manutenção uma máquina em uso.");return;}
+  var reason=prompt("Motivo da manutenção:"),un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Manutenção"; m.history.push({type:"manutenção",observation:reason||"",date:new Date().toISOString(),user:un,userEmail:ue}); save();
+}
+function returnFromMaintenance(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var obs=prompt("Observação da liberação:"),un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Disponível"; m.history.push({type:"retorno manutenção",observation:obs||"",date:new Date().toISOString(),user:un,userEmail:ue}); save();
+}
+
+// ── EXCLUIR ───────────────────────────────────────────
+function deleteMachine(serial) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  if(m.status==="Em uso"){alert("Não é possível excluir uma máquina em uso.");return;}
+  if(!confirm("Deseja realmente excluir essa máquina?")) return;
+  machines=machines.filter(function(m){ return m.serial!==serial; }); save();
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────
+function toggleHistory(serial){ var m=machines.find(function(m){ return m.serial===serial; }); if(m){ m.showHistory=!m.showHistory; render(); } }
+
+// ── FILTROS ───────────────────────────────────────────
+function getEvents(){ var ev=new Set(); machines.forEach(function(m){ m.history.forEach(function(h){ if(h.event) ev.add(h.event); }); m.reservations.forEach(function(r){ if(r.event) ev.add(r.event); }); }); return Array.from(ev); }
+function refreshEventFilter(sel){ sel=sel||""; var ef=document.getElementById("eventFilter"); ef.innerHTML='<option value="">Todos os eventos</option>'+getEvents().map(function(e){ return '<option value="'+e+'"'+(e===sel?' selected':'')+'>'+e+'</option>'; }).join(""); }
+function getCurrentEvent(m){ var s=getRealStatus(m); if(s==="Em uso"){ var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } return last?last.event:"-"; } if(s==="Manutenção") return "Em manutenção"; if(s==="Reservada hoje"){ var t=getToday(),a=m.reservations.find(function(r){ return hasDateOverlap(r.startDate,r.endDate,t,t); }); return a?a.event:"-"; } return "-"; }
+function getNextReservation(m){ var today=getToday(); return m.reservations.filter(function(r){ return r.endDate>=today; }).sort(function(a,b){ return a.startDate.localeCompare(b.startDate); })[0]||null; }
+
+// ── RENDER ────────────────────────────────────────────
+function render() {
+  updateDashboard(); renderDayAlerts();
+  var selEv=document.getElementById("eventFilter").value; refreshEventFilter(selEv);
+  var search=document.getElementById("searchInput").value.toLowerCase(), brand=document.getElementById("brandFilter").value, status=document.getElementById("statusFilter").value, evFilt=document.getElementById("eventFilter").value;
+  var filtered=machines.filter(function(m){ var rs=getRealStatus(m); return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||m.history.some(function(h){ return h.event===evFilt; })||m.reservations.some(function(r){ return r.event===evFilt; })); });
+  var list=document.getElementById("machineList"); list.innerHTML="";
+  if(!filtered.length){list.innerHTML="<p style='color:#9ca3af'>Nenhuma máquina encontrada.</p>";return;}
+  filtered.forEach(function(m){
+    var rs=getRealStatus(m),nextRes=getNextReservation(m),today=getToday();
+    var resHoje=rs==="Reservada hoje"?m.reservations.find(function(r){ return hasDateOverlap(r.startDate,r.endDate,today,today); }):null;
+    var lastSaida=null; if(rs==="Em uso"){ for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){lastSaida=m.history[i];break;} } }
+    var infoHtml="";
+    if(rs==="Disponível") infoHtml=nextRes?'<p><b>Próxima reserva:</b> '+nextRes.event+' · '+formatDate(nextRes.startDate)+' → '+formatDate(nextRes.endDate)+'</p>':'<p style="color:#9ca3af">Sem reservas futuras</p>';
+    if(rs==="Reservada hoje"&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Período:</b> '+formatDate(resHoje.startDate)+' → '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.responsible?'<p><b>Responsável:</b> '+resHoje.responsible+'</p>':'')+'<div class="alert-reservada">Sai hoje — clique em <b>Confirmar saída</b></div>';
+    if(rs==="Em uso"&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||"-")+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>';
+    if(rs==="Manutenção"){ var lM=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="manutenção"){lM=m.history[i];break;} } infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':""; }
+    var acoesHtml="";
+    if(rs==="Disponível") acoesHtml='<div class="actions-row"><button onclick="openExitModal(\''+m.serial+'\')">Saída</button><button onclick="openReserveModal(\''+m.serial+'\')">Reservar</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button><button class="btn-gray" onclick="sendToMaintenance(\''+m.serial+'\')">Manutenção</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    if(rs==="Reservada hoje") acoesHtml='<div class="actions-row"><button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva(\''+m.serial+'\')">✓ Confirmar saída</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button></div>';
+    if(rs==="Em uso") acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button></div>';
+    if(rs==="Manutenção") acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?"<p>Sem histórico.</p>":m.history.slice().reverse().map(function(h){ return '<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?" EM LOTE":"")+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.responsible?'<br>Responsável: '+h.responsible:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' → '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">👤 '+h.user+'</span>':'')+'</div>'; }).join(""))+'</div>':"";
+    var div=document.createElement("div"); div.className="machine-item";
+    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    list.appendChild(div);
+  });
+}
+
+// ── FILTROS LIVE ──────────────────────────────────────
+["searchInput","brandFilter","statusFilter","eventFilter"].forEach(function(id){ document.getElementById(id).addEventListener("input",render); document.getElementById(id).addEventListener("change",render); });
+
+// ── DATAS MINIMAS ─────────────────────────────────────
+var _today=getToday();
+["batchStartDate","batchEndDate","customStartDate","customEndDate","batchExitStartDate","batchExitEndDate","novaDataRetorno"].forEach(function(id){ var el=document.getElementById(id); if(el) el.min=_today; });
+document.getElementById("batchStartDate").addEventListener("change",function(){ document.getElementById("batchEndDate").min=this.value; if(reserveMode==='manual') refreshReserveMachineList(); });
+document.getElementById("batchEndDate").addEventListener("change",function(){ if(reserveMode==='manual') refreshReserveMachineList(); });
+document.getElementById("batchExitStartDate").addEventListener("change",function(){ document.getElementById("batchExitEndDate").min=this.value; if(exitMode==='manual') refreshExitMachineList(); });
+document.getElementById("batchExitEndDate").addEventListener("change",function(){ if(exitMode==='manual') refreshExitMachineList(); });
+document.getElementById("customStartDate").addEventListener("change",function(){ document.getElementById("customEndDate").min=this.value; });
+document.querySelectorAll('input[name="batchBrands"]').forEach(function(i){ i.addEventListener("change",function(){ if(reserveMode==='manual') refreshReserveMachineList(); }); });
+document.querySelectorAll('input[name="batchExitBrands"]').forEach(function(i){ i.addEventListener("change",function(){ if(exitMode==='manual') refreshExitMachineList(); }); });
+</script>
+</body>
+</html>
