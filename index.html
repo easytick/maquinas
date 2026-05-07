@@ -5,11 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Controle de Máquinas – Easytick</title>
 
-  <!-- Firebase via CDN (sem type=module para evitar problemas de escopo) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; min-height: 100vh; font-size: 15px; line-height: 1.5; }
@@ -428,6 +423,10 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
 // ════════════════════════════════════════════════════
 // CONFIGURAÇÃO FIREBASE
@@ -440,6 +439,7 @@ const firebaseConfig = {
       storageBucket:     "easytick-maquinas.firebasestorage.app",
       messagingSenderId: "1096291599566",
       appId:             "1:1096291599566:web:6e96b6ebec057fd37afc9f"
+};
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
