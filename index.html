@@ -35,8 +35,8 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       window._onAuth((user) => {
-        if (user) { window._currentUser = user; showApp(); startFirebaseListener(); }
-        else      { window._currentUser = null;  showLogin(); }
+        if (user) { window._currentUser = user; if(window.showApp) window.showApp(); if(window.startFirebaseListener) window.startFirebaseListener(); }
+        else      { window._currentUser = null;  if(window.showLogin) window.showLogin(); }
       });
     });
   </script>
@@ -557,18 +557,28 @@
 <script>
 let machines = [];
 
-// USUARIO
-function getCurrentUserName()  { const u=window._currentUser; return u?(u.displayName||u.email||"Usuário"):"Desconhecido"; }
-function getCurrentUserEmail() { const u=window._currentUser; return u?(u.email||""):""; }
-
-// LOGIN
-function showLogin() { document.getElementById("loginScreen").classList.remove("hidden"); document.getElementById("appScreen").classList.remove("visible"); }
-function showApp()   {
+// EXPOE FUNCOES AO WINDOW (necessario para o modulo Firebase)
+function showApp() {
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.add("visible");
   const u=window._currentUser;
   if(u){ document.getElementById("headerUserName").textContent=u.displayName||u.email; document.getElementById("headerUserEmail").textContent=u.displayName?u.email:""; }
 }
+window.showApp = showApp;
+
+function showLogin() {
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("appScreen").classList.remove("visible");
+}
+window.showLogin = showLogin;
+
+window.startFirebaseListener = function() { startFirebaseListener(); };
+
+// USUARIO
+function getCurrentUserName()  { const u=window._currentUser; return u?(u.displayName||u.email||"Usuário"):"Desconhecido"; }
+function getCurrentUserEmail() { const u=window._currentUser; return u?(u.email||""):""; }
+
+// LOGIN
 
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
   e.preventDefault();
