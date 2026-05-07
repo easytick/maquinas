@@ -214,6 +214,12 @@
         <input type="date" id="customEndDate" />
         <button onclick="showCustomDayResume()">Filtrar período</button>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer;font-weight:normal">
+          <input type="checkbox" id="showEmUsoToggle" onchange="render(); if(document.getElementById('dayResumeBox').textContent.indexOf('Selecione')===-1) refreshCurrentDayResume();" style="width:auto" />
+          Mostrar máquinas já em uso no Resumo do Dia
+        </label>
+      </div>
       <div id="dayResumeBox" class="day-box">Selecione um período para visualizar.</div>
     </section>
     <section class="card">
@@ -568,11 +574,25 @@ function renderDayAlerts() {
 }
 
 // ── RESUMO DO DIA ─────────────────────────────────────
-function getReservationsByRange(s,e) { var l=[]; machines.forEach(function(m){ m.reservations.forEach(function(r){ if(hasDateOverlap(r.startDate,r.endDate,s,e)) l.push(Object.assign({},r,{serial:m.serial,brand:m.brand,status:getRealStatus(m)})); }); }); return l; }
+function getReservationsByRange(s,e) {
+  var showEmUso = document.getElementById('showEmUsoToggle') && document.getElementById('showEmUsoToggle').checked;
+  var l=[];
+  machines.forEach(function(m){
+    m.reservations.forEach(function(r){
+      if(hasDateOverlap(r.startDate,r.endDate,s,e)){
+        var status=getRealStatus(m);
+        if(status==="Em uso" && !showEmUso) return;
+        l.push(Object.assign({},r,{serial:m.serial,brand:m.brand,status:status}));
+      }
+    });
+  });
+  return l;
+}
 function getRetornosByRange(s,e) { var l=[]; machines.forEach(function(m){ if(m.status!=="Em uso") return; var last=null; for(var i=m.history.length-1;i>=0;i--){ if(m.history[i].type==="saida"){last=m.history[i];break;} } if(last&&hasDateOverlap(last.endDate,last.endDate,s,e)) l.push(Object.assign({},last,{serial:m.serial,brand:m.brand})); }); return l; }
 function groupByEvent(list) { return list.reduce(function(g,r){ if(!g[r.event]) g[r.event]=[]; g[r.event].push(r); return g; },{}); }
 
 function renderDayResume(start,end,label) {
+  _lastDayResume = {start:start, end:end, label:label};
   var box=document.getElementById("dayResumeBox"), res=getReservationsByRange(start,end), ret=getRetornosByRange(start,end), today=getToday(), isToday=(start===today&&end===today);
   if (!res.length&&!ret.length) { box.innerHTML="<b>"+label+"</b> — "+formatDate(start)+" até "+formatDate(end)+"<br><br>Nenhuma movimentação encontrada."; return; }
   var grouped=groupByEvent(res), grRet=groupByEvent(ret.map(function(r){ return Object.assign({},r,{event:r.event||"Evento"}); }));
@@ -589,6 +609,9 @@ function renderDayResume(start,end,label) {
 }
 function showDayResume(type) { var today=getToday(); if(type==="today") renderDayResume(today,today,"Hoje"); else if(type==="week"){var w=getWeekRange();renderDayResume(w.start,w.end,"Esta semana");} else if(type==="15days") renderDayResume(today,addDays(today,15),"Próximos 15 dias"); else {var mo=getMonthRange();renderDayResume(mo.start,mo.end,"Este mês");} }
 function showCustomDayResume() { var s=document.getElementById("customStartDate").value,e=document.getElementById("customEndDate").value; if(!s||!e){alert("Selecione as duas datas.");return;} if(e<s){alert("Data final não pode ser menor.");return;} renderDayResume(s,e,"Período personalizado"); }
+
+var _lastDayResume = null;
+function refreshCurrentDayResume() { if(_lastDayResume) renderDayResume(_lastDayResume.start, _lastDayResume.end, _lastDayResume.label); }
 
 function confirmarSaidaLote(eventName) {
   var today=getToday(), maquinas=machines.filter(function(m){ if(m.status==="Em uso"||m.status==="Manutenção") return false; return m.reservations.some(function(r){ return r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today); }); });
