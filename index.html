@@ -6,15 +6,12 @@
   <title>Controle de Máquinas – Easytick</title>
 
   <script type="module">
-    import { initializeApp }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
-       apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+      apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
       authDomain:        "easytick-maquinas.firebaseapp.com",
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
@@ -46,318 +43,182 @@
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; min-height: 100vh; font-size: 15px; line-height: 1.5; }
+    :root { --blue:#004aad; --blue2:#003b8a; --green:#16a34a; --red:#dc2626; --gray:#374151; --border:#e5e7eb; --shadow:0 2px 12px rgba(0,74,173,.08); }
 
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f4f7fb;
-      color: #1f2937;
-      min-height: 100vh;
-      font-size: 15px;
-      line-height: 1.5;
-    }
+    /* LOGIN */
+    #loginScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--blue); padding:20px; }
+    #loginScreen.hidden { display:none; }
+    .login-card { background:#fff; border-radius:18px; padding:36px 28px; width:100%; max-width:360px; box-shadow:0 20px 60px rgba(0,0,0,.25); text-align:center; }
+    .login-logo { font-size:40px; margin-bottom:8px; }
+    .login-card h1 { font-size:21px; color:var(--blue); margin-bottom:4px; }
+    .login-card p  { font-size:13px; color:#6b7280; margin-bottom:22px; }
+    .login-card form { display:grid; gap:11px; }
+    #loginError { background:#fee2e2; color:#991b1b; border-radius:8px; padding:10px; font-size:13px; display:none; }
+    #loginError.show { display:block; }
 
-    :root {
-      --blue:   #004aad;
-      --blue2:  #003b8a;
-      --green:  #16a34a;
-      --red:    #dc2626;
-      --gray:   #374151;
-      --border: #e5e7eb;
-      --shadow: 0 2px 12px rgba(0,74,173,.08);
-    }
+    /* APP */
+    #appScreen { display:none; }
+    #appScreen.visible { display:block; }
 
-    /* ── LOGIN ── */
-    #loginScreen {
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--blue); padding: 20px;
-    }
-    #loginScreen.hidden { display: none; }
-    .login-card {
-      background: #fff; border-radius: 18px; padding: 36px 28px;
-      width: 100%; max-width: 360px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.25); text-align: center;
-    }
-    .login-logo { font-size: 40px; margin-bottom: 8px; }
-    .login-card h1 { font-size: 21px; color: var(--blue); margin-bottom: 4px; }
-    .login-card p  { font-size: 13px; color: #6b7280; margin-bottom: 22px; }
-    .login-card form { display: grid; gap: 11px; }
-    #loginError { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px; font-size: 13px; display: none; }
-    #loginError.show { display: block; }
+    /* HEADER */
+    .header { background:var(--blue); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .header-icon { width:40px; height:40px; background:rgba(255,255,255,.15); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+    .header h1   { font-size:19px; line-height:1.2; }
+    .header-sub  { font-size:12px; opacity:.8; margin-top:1px; }
+    .header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .user-badge { background:rgba(255,255,255,.15); border-radius:8px; padding:5px 10px; font-size:12px; color:#fff; line-height:1.4; }
+    .user-badge b { display:block; font-size:13px; }
+    .logout-btn { background:rgba(255,255,255,.18); border:none; border-radius:8px; color:#fff; padding:7px 11px; font-size:13px; font-family:Arial,sans-serif; cursor:pointer; width:auto; }
+    .logout-btn:hover { background:rgba(255,255,255,.3); }
 
-    /* ── APP ── */
-    #appScreen { display: none; }
-    #appScreen.visible { display: block; }
+    #fbStatus { font-size:13px; text-align:center; padding:8px 16px; display:none; }
+    #fbStatus.error { background:#fee2e2; color:#991b1b; display:block; }
+    #fbStatus.ok    { background:#dcfce7; color:#166534; display:block; }
 
-    /* ── HEADER ── */
-    .header {
-      background: var(--blue); color: #fff;
-      padding: 14px 18px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .header-left { display: flex; align-items: center; gap: 12px; }
-    .header-icon {
-      width: 40px; height: 40px; background: rgba(255,255,255,.15);
-      border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-size: 19px; flex-shrink: 0;
-    }
-    .header h1   { font-size: 19px; line-height: 1.2; }
-    .header-sub  { font-size: 12px; opacity: .8; margin-top: 1px; }
-    .header-right{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .user-badge  {
-      background: rgba(255,255,255,.15); border-radius: 8px;
-      padding: 5px 10px; font-size: 12px; color: #fff; line-height: 1.4;
-    }
-    .user-badge b { display: block; font-size: 13px; }
-    .logout-btn  {
-      background: rgba(255,255,255,.18); border: none; border-radius: 8px;
-      color: #fff; padding: 7px 11px; font-size: 13px;
-      font-family: Arial, sans-serif; cursor: pointer; width: auto;
-    }
-    .logout-btn:hover { background: rgba(255,255,255,.3); }
+    .app { max-width:900px; margin:0 auto; padding:14px; }
 
-    #fbStatus { font-size: 13px; text-align: center; padding: 8px 16px; display: none; }
-    #fbStatus.error { background: #fee2e2; color: #991b1b; display: block; }
-    #fbStatus.ok    { background: #dcfce7; color: #166534; display: block; }
+    /* ALERTAS */
+    .day-alert { border-radius:14px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .day-alert.saida   { background:#fef3c7; border:1.5px solid #fcd34d; }
+    .day-alert.retorno { background:#dbeafe; border:1.5px solid #93c5fd; }
+    .day-alert-text b  { display:block; font-size:15px; margin-bottom:3px; }
+    .day-alert-text p  { font-size:13px; color:#374151; margin:0; }
+    .day-alert.saida .day-alert-text b   { color:#92400e; }
+    .day-alert.retorno .day-alert-text b { color:#1e40af; }
+    .day-alert button { white-space:nowrap; font-size:13px; padding:9px 16px; width:auto; flex-shrink:0; }
 
-    .app { max-width: 900px; margin: 0 auto; padding: 14px; }
+    /* CARDS */
+    .card { background:#fff; border-radius:16px; padding:18px; margin-bottom:14px; box-shadow:var(--shadow); }
+    .card h2 { font-size:16px; font-weight:bold; margin-bottom:14px; color:var(--blue); }
 
-    /* ── ALERTAS DO DIA ── */
-    .day-alert {
-      border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 12px; flex-wrap: wrap;
-    }
-    .day-alert.saida   { background: #fef3c7; border: 1.5px solid #fcd34d; }
-    .day-alert.retorno { background: #dbeafe; border: 1.5px solid #93c5fd; }
-    .day-alert-text b  { display: block; font-size: 15px; margin-bottom: 3px; }
-    .day-alert-text p  { font-size: 13px; color: #374151; margin: 0; }
-    .day-alert.saida   .day-alert-text b { color: #92400e; }
-    .day-alert.retorno .day-alert-text b { color: #1e40af; }
-    .day-alert button  { white-space: nowrap; font-size: 13px; padding: 9px 16px; width: auto; flex-shrink: 0; }
+    /* DASHBOARD */
+    .dashboard { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
+    .dash-card { background:#fff; border-radius:14px; padding:14px; text-align:center; box-shadow:var(--shadow); }
+    .dash-card span { display:block; font-size:30px; font-weight:bold; color:var(--blue); }
+    .dash-card p    { font-size:12px; margin-top:3px; color:#6b7280; }
 
-    /* ── CARDS ── */
-    .card {
-      background: #fff; border-radius: 16px; padding: 18px;
-      margin-bottom: 14px; box-shadow: var(--shadow);
-    }
-    .card h2 { font-size: 16px; font-weight: bold; margin-bottom: 14px; color: var(--blue); }
+    /* FORMS */
+    form  { display:grid; gap:10px; }
+    label { display:grid; gap:4px; font-size:13px; font-weight:bold; color:var(--gray); }
+    input, select { width:100%; padding:11px 13px; border-radius:9px; border:1.5px solid var(--border); font-size:14px; font-family:Arial,sans-serif; background:#fafafa; transition:border .2s; }
+    input:focus, select:focus { outline:none; border-color:var(--blue); background:#fff; }
+    button { width:100%; padding:11px; border-radius:9px; border:none; background:var(--blue); color:#fff; font-family:Arial,sans-serif; font-size:14px; font-weight:bold; cursor:pointer; transition:background .15s,transform .1s; }
+    button:hover  { background:var(--blue2); }
+    button:active { transform:scale(.98); }
+    button:disabled { background:#9ca3af; cursor:not-allowed; opacity:.7; }
 
-    /* ── DASHBOARD ── */
-    .dashboard { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 14px; }
-    .dash-card {
-      background: #fff; border-radius: 14px; padding: 14px;
-      text-align: center; box-shadow: var(--shadow);
-    }
-    .dash-card span { display: block; font-size: 30px; font-weight: bold; color: var(--blue); }
-    .dash-card p    { font-size: 12px; margin-top: 3px; color: #6b7280; }
+    .helper-text { font-size:13px; color:#6b7280; margin-bottom:10px; }
+    .filters { display:grid; gap:9px; }
 
-    /* ── FORMS ── */
-    form  { display: grid; gap: 10px; }
-    label { display: grid; gap: 4px; font-size: 13px; font-weight: bold; color: var(--gray); }
+    /* RESUMO DO DIA */
+    .day-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:10px; }
+    .day-tabs button { background:#eef2ff; color:var(--blue); font-size:13px; padding:9px; }
+    .day-tabs button:hover { background:var(--blue); color:#fff; }
+    .custom-filter { display:grid; gap:7px; margin-bottom:10px; }
+    .day-box { padding:12px; border-radius:10px; background:#eef6ff; font-size:14px; line-height:1.7; }
+    .day-event-group { margin-top:10px; padding:12px; border-radius:10px; background:#fff; border:1px solid var(--border); }
+    .day-event-group h3 { font-size:14px; color:var(--blue); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .day-event-group h3 button { font-size:12px; padding:5px 12px; width:auto; background:var(--green); }
+    .day-event-group h3 button.entrada-btn { background:var(--blue); }
+    .day-item { padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; line-height:1.6; }
+    .day-item:last-child { border-bottom:none; }
+    .retorno-group { margin-top:10px; padding:12px; border-radius:10px; background:#eff6ff; border:1px solid #93c5fd; }
+    .retorno-group h3 { font-size:14px; color:#1e40af; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .retorno-group h3 button { font-size:12px; padding:5px 12px; width:auto; }
 
-    input, select {
-      width: 100%; padding: 11px 13px;
-      border-radius: 9px; border: 1.5px solid var(--border);
-      font-size: 14px; font-family: Arial, sans-serif;
-      background: #fafafa; transition: border .2s;
-    }
-    input:focus, select:focus { outline: none; border-color: var(--blue); background: #fff; }
+    /* ACOES EM LOTE - ABAS */
+    .lote-tabs { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--border); margin:-18px -18px 16px; }
+    .lote-tab-btn { padding:12px 6px; font-size:12px; border:none; border-right:1px solid var(--border); background:#f9fafb; color:#6b7280; cursor:pointer; font-family:Arial,sans-serif; width:100%; line-height:1.4; transition:all .15s; }
+    .lote-tab-btn:last-child { border-right:none; }
+    .lote-tab-btn.active { background:#eef6ff; color:var(--blue); font-weight:bold; }
+    .lote-tab-btn:hover:not(.active) { background:#f3f4f6; }
+    .lote-tab-content { display:none; }
+    .lote-tab-content.active { display:block; }
 
-    button {
-      width: 100%; padding: 11px; border-radius: 9px; border: none;
-      background: var(--blue); color: #fff;
-      font-family: Arial, sans-serif; font-size: 14px; font-weight: bold;
-      cursor: pointer; transition: background .15s, transform .1s;
-    }
-    button:hover  { background: var(--blue2); }
-    button:active { transform: scale(.98); }
-    button:disabled { background: #9ca3af; cursor: not-allowed; opacity: .7; }
+    /* BRAND CHECKBOXES */
+    .brand-checkboxes { display:flex; gap:14px; flex-wrap:wrap; padding:11px 13px; border-radius:9px; border:1.5px solid var(--border); background:#fafafa; }
+    .brand-checkboxes label { display:flex; align-items:center; gap:6px; font-weight:normal; font-size:14px; cursor:pointer; }
+    .brand-checkboxes input { width:auto; }
 
-    .helper-text { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
-    .filters     { display: grid; gap: 9px; }
+    /* BATCH RESULT */
+    .batch-result { margin-top:10px; padding:12px; border-radius:9px; background:#eef6ff; font-size:13px; line-height:1.6; display:none; }
+    .batch-result.show       { display:block; }
+    .batch-result.show.error { background:#fee2e2; }
 
-    /* ── RESUMO DO DIA ── */
-    .day-tabs {
-      display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; margin-bottom: 10px;
-    }
-    .day-tabs button {
-      background: #eef2ff; color: var(--blue); font-size: 13px; padding: 9px;
-    }
-    .day-tabs button:hover { background: var(--blue); color: #fff; }
-    .custom-filter { display: grid; gap: 7px; margin-bottom: 10px; }
+    /* MODO SELECAO */
+    .mode-selector { border-top:1px solid var(--border); padding-top:12px; }
+    .mode-btn { font-size:13px; padding:9px 8px; background:#f3f4f6; color:#374151; border:1.5px solid var(--border); }
+    .mode-btn-active { background:#eef6ff; color:var(--blue); border-color:var(--blue); }
+    .mode-info { font-size:13px; color:#374151; background:#eef6ff; padding:9px 12px; border-radius:9px; margin-bottom:10px; }
+    .machine-select-box { border:1.5px solid var(--border); border-radius:9px; overflow:hidden; }
+    .machine-select-header { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:#f9fafb; border-bottom:1px solid var(--border); font-size:13px; color:#374151; }
+    .machine-select-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); font-size:14px; cursor:pointer; }
+    .machine-select-item:last-child { border-bottom:none; }
+    .machine-select-item.selected { background:#eef6ff; }
+    .machine-select-item input { width:auto; }
 
-    .day-box {
-      padding: 12px; border-radius: 10px; background: #eef6ff;
-      font-size: 14px; line-height: 1.7;
-    }
-    .day-event-group {
-      margin-top: 10px; padding: 12px; border-radius: 10px;
-      background: #fff; border: 1px solid var(--border);
-    }
-    .day-event-group h3 {
-      font-size: 14px; color: var(--blue); margin-bottom: 8px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-    }
-    .day-event-group h3 button {
-      font-size: 12px; padding: 5px 12px; width: auto; background: var(--green);
-    }
-    .day-event-group h3 button.entrada-btn { background: var(--blue); }
-    .day-item {
-      padding: 7px 0; border-bottom: 1px solid var(--border);
-      font-size: 13px; line-height: 1.6;
-    }
-    .day-item:last-child { border-bottom: none; }
+    /* MACHINE CARDS */
+    .machine-item { border:1.5px solid var(--border); border-radius:14px; padding:14px; background:#fafafa; margin-bottom:10px; }
+    .machine-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .machine-serial { font-size:16px; font-weight:bold; color:#111827; }
+    .machine-brand  { font-size:13px; color:#6b7280; margin-top:2px; }
+    .status { display:inline-block; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:bold; white-space:nowrap; }
+    .disponivel     { background:#dcfce7; color:#166534; }
+    .em-uso         { background:#fee2e2; color:#991b1b; }
+    .manutencao     { background:#e5e7eb; color:#374151; }
+    .reservada-hoje { background:#fef3c7; color:#92400e; }
+    .machine-info { border-top:1px solid var(--border); margin-top:8px; padding-top:8px; font-size:13px; color:#374151; line-height:1.6; }
+    .machine-info p { margin:2px 0; }
+    .alert-reservada { margin-top:8px; padding:7px 11px; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#92400e; }
 
-    .retorno-group {
-      margin-top: 10px; padding: 12px; border-radius: 10px;
-      background: #eff6ff; border: 1px solid #93c5fd;
-    }
-    .retorno-group h3 {
-      font-size: 14px; color: #1e40af; margin-bottom: 8px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-    }
-    .retorno-group h3 button { font-size: 12px; padding: 5px 12px; width: auto; }
+    /* ACOES BOTOES */
+    .actions     { display:grid; gap:7px; margin-top:10px; }
+    .actions-row { display:flex; gap:7px; flex-wrap:wrap; }
+    .actions-row button { flex:1; min-width:70px; font-size:13px; padding:9px 8px; }
+    .btn-confirmar-saida { background:var(--green) !important; }
+    .btn-confirmar-saida:hover { background:#15803d !important; }
+    .btn-entrada   { background:var(--blue) !important; }
+    .btn-secundario { background:#f3f4f6 !important; color:#374151 !important; border:1px solid var(--border) !important; }
+    .btn-secundario:hover { background:#e5e7eb !important; }
+    .btn-danger    { background:var(--red) !important; }
+    .btn-danger:hover { background:#991b1b !important; }
+    .btn-gray      { background:#374151 !important; }
+    .btn-yellow    { background:#fef3c7 !important; color:#92400e !important; border:1.5px solid #fcd34d !important; }
+    .btn-yellow:hover { background:#fde68a !important; }
+    .btn-green-soft { background:#dcfce7 !important; color:#166534 !important; border:1.5px solid #86efac !important; }
+    .btn-green-soft:hover { background:#bbf7d0 !important; }
 
-    /* ── BRAND CHECKBOXES ── */
-    .brand-checkboxes {
-      display: flex; gap: 14px; flex-wrap: wrap;
-      padding: 11px 13px; border-radius: 9px;
-      border: 1.5px solid var(--border); background: #fafafa;
-    }
-    .brand-checkboxes label {
-      display: flex; align-items: center; gap: 6px;
-      font-weight: normal; font-size: 14px; cursor: pointer;
-    }
-    .brand-checkboxes input { width: auto; }
+    /* HISTORICO */
+    .history-box { margin-top:10px; padding:11px; background:#f9fafb; border-radius:9px; border:1px solid var(--border); }
+    .history-item { border-bottom:1px solid #e5e7eb; margin-bottom:7px; padding-bottom:7px; font-size:13px; line-height:1.6; }
+    .history-item:last-child { border-bottom:none; margin:0; padding:0; }
+    .history-user { display:inline-block; background:#ede9fe; color:#5b21b6; border-radius:5px; padding:1px 6px; font-size:11px; font-weight:bold; margin-top:2px; }
 
-    .batch-result {
-      margin-top: 10px; padding: 12px; border-radius: 9px;
-      background: #eef6ff; font-size: 13px; line-height: 1.6; display: none;
-    }
-    .batch-result.show       { display: block; }
-    .batch-result.show.error { background: #fee2e2; }
+    .reservation-detail { margin-top:8px; padding:9px 11px; background:#fff7ed; border:1px solid #fed7aa; border-radius:9px; font-size:13px; line-height:1.6; }
+    .blocked-msg { margin-top:7px; padding:7px 11px; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; font-size:13px; color:#92400e; }
 
-    .mode-selector { border-top: 1px solid var(--border); padding-top: 12px; }
-    .mode-btn { font-size: 13px; padding: 9px 8px; background: #f3f4f6; color: #374151; border: 1.5px solid var(--border); }
-    .mode-btn-active { background: #eef6ff; color: var(--blue); border-color: var(--blue); }
-    .mode-info { font-size: 13px; color: #374151; background: #eef6ff; padding: 9px 12px; border-radius: 9px; margin-bottom: 10px; }
-    .machine-select-box { border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; }
-    .machine-select-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: #f9fafb; border-bottom: 1px solid var(--border); font-size: 13px; color: #374151; }
-    .machine-select-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; }
-    .machine-select-item:last-child { border-bottom: none; }
-    .machine-select-item.selected { background: #eef6ff; }
-    .machine-select-item input { width: auto; }
+    /* MODAIS */
+    .modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); padding:16px; z-index:999; align-items:center; justify-content:center; }
+    .modal.open { display:flex; }
+    .modal-content { background:#fff; width:100%; max-width:400px; padding:22px; border-radius:18px; box-shadow:0 24px 48px rgba(0,0,0,.25); max-height:90vh; overflow-y:auto; }
+    .modal-content h2 { font-size:17px; color:var(--blue); margin-bottom:14px; }
+    .modal-actions { display:grid; gap:7px; margin-top:8px; }
+    .modal-content form { grid-template-columns:1fr !important; }
 
-    /* ── MACHINE CARDS ── */
-    .machine-item {
-      border: 1.5px solid var(--border); border-radius: 14px;
-      padding: 14px; background: #fafafa; margin-bottom: 10px;
-    }
-    .machine-header {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 10px; margin-bottom: 8px;
-    }
-    .machine-serial { font-size: 16px; font-weight: bold; color: #111827; }
-    .machine-brand  { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    #loadingBar { position:fixed; top:0; left:0; height:3px; width:0; background:#60a5fa; transition:width .3s; z-index:9999; }
 
-    .status {
-      display: inline-block; padding: 4px 11px;
-      border-radius: 999px; font-size: 12px; font-weight: bold; white-space: nowrap;
-    }
-    .disponivel     { background: #dcfce7; color: #166534; }
-    .em-uso         { background: #fee2e2; color: #991b1b; }
-    .manutencao     { background: #e5e7eb; color: #374151; }
-    .reservada-hoje { background: #fef3c7; color: #92400e; }
-
-    .machine-info {
-      border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px;
-      font-size: 13px; color: #374151; line-height: 1.6;
-    }
-    .machine-info p { margin: 2px 0; }
-
-    .alert-reservada {
-      margin-top: 8px; padding: 7px 11px;
-      background: #fef3c7; border: 1px solid #fcd34d;
-      border-radius: 8px; font-size: 13px; color: #92400e;
-    }
-
-    /* ── AÇÕES ── */
-    .actions     { display: grid; gap: 7px; margin-top: 10px; }
-    .actions-row { display: flex; gap: 7px; flex-wrap: wrap; }
-    .actions-row button { flex: 1; min-width: 70px; font-size: 13px; padding: 9px 8px; }
-
-    .btn-confirmar-saida { background: var(--green) !important; }
-    .btn-confirmar-saida:hover { background: #15803d !important; }
-    .btn-entrada  { background: var(--blue) !important; }
-    .btn-secundario { background: #f3f4f6 !important; color: #374151 !important; border: 1px solid var(--border) !important; }
-    .btn-secundario:hover { background: #e5e7eb !important; }
-    .btn-danger   { background: var(--red) !important; }
-    .btn-danger:hover { background: #991b1b !important; }
-    .btn-gray     { background: #374151 !important; }
-
-    /* ── HISTÓRICO ── */
-    .history-box {
-      margin-top: 10px; padding: 11px; background: #f9fafb;
-      border-radius: 9px; border: 1px solid var(--border);
-    }
-    .history-item {
-      border-bottom: 1px solid #e5e7eb; margin-bottom: 7px;
-      padding-bottom: 7px; font-size: 13px; line-height: 1.6;
-    }
-    .history-item:last-child { border-bottom: none; margin: 0; padding: 0; }
-    .history-user {
-      display: inline-block; background: #ede9fe; color: #5b21b6;
-      border-radius: 5px; padding: 1px 6px; font-size: 11px; font-weight: bold; margin-top: 2px;
-    }
-
-    .reservation-detail {
-      margin-top: 8px; padding: 9px 11px;
-      background: #fff7ed; border: 1px solid #fed7aa;
-      border-radius: 9px; font-size: 13px; line-height: 1.6;
-    }
-
-    .blocked-msg {
-      margin-top: 7px; padding: 7px 11px;
-      background: #fef3c7; border: 1px solid #fcd34d;
-      border-radius: 8px; font-size: 13px; color: #92400e;
-    }
-
-    /* ── MODAIS ── */
-    .modal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(15,23,42,.55); padding: 16px; z-index: 999;
-      align-items: center; justify-content: center;
-    }
-    .modal.open { display: flex; }
-    .modal-content {
-      background: #fff; width: 100%; max-width: 400px; padding: 22px;
-      border-radius: 18px; box-shadow: 0 24px 48px rgba(0,0,0,.25);
-      max-height: 90vh; overflow-y: auto;
-    }
-    .modal-content h2   { font-size: 17px; color: var(--blue); margin-bottom: 14px; }
-    .modal-actions      { display: grid; gap: 7px; margin-top: 8px; }
-    .modal-content form { grid-template-columns: 1fr !important; }
-
-    #loadingBar {
-      position: fixed; top: 0; left: 0; height: 3px; width: 0;
-      background: #60a5fa; transition: width .3s; z-index: 9999;
-    }
-
-    @media (min-width: 700px) {
-      form              { grid-template-columns: 2fr 1fr 1fr; }
-      #batchReserveForm { grid-template-columns: 2fr 1fr 1fr; }
-      #batchExitForm    { grid-template-columns: 2fr 1fr 1fr; }
-      .filters          { grid-template-columns: 2fr 1fr 1fr 1fr; }
-      .dashboard        { grid-template-columns: repeat(4,1fr); }
-      .day-tabs         { grid-template-columns: repeat(4,1fr); }
-      .custom-filter    { grid-template-columns: 1fr 1fr 1fr; }
-      .actions-row button { min-width: 60px; }
+    @media (min-width:700px) {
+      .filters { grid-template-columns:2fr 1fr 1fr 1fr; }
+      .dashboard { grid-template-columns:repeat(4,1fr); }
+      .day-tabs { grid-template-columns:repeat(4,1fr); }
+      .custom-filter { grid-template-columns:1fr 1fr 1fr; }
+      .actions-row button { min-width:60px; }
     }
   </style>
 </head>
 <body>
-
 <div id="loadingBar"></div>
 
 <!-- LOGIN -->
@@ -378,27 +239,18 @@
 <!-- APP -->
 <div id="appScreen">
   <div id="fbStatus"></div>
-
   <header class="header">
     <div class="header-left">
       <div class="header-icon">📟</div>
-      <div>
-        <h1>Controle de Máquinas</h1>
-        <div class="header-sub">Easytick · Sipag, PagBank e Stone</div>
-      </div>
+      <div><h1>Controle de Máquinas</h1><div class="header-sub">Easytick · Sipag, PagBank e Stone</div></div>
     </div>
     <div class="header-right">
-      <div class="user-badge">
-        <b id="headerUserName">–</b>
-        <span id="headerUserEmail" style="font-size:11px;opacity:.8"></span>
-      </div>
+      <div class="user-badge"><b id="headerUserName">–</b><span id="headerUserEmail" style="font-size:11px;opacity:.8"></span></div>
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
 
   <main class="app">
-
-    <!-- ALERTAS DO DIA -->
     <div id="alertaSaida"   style="display:none"></div>
     <div id="alertaRetorno" style="display:none"></div>
 
@@ -442,82 +294,186 @@
       </form>
     </section>
 
-    <!-- RESERVA EM LOTE -->
+    <!-- ACOES EM LOTE -->
     <section class="card">
-      <h2>📦 Reserva em Lote</h2>
-      <form id="batchReserveForm">
-        <input type="text" id="batchEvent"       placeholder="Nome do evento"  required />
-        <input type="text" id="batchCity"        placeholder="Cidade"          required />
-        <input type="text" id="batchResponsible" placeholder="Responsável"     required />
-        <div class="brand-checkboxes">
-          <label><input type="checkbox" name="batchBrands" value="Sipag"   checked /> Sipag</label>
-          <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
-          <label><input type="checkbox" name="batchBrands" value="Stone"   checked /> Stone</label>
-        </div>
-        <label>Data inicial<input type="date" id="batchStartDate" required /></label>
-        <label>Data final  <input type="date" id="batchEndDate"   required /></label>
-        <div class="mode-selector">
-          <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <button type="button" id="reserveAutoBtn"   onclick="setReserveMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
-            <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
-          </div>
-          <div id="reserveAutoSection">
-            <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
-            <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" />
-          </div>
-          <div id="reserveManualSection" style="display:none">
-            <div class="machine-select-box">
-              <div class="machine-select-header">
-                <span id="reserveSelCount">0 selecionadas</span>
-                <button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
-              </div>
-              <div id="reserveMachineList" style="max-height:220px;overflow-y:auto"></div>
-            </div>
-          </div>
-        </div>
-        <button type="submit">Reservar</button>
-      </form>
-      <div id="batchReserveResult" class="batch-result"></div>
-    </section>
+      <div class="lote-tabs">
+        <button class="lote-tab-btn active" onclick="setLoteAba('reservar')">📦 Reservar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('saida')">🚀 Saída</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('entrada')">📥 Entrada</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('renovar')">🔄 Renovar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">❌ Cancelar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">🔧 Manutenção</button>
+      </div>
 
-    <!-- SAÍDA EM LOTE -->
-    <section class="card">
-      <h2>🚀 Saída em Lote</h2>
-      <form id="batchExitForm">
-        <input type="text" id="batchExitEvent"       placeholder="Nome do evento"  required />
-        <input type="text" id="batchExitCity"        placeholder="Cidade"          required />
-        <input type="text" id="batchExitResponsible" placeholder="Responsável"     required />
-        <div class="brand-checkboxes">
-          <label><input type="checkbox" name="batchExitBrands" value="Sipag"   checked /> Sipag</label>
-          <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked /> PagBank</label>
-          <label><input type="checkbox" name="batchExitBrands" value="Stone"   checked /> Stone</label>
-        </div>
-        <label>Data de saída  <input type="date" id="batchExitStartDate" required /></label>
-        <label>Data de retorno<input type="date" id="batchExitEndDate"   required /></label>
-        <div class="mode-selector">
-          <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <button type="button" id="exitAutoBtn"   onclick="setExitMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
-            <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+      <!-- ABA RESERVAR -->
+      <div id="lote-reservar" class="lote-tab-content active">
+        <h2>📦 Reserva em Lote</h2>
+        <form id="batchReserveForm">
+          <input type="text" id="batchEvent"       placeholder="Nome do evento"  required />
+          <input type="text" id="batchCity"        placeholder="Cidade"          required />
+          <input type="text" id="batchResponsible" placeholder="Responsável"     required />
+          <div class="brand-checkboxes">
+            <label><input type="checkbox" name="batchBrands" value="Sipag"   checked /> Sipag</label>
+            <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
+            <label><input type="checkbox" name="batchBrands" value="Stone"   checked /> Stone</label>
           </div>
-          <div id="exitAutoSection">
-            <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
-            <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" />
-          </div>
-          <div id="exitManualSection" style="display:none">
-            <div class="machine-select-box">
-              <div class="machine-select-header">
-                <span id="exitSelCount">0 selecionadas</span>
-                <button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+          <label>Data inicial<input type="date" id="batchStartDate" required /></label>
+          <label>Data final  <input type="date" id="batchEndDate"   required /></label>
+          <div class="mode-selector">
+            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <button type="button" id="reserveAutoBtn"   onclick="setReserveMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
+              <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+            </div>
+            <div id="reserveAutoSection">
+              <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
+              <input type="number" id="batchQuantity" placeholder="Quantidade" min="1" />
+            </div>
+            <div id="reserveManualSection" style="display:none">
+              <div class="machine-select-box">
+                <div class="machine-select-header">
+                  <span id="reserveSelCount">0 selecionadas</span>
+                  <button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+                </div>
+                <div id="reserveMachineList" style="max-height:220px;overflow-y:auto"></div>
               </div>
-              <div id="exitMachineList" style="max-height:220px;overflow-y:auto"></div>
             </div>
           </div>
+          <button type="submit">Reservar</button>
+        </form>
+        <div id="batchReserveResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA SAIDA -->
+      <div id="lote-saida" class="lote-tab-content">
+        <h2>🚀 Saída em Lote</h2>
+        <form id="batchExitForm">
+          <input type="text" id="batchExitEvent"       placeholder="Nome do evento"  required />
+          <input type="text" id="batchExitCity"        placeholder="Cidade"          required />
+          <input type="text" id="batchExitResponsible" placeholder="Responsável"     required />
+          <div class="brand-checkboxes">
+            <label><input type="checkbox" name="batchExitBrands" value="Sipag"   checked /> Sipag</label>
+            <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked /> PagBank</label>
+            <label><input type="checkbox" name="batchExitBrands" value="Stone"   checked /> Stone</label>
+          </div>
+          <label>Data de saída  <input type="date" id="batchExitStartDate" required /></label>
+          <label>Data de retorno<input type="date" id="batchExitEndDate"   required /></label>
+          <div class="mode-selector">
+            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de seleção</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <button type="button" id="exitAutoBtn"   onclick="setExitMode('auto')"   class="mode-btn mode-btn-active">🤖 Automático</button>
+              <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Selecionar manualmente</button>
+            </div>
+            <div id="exitAutoSection">
+              <p class="mode-info">O sistema escolherá as máquinas que menos giraram e sem conflito no período.</p>
+              <input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1" />
+            </div>
+            <div id="exitManualSection" style="display:none">
+              <div class="machine-select-box">
+                <div class="machine-select-header">
+                  <span id="exitSelCount">0 selecionadas</span>
+                  <button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+                </div>
+                <div id="exitMachineList" style="max-height:220px;overflow-y:auto"></div>
+              </div>
+            </div>
+          </div>
+          <button type="submit">Dar saída</button>
+        </form>
+        <div id="batchExitResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA ENTRADA -->
+      <div id="lote-entrada" class="lote-tab-content">
+        <h2>📥 Entrada em Lote</h2>
+        <p class="helper-text">Registre a devolução de várias máquinas de um evento antes da data prevista.</p>
+        <div style="display:grid;gap:10px">
+          <select id="entradaEventoSelect" onchange="refreshEntradaList()">
+            <option value="">Selecione o evento</option>
+          </select>
+          <div id="entradaMachineBox" style="display:none">
+            <div class="machine-select-box">
+              <div class="machine-select-header">
+                <span id="entradaSelCount">0 selecionadas</span>
+                <button type="button" onclick="toggleAllEntrada()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+              </div>
+              <div id="entradaMachineList" style="max-height:220px;overflow-y:auto"></div>
+            </div>
+          </div>
+          <input type="text" id="entradaObservacao" placeholder="Observação (opcional)" />
+          <button onclick="confirmarEntradaEmLote()" class="btn-green-soft" style="border:none">📥 Registrar entrada</button>
         </div>
-        <button type="submit">Dar saída</button>
-      </form>
-      <div id="batchExitResult" class="batch-result"></div>
+        <div id="entradaResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA RENOVAR -->
+      <div id="lote-renovar" class="lote-tab-content">
+        <h2>🔄 Renovar Prazo</h2>
+        <p class="helper-text">Estenda o prazo de uso de várias máquinas sem dar entrada e saída novamente.</p>
+        <div style="display:grid;gap:10px">
+          <select id="renovarEventoSelect" onchange="refreshRenovarList()">
+            <option value="">Selecione o evento</option>
+          </select>
+          <div id="renovarMachineBox" style="display:none">
+            <div class="machine-select-box">
+              <div class="machine-select-header">
+                <span id="renovarSelCount">0 selecionadas</span>
+                <button type="button" onclick="toggleAllRenovar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+              </div>
+              <div id="renovarMachineList" style="max-height:220px;overflow-y:auto"></div>
+            </div>
+          </div>
+          <label>Nova data de retorno<input type="date" id="novaDataRetorno" /></label>
+          <button onclick="confirmarRenovacao()" class="btn-yellow" style="border:none">🔄 Renovar prazo</button>
+        </div>
+        <div id="renovarResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA CANCELAR -->
+      <div id="lote-cancelar" class="lote-tab-content">
+        <h2>❌ Cancelar Reservas em Lote</h2>
+        <p class="helper-text">Cancele todas as reservas de um evento de uma vez.</p>
+        <div style="display:grid;gap:10px">
+          <select id="cancelarEventoSelect" onchange="refreshCancelarList()">
+            <option value="">Selecione o evento</option>
+          </select>
+          <div id="cancelarMachineBox" style="display:none">
+            <div class="machine-select-box">
+              <div class="machine-select-header">
+                <span id="cancelarSelCount">0 selecionadas</span>
+                <button type="button" onclick="toggleAllCancelar()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+              </div>
+              <div id="cancelarMachineList" style="max-height:220px;overflow-y:auto"></div>
+            </div>
+          </div>
+          <button onclick="confirmarCancelamentoLote()" class="btn-danger" style="border:none">❌ Cancelar reservas selecionadas</button>
+        </div>
+        <div id="cancelarResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA MANUTENCAO -->
+      <div id="lote-manutencao" class="lote-tab-content">
+        <h2>🔧 Manutenção em Lote</h2>
+        <p class="helper-text">Envie várias máquinas para manutenção de uma vez.</p>
+        <div style="display:grid;gap:10px">
+          <div class="brand-checkboxes">
+            <label><input type="checkbox" name="manutBrands" value="Sipag"   checked onchange="refreshManutList()" /> Sipag</label>
+            <label><input type="checkbox" name="manutBrands" value="PagBank" checked onchange="refreshManutList()" /> PagBank</label>
+            <label><input type="checkbox" name="manutBrands" value="Stone"   checked onchange="refreshManutList()" /> Stone</label>
+          </div>
+          <div class="machine-select-box">
+            <div class="machine-select-header">
+              <span id="manutSelCount">0 selecionadas</span>
+              <button type="button" onclick="toggleAllManut()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button>
+            </div>
+            <div id="manutMachineList" style="max-height:220px;overflow-y:auto"></div>
+          </div>
+          <input type="text" id="manutMotivo" placeholder="Motivo da manutenção (opcional)" />
+          <button onclick="confirmarManutencaoLote()" class="btn-gray" style="border:none">🔧 Enviar para manutenção</button>
+        </div>
+        <div id="manutResult" class="batch-result"></div>
+      </div>
+
     </section>
 
     <!-- FILTROS -->
@@ -547,7 +503,6 @@
       <h2>🖥️ Máquinas</h2>
       <div id="machineList"><p style="color:#9ca3af">Aguardando conexão…</p></div>
     </section>
-
   </main>
 </div>
 
@@ -602,73 +557,59 @@
 <script>
 let machines = [];
 
-// ── USUÁRIO ───────────────────────────────────────────
+// USUARIO
 function getCurrentUserName()  { const u=window._currentUser; return u?(u.displayName||u.email||"Usuário"):"Desconhecido"; }
 function getCurrentUserEmail() { const u=window._currentUser; return u?(u.email||""):""; }
 
-// ── LOGIN ────────────────────────────────────────────
-function showLogin() {
-  document.getElementById("loginScreen").classList.remove("hidden");
-  document.getElementById("appScreen").classList.remove("visible");
-}
-function showApp() {
+// LOGIN
+function showLogin() { document.getElementById("loginScreen").classList.remove("hidden"); document.getElementById("appScreen").classList.remove("visible"); }
+function showApp()   {
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.add("visible");
-  const u = window._currentUser;
-  if (u) {
-    document.getElementById("headerUserName").textContent  = u.displayName || u.email;
-    document.getElementById("headerUserEmail").textContent = u.displayName ? u.email : "";
-  }
+  const u=window._currentUser;
+  if(u){ document.getElementById("headerUserName").textContent=u.displayName||u.email; document.getElementById("headerUserEmail").textContent=u.displayName?u.email:""; }
 }
 
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
   e.preventDefault();
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPassword").value;
-  const btn   = document.getElementById("loginBtn");
-  const err   = document.getElementById("loginError");
-  btn.textContent = "Entrando…"; btn.disabled = true; err.classList.remove("show");
-  try { await window._signIn(email, pass); }
-  catch(ex) { err.classList.add("show"); btn.textContent = "Entrar"; btn.disabled = false; }
+  const email=document.getElementById("loginEmail").value.trim();
+  const pass=document.getElementById("loginPassword").value;
+  const btn=document.getElementById("loginBtn"); const err=document.getElementById("loginError");
+  btn.textContent="Entrando…"; btn.disabled=true; err.classList.remove("show");
+  try { await window._signIn(email,pass); }
+  catch(ex){ err.classList.add("show"); btn.textContent="Entrar"; btn.disabled=false; }
 });
+function doLogout() { if(confirm("Deseja sair do sistema?")) window._signOut(); }
 
-function doLogout() { if (confirm("Deseja sair do sistema?")) window._signOut(); }
-
-// ── FIREBASE ─────────────────────────────────────────
+// FIREBASE
 function startFirebaseListener() {
-  const fbStatus   = document.getElementById("fbStatus");
-  const loadingBar = document.getElementById("loadingBar");
+  const fbStatus=document.getElementById("fbStatus"); const loadingBar=document.getElementById("loadingBar");
   try {
-    const dbRef = window._ref(window._db, "machines");
-    loadingBar.style.width = "60%";
-    window._onValue(dbRef, (snapshot) => {
-      loadingBar.style.width = "100%";
-      setTimeout(() => loadingBar.style.width = "0", 400);
-      const data = snapshot.val();
-      machines = data ? Object.values(data).map(m=>({...m, history:m.history||[], reservations:m.reservations||[], showHistory:false})) : [];
-      fbStatus.className = "ok"; fbStatus.textContent = "✅ Conectado – dados em tempo real";
-      setTimeout(() => fbStatus.className = "", 3000);
+    const dbRef=window._ref(window._db,"machines"); loadingBar.style.width="60%";
+    window._onValue(dbRef,(snapshot)=>{
+      loadingBar.style.width="100%"; setTimeout(()=>loadingBar.style.width="0",400);
+      const data=snapshot.val();
+      machines=data?Object.values(data).map(m=>({...m,history:m.history||[],reservations:m.reservations||[],showHistory:false})):[];
+      fbStatus.className="ok"; fbStatus.textContent="✅ Conectado – dados em tempo real";
+      setTimeout(()=>fbStatus.className="",3000);
       render();
-    }, (err) => {
-      fbStatus.className = "error"; fbStatus.textContent = "⚠️ Erro Firebase: " + err.message;
-      loadingBar.style.width = "0";
-    });
+    },(err)=>{ fbStatus.className="error"; fbStatus.textContent="⚠️ Erro Firebase: "+err.message; loadingBar.style.width="0"; });
   } catch(e) {
-    fbStatus.className = "error"; fbStatus.textContent = "⚠️ Firebase não configurado.";
-    machines = JSON.parse(localStorage.getItem("machines")||"[]").map(m=>({...m,history:m.history||[],reservations:m.reservations||[],showHistory:false}));
+    fbStatus.className="error"; fbStatus.textContent="⚠️ Firebase não configurado.";
+    machines=JSON.parse(localStorage.getItem("machines")||"[]").map(m=>({...m,history:m.history||[],reservations:m.reservations||[],showHistory:false}));
     render();
   }
 }
 
 function save() {
   try {
-    const obj = {};
-    machines.forEach(m => { const k=m.serial.replace(/[.#$/[\]]/g,"_"); obj[k]={serial:m.serial,brand:m.brand,status:m.status,history:m.history,reservations:m.reservations}; });
-    window._set(window._ref(window._db,"machines"), obj);
-  } catch(e) { localStorage.setItem("machines", JSON.stringify(machines)); }
+    const obj={};
+    machines.forEach(m=>{ const k=m.serial.replace(/[.#$/[\]]/g,"_"); obj[k]={serial:m.serial,brand:m.brand,status:m.status,history:m.history,reservations:m.reservations}; });
+    window._set(window._ref(window._db,"machines"),obj);
+  } catch(e){ localStorage.setItem("machines",JSON.stringify(machines)); }
 }
 
-// ── UTILITÁRIOS ───────────────────────────────────────
+// UTILITARIOS
 function getToday() { return new Date().toISOString().split("T")[0]; }
 function addDays(d,n) { const dt=new Date(d+"T00:00:00"); dt.setDate(dt.getDate()+n); return dt.toISOString().split("T")[0]; }
 function getWeekRange() {
@@ -687,31 +628,31 @@ function formatDate(d)     { return d?new Date(d+"T00:00:00").toLocaleDateString
 function formatDateTime(d) { return d?new Date(d).toLocaleString("pt-BR"):"-"; }
 function hasDateOverlap(sA,eA,sB,eB) { return sA<=eB&&eA>=sB; }
 
-// ── STATUS REAL ───────────────────────────────────────
+// STATUS REAL
 function getRealStatus(m) {
-  if (m.status==="Em uso")     return "Em uso";
-  if (m.status==="Manutenção") return "Manutenção";
+  if(m.status==="Em uso")     return "Em uso";
+  if(m.status==="Manutenção") return "Manutenção";
   const t=getToday();
-  if (m.reservations.some(r=>hasDateOverlap(r.startDate,r.endDate,t,t))) return "Reservada hoje";
+  if(m.reservations.some(r=>hasDateOverlap(r.startDate,r.endDate,t,t))) return "Reservada hoje";
   return "Disponível";
 }
 function getStatusClass(s) {
-  if (s==="Disponível")     return "disponivel";
-  if (s==="Em uso")         return "em-uso";
-  if (s==="Manutenção")     return "manutencao";
-  if (s==="Reservada hoje") return "reservada-hoje";
+  if(s==="Disponível")     return "disponivel";
+  if(s==="Em uso")         return "em-uso";
+  if(s==="Manutenção")     return "manutencao";
+  if(s==="Reservada hoje") return "reservada-hoje";
   return "";
 }
 function hasReservationConflict(m,s,e) { return m.reservations.some(r=>hasDateOverlap(s,e,r.startDate,r.endDate)); }
 function isBlockedForExit(m,s,e) {
-  if (m.status==="Em uso")     return "Máquina já está em uso.";
-  if (m.status==="Manutenção") return "Máquina em manutenção.";
+  if(m.status==="Em uso")     return "Máquina já está em uso.";
+  if(m.status==="Manutenção") return "Máquina em manutenção.";
   const c=m.reservations.find(r=>hasDateOverlap(s,e,r.startDate,r.endDate));
-  if (c) return `Conflito com reserva: ${c.event} (${formatDate(c.startDate)} → ${formatDate(c.endDate)})`;
+  if(c) return `Conflito com reserva: ${c.event} (${formatDate(c.startDate)} → ${formatDate(c.endDate)})`;
   return null;
 }
 
-// ── DASHBOARD ─────────────────────────────────────────
+// DASHBOARD
 function updateDashboard() {
   const st=machines.map(getRealStatus);
   document.getElementById("totalCount").textContent       = machines.length;
@@ -720,767 +661,380 @@ function updateDashboard() {
   document.getElementById("maintenanceCount").textContent = st.filter(s=>s==="Manutenção").length;
 }
 
-// ── ALERTAS DO DIA ────────────────────────────────────
+// ALERTAS DO DIA
 function renderDayAlerts() {
-  const today = getToday();
-
-  // Saídas de hoje (reservadas para hoje, ainda não em uso)
-  const saidasHoje = {};
-  machines.forEach(m => {
-    if (m.status==="Em uso"||m.status==="Manutenção") return;
-    m.reservations.forEach(r => {
-      if (hasDateOverlap(r.startDate,r.endDate,today,today)) {
-        if (!saidasHoje[r.event]) saidasHoje[r.event] = [];
-        saidasHoje[r.event].push({machine:m, reservation:r});
+  const today=getToday();
+  const saidasHoje={};
+  machines.forEach(m=>{
+    if(m.status==="Em uso"||m.status==="Manutenção") return;
+    m.reservations.forEach(r=>{
+      if(hasDateOverlap(r.startDate,r.endDate,today,today)){
+        if(!saidasHoje[r.event]) saidasHoje[r.event]=[];
+        saidasHoje[r.event].push({machine:m,reservation:r});
       }
     });
   });
-
-  // Retornos de hoje (em uso com endDate = hoje)
-  const retornosHoje = {};
-  machines.forEach(m => {
-    if (m.status!=="Em uso") return;
-    const last = [...m.history].reverse().find(h=>h.type==="saida");
-    if (last && last.endDate===today) {
-      const ev = last.event||"Evento";
-      if (!retornosHoje[ev]) retornosHoje[ev]=[];
-      retornosHoje[ev].push({machine:m, history:last});
-    }
+  const retornosHoje={};
+  machines.forEach(m=>{
+    if(m.status!=="Em uso") return;
+    const last=[...m.history].reverse().find(h=>h.type==="saida");
+    if(last&&last.endDate===today){ const ev=last.event||"Evento"; if(!retornosHoje[ev]) retornosHoje[ev]=[]; retornosHoje[ev].push({machine:m,history:last}); }
   });
-
-  const elSaida   = document.getElementById("alertaSaida");
-  const elRetorno = document.getElementById("alertaRetorno");
-
-  // Alerta saídas
-  const totalSaidas = Object.values(saidasHoje).flat().length;
-  if (totalSaidas > 0) {
-    const eventos = Object.keys(saidasHoje).join(", ");
-    elSaida.style.display = "block";
-    elSaida.innerHTML = `
-      <div class="day-alert saida">
-        <div class="day-alert-text">
-          <b>🚨 ${totalSaidas} máquina${totalSaidas>1?'s':''} sai${totalSaidas>1?'em':''} hoje</b>
-          <p>${eventos}</p>
-        </div>
-        <button onclick="showDayResume('today')">Ver no Resumo do Dia</button>
-      </div>`;
-  } else { elSaida.style.display = "none"; }
-
-  // Alerta retornos
-  const totalRetornos = Object.values(retornosHoje).flat().length;
-  if (totalRetornos > 0) {
-    const eventos = Object.keys(retornosHoje).join(", ");
-    elRetorno.style.display = "block";
-    elRetorno.innerHTML = `
-      <div class="day-alert retorno">
-        <div class="day-alert-text">
-          <b>📥 ${totalRetornos} máquina${totalRetornos>1?'s':''} retorna${totalRetornos>1?'m':''} hoje</b>
-          <p>${eventos}</p>
-        </div>
-        <button onclick="showDayResume('today')">Ver no Resumo do Dia</button>
-      </div>`;
-  } else { elRetorno.style.display = "none"; }
+  const elS=document.getElementById("alertaSaida"); const elR=document.getElementById("alertaRetorno");
+  const ts=Object.values(saidasHoje).flat().length;
+  if(ts>0){ elS.style.display="block"; elS.innerHTML=`<div class="day-alert saida"><div class="day-alert-text"><b>🚨 ${ts} máquina${ts>1?'s':''} sai${ts>1?'em':''} hoje</b><p>${Object.keys(saidasHoje).join(", ")}</p></div><button onclick="showDayResume('today')">Ver no Resumo do Dia</button></div>`; }
+  else elS.style.display="none";
+  const tr=Object.values(retornosHoje).flat().length;
+  if(tr>0){ elR.style.display="block"; elR.innerHTML=`<div class="day-alert retorno"><div class="day-alert-text"><b>📥 ${tr} máquina${tr>1?'s':''} retorna${tr>1?'m':''} hoje</b><p>${Object.keys(retornosHoje).join(", ")}</p></div><button onclick="showDayResume('today')">Ver no Resumo do Dia</button></div>`; }
+  else elR.style.display="none";
 }
 
-// ── RESUMO DO DIA ─────────────────────────────────────
+// RESUMO DO DIA — apenas reservas e retornos (sem "em uso")
 function getReservationsByRange(start,end) {
   const list=[];
   machines.forEach(m=>{
     m.reservations.forEach(r=>{
-      if (hasDateOverlap(r.startDate,r.endDate,start,end))
+      if(hasDateOverlap(r.startDate,r.endDate,start,end))
         list.push({...r,serial:m.serial,brand:m.brand,status:getRealStatus(m)});
     });
   });
   return list;
 }
-
 function getRetornosByRange(start,end) {
   const list=[];
   machines.forEach(m=>{
-    if (m.status!=="Em uso") return;
+    if(m.status!=="Em uso") return;
     const last=[...m.history].reverse().find(h=>h.type==="saida");
-    if (last && hasDateOverlap(last.endDate,last.endDate,start,end))
-      list.push({...last, serial:m.serial, brand:m.brand});
+    if(last&&hasDateOverlap(last.endDate,last.endDate,start,end))
+      list.push({...last,serial:m.serial,brand:m.brand});
   });
   return list;
 }
+function groupByEvent(list) { return list.reduce((g,r)=>{g[r.event]=g[r.event]||[];g[r.event].push(r);return g;},{}); }
 
-function groupByEvent(list) {
-  return list.reduce((g,r)=>{g[r.event]=g[r.event]||[];g[r.event].push(r);return g;},{});
-}
-
-function renderDayResume(start, end, label) {
-  const box         = document.getElementById("dayResumeBox");
-  const reservations= getReservationsByRange(start, end);
-  const retornos    = getRetornosByRange(start, end);
-  const today       = getToday();
-  const isToday     = (start===today && end===today);
-
-  if (!reservations.length && !retornos.length) {
-    box.innerHTML = `<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br><br>Nenhuma movimentação encontrada.`;
-    return;
-  }
-
-  const grouped   = groupByEvent(reservations);
-  const grRetorno = groupByEvent(retornos.map(r=>({...r,event:r.event||"Evento"})));
-
-  let html = `<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br>`;
-  if (reservations.length) html += `Saídas previstas: <b>${reservations.length}</b> &nbsp;`;
-  if (retornos.length)     html += `Retornos previstos: <b>${retornos.length}</b>`;
-
-  // Grupos de saída
-  Object.entries(grouped).forEach(([ev, items]) => {
-    const saidasPendentes = isToday
-      ? items.filter(i => i.status==="Reservada hoje")
-      : items;
-    const btnSaida = (isToday && saidasPendentes.length)
-      ? `<button onclick="confirmarSaidaLote('${ev}')" style="background:var(--green)">Dar saída em todas (${saidasPendentes.length})</button>`
-      : "";
-
-    html += `<div class="day-event-group">
-      <h3>${ev} <small style="font-weight:normal;font-size:12px">(${items.length} máquina${items.length>1?'s':''})</small> ${btnSaida}</h3>
-      ${items.map(i=>`<div class="day-item">
-        <b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>
-        ${formatDate(i.startDate)} → ${formatDate(i.endDate)} ·
-        <span class="status ${getStatusClass(i.status)}" style="font-size:11px;padding:2px 8px">${i.status}</span>
-        ${i.createdBy?`<br><span class="history-user">👤 ${i.createdBy}</span>`:""}
-      </div>`).join("")}
-    </div>`;
+function renderDayResume(start,end,label) {
+  const box=document.getElementById("dayResumeBox");
+  const reservations=getReservationsByRange(start,end);
+  const retornos=getRetornosByRange(start,end);
+  const today=getToday(); const isToday=(start===today&&end===today);
+  if(!reservations.length&&!retornos.length){ box.innerHTML=`<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br><br>Nenhuma movimentação encontrada.`; return; }
+  const grouped=groupByEvent(reservations);
+  const grRetorno=groupByEvent(retornos.map(r=>({...r,event:r.event||"Evento"})));
+  let html=`<b>${label}</b> — ${formatDate(start)} até ${formatDate(end)}<br>`;
+  if(reservations.length) html+=`Saídas previstas: <b>${reservations.length}</b> &nbsp;`;
+  if(retornos.length)     html+=`Retornos previstos: <b>${retornos.length}</b>`;
+  Object.entries(grouped).forEach(([ev,items])=>{
+    const pendentes=isToday?items.filter(i=>i.status==="Reservada hoje"):items;
+    const btnS=(isToday&&pendentes.length)?`<button onclick="confirmarSaidaLote('${ev}')" style="background:var(--green)">Dar saída em todas (${pendentes.length})</button>`:"";
+    html+=`<div class="day-event-group"><h3>${ev} <small style="font-weight:normal;font-size:12px">(${items.length} máquina${items.length>1?'s':''})</small> ${btnS}</h3>${items.map(i=>`<div class="day-item"><b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>${formatDate(i.startDate)} → ${formatDate(i.endDate)} · <span class="status ${getStatusClass(i.status)}" style="font-size:11px;padding:2px 8px">${i.status}</span>${i.createdBy?`<br><span class="history-user">👤 ${i.createdBy}</span>`:""}</div>`).join("")}</div>`;
   });
-
-  // Grupos de retorno
-  if (retornos.length) {
-    Object.entries(grRetorno).forEach(([ev, items]) => {
-      const btnEntrada = isToday
-        ? `<button class="entrada-btn" onclick="confirmarEntradaLote('${ev}')">Dar entrada em todas (${items.length})</button>`
-        : "";
-      html += `<div class="retorno-group">
-        <h3>📥 Retorno: ${ev} ${btnEntrada}</h3>
-        ${items.map(i=>`<div class="day-item">
-          <b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}
-          ${i.responsible?` · ${i.responsible}`:""}<br>
-          Retorno previsto: ${formatDate(i.endDate)}
-        </div>`).join("")}
-      </div>`;
+  if(retornos.length){
+    Object.entries(grRetorno).forEach(([ev,items])=>{
+      const btnE=isToday?`<button class="entrada-btn" onclick="confirmarEntradaLote('${ev}')">Dar entrada em todas (${items.length})</button>`:"";
+      html+=`<div class="retorno-group"><h3>📥 Retorno: ${ev} ${btnE}</h3>${items.map(i=>`<div class="day-item"><b>${i.serial}</b> · ${i.brand}${i.city?` · ${i.city}`:""}${i.responsible?` · ${i.responsible}`:""}<br>Retorno previsto: ${formatDate(i.endDate)}</div>`).join("")}</div>`;
     });
   }
-
-  box.innerHTML = html;
+  box.innerHTML=html;
 }
-
 function showDayResume(type) {
   const today=getToday();
-  if (type==="today")  renderDayResume(today,today,"Hoje");
-  if (type==="week")   { const w=getWeekRange(); renderDayResume(w.start,w.end,"Esta semana"); }
-  if (type==="15days") renderDayResume(today,addDays(today,15),"Próximos 15 dias");
-  if (type==="month")  { const m=getMonthRange(); renderDayResume(m.start,m.end,"Este mês"); }
+  if(type==="today")  renderDayResume(today,today,"Hoje");
+  if(type==="week")   { const w=getWeekRange(); renderDayResume(w.start,w.end,"Esta semana"); }
+  if(type==="15days") renderDayResume(today,addDays(today,15),"Próximos 15 dias");
+  if(type==="month")  { const m=getMonthRange(); renderDayResume(m.start,m.end,"Este mês"); }
 }
 function showCustomDayResume() {
-  const s=document.getElementById("customStartDate").value;
-  const e=document.getElementById("customEndDate").value;
-  if (!s||!e) { alert("Selecione as duas datas."); return; }
-  if (e<s)    { alert("Data final não pode ser menor."); return; }
+  const s=document.getElementById("customStartDate").value; const e=document.getElementById("customEndDate").value;
+  if(!s||!e){ alert("Selecione as duas datas."); return; }
+  if(e<s){ alert("Data final não pode ser menor."); return; }
   renderDayResume(s,e,"Período personalizado");
 }
 
-// ── CONFIRMAR SAÍDA EM LOTE PELO RESUMO ──────────────
+// CONFIRMAR SAIDA/ENTRADA VIA RESUMO
 function confirmarSaidaLote(eventName) {
-  const today = getToday();
-  const maquinas = machines.filter(m => {
-    if (m.status==="Em uso"||m.status==="Manutenção") return false;
-    return m.reservations.some(r=>r.event===eventName && hasDateOverlap(r.startDate,r.endDate,today,today));
-  });
-  if (!maquinas.length) { alert("Nenhuma máquina disponível para saída."); return; }
-  if (!confirm(`Confirmar saída de ${maquinas.length} máquina(s) para "${eventName}"?`)) return;
+  const today=getToday();
+  const maquinas=machines.filter(m=>{ if(m.status==="Em uso"||m.status==="Manutenção") return false; return m.reservations.some(r=>r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today)); });
+  if(!maquinas.length){ alert("Nenhuma máquina disponível."); return; }
+  if(!confirm(`Confirmar saída de ${maquinas.length} máquina(s) para "${eventName}"?`)) return;
   const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  maquinas.forEach(m => {
-    const res = m.reservations.find(r=>r.event===eventName && hasDateOverlap(r.startDate,r.endDate,today,today));
-    m.status = "Em uso";
-    m.history.push({type:"saida",event:eventName,city:res?.city||"",responsible:res?.responsible||"",startDate:res?.startDate||today,endDate:res?.endDate||today,date:new Date().toISOString(),user:userName,userEmail,fromReservation:true});
-  });
-  save();
-  alert(`✅ Saída confirmada para ${maquinas.length} máquina(s)!`);
+  maquinas.forEach(m=>{ const res=m.reservations.find(r=>r.event===eventName&&hasDateOverlap(r.startDate,r.endDate,today,today)); m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:res?.city||"",responsible:res?.responsible||"",startDate:res?.startDate||today,endDate:res?.endDate||today,date:new Date().toISOString(),user:userName,userEmail,fromReservation:true}); });
+  save(); alert(`✅ Saída confirmada para ${maquinas.length} máquina(s)!`);
 }
-
-// ── CONFIRMAR ENTRADA EM LOTE PELO RESUMO ────────────
 function confirmarEntradaLote(eventName) {
-  const today = getToday();
-  const maquinas = machines.filter(m => {
-    if (m.status!=="Em uso") return false;
-    const last=[...m.history].reverse().find(h=>h.type==="saida");
-    return last && (last.event===eventName) && (last.endDate===today);
-  });
-  if (!maquinas.length) { alert("Nenhuma máquina encontrada para entrada."); return; }
-  if (!confirm(`Confirmar entrada de ${maquinas.length} máquina(s) do evento "${eventName}"?`)) return;
+  const today=getToday();
+  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&(last.event===eventName)&&(last.endDate===today); });
+  if(!maquinas.length){ alert("Nenhuma máquina encontrada."); return; }
+  if(!confirm(`Confirmar entrada de ${maquinas.length} máquina(s) do evento "${eventName}"?`)) return;
   const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  maquinas.forEach(m => {
-    m.status = "Disponível";
-    m.history.push({type:"entrada",observation:"Entrada em lote via Resumo do Dia",date:new Date().toISOString(),user:userName,userEmail});
-  });
-  save();
-  alert(`✅ Entrada confirmada para ${maquinas.length} máquina(s)!`);
+  maquinas.forEach(m=>{ m.status="Disponível"; m.history.push({type:"entrada",observation:"Entrada em lote via Resumo do Dia",date:new Date().toISOString(),user:userName,userEmail}); });
+  save(); alert(`✅ Entrada confirmada para ${maquinas.length} máquina(s)!`);
 }
 
-// ── CADASTRO ─────────────────────────────────────────
-document.getElementById("machineForm").addEventListener("submit", function(e) {
+// ABAS DE LOTE
+const LOTE_ABAS = ['reservar','saida','entrada','renovar','cancelar','manutencao'];
+function setLoteAba(aba) {
+  LOTE_ABAS.forEach(a=>{
+    document.getElementById('lote-'+a).classList.toggle('active',a===aba);
+  });
+  document.querySelectorAll('.lote-tab-btn').forEach((btn,i)=>{ btn.classList.toggle('active',LOTE_ABAS[i]===aba); });
+  if(aba==='entrada')   refreshEntradaEventos();
+  if(aba==='renovar')   refreshRenovarEventos();
+  if(aba==='cancelar')  refreshCancelarEventos();
+  if(aba==='manutencao')refreshManutList();
+}
+
+// ABA ENTRADA EM LOTE
+let entradaSelected = new Set();
+function refreshEntradaEventos() {
+  const sel=document.getElementById("entradaEventoSelect");
+  const eventos=new Set();
+  machines.forEach(m=>{ if(m.status!=="Em uso") return; const last=[...m.history].reverse().find(h=>h.type==="saida"); if(last&&last.event) eventos.add(last.event); });
+  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
+  document.getElementById("entradaMachineBox").style.display="none";
+  entradaSelected.clear();
+}
+function refreshEntradaList() {
+  const ev=document.getElementById("entradaEventoSelect").value;
+  const box=document.getElementById("entradaMachineBox");
+  if(!ev){ box.style.display="none"; return; }
+  box.style.display="block";
+  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
+  const list=document.getElementById("entradaMachineList");
+  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso neste evento.</p>'; return; }
+  list.innerHTML=maquinas.map(m=>{ const last=[...m.history].reverse().find(h=>h.type==="saida"); return `<label class="machine-select-item ${entradaSelected.has(m.serial)?'selected':''}" onclick="toggleEntradaSel('${m.serial}')"><input type="checkbox" ${entradaSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleEntradaSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">Retorno: ${formatDate(last?.endDate)}</span></label>`; }).join("");
+  document.getElementById("entradaSelCount").textContent=entradaSelected.size+" selecionadas";
+}
+function toggleEntradaSel(serial) { if(entradaSelected.has(serial)) entradaSelected.delete(serial); else entradaSelected.add(serial); refreshEntradaList(); }
+function toggleAllEntrada() {
+  const ev=document.getElementById("entradaEventoSelect").value;
+  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
+  if(entradaSelected.size===maquinas.length) entradaSelected.clear(); else maquinas.forEach(m=>entradaSelected.add(m.serial));
+  refreshEntradaList();
+}
+function confirmarEntradaEmLote() {
+  if(!entradaSelected.size){ alert("Selecione ao menos uma máquina."); return; }
+  const obs=document.getElementById("entradaObservacao").value.trim();
+  const result=document.getElementById("entradaResult");
+  if(!confirm(`Confirmar entrada de ${entradaSelected.size} máquina(s)?`)) return;
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  const selected=machines.filter(m=>entradaSelected.has(m.serial));
+  selected.forEach(m=>{ m.status="Disponível"; m.history.push({type:"entrada",observation:obs||"",date:new Date().toISOString(),user:userName,userEmail}); });
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Entrada registrada!</b><br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  entradaSelected.clear(); document.getElementById("entradaObservacao").value="";
+  refreshEntradaEventos(); save();
+}
+
+// ABA RENOVAR
+let renovarSelected = new Set();
+function refreshRenovarEventos() {
+  const sel=document.getElementById("renovarEventoSelect");
+  const eventos=new Set();
+  machines.forEach(m=>{ if(m.status!=="Em uso") return; const last=[...m.history].reverse().find(h=>h.type==="saida"); if(last&&last.event) eventos.add(last.event); });
+  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
+  document.getElementById("renovarMachineBox").style.display="none";
+  renovarSelected.clear();
+}
+function refreshRenovarList() {
+  const ev=document.getElementById("renovarEventoSelect").value;
+  const box=document.getElementById("renovarMachineBox");
+  if(!ev){ box.style.display="none"; return; }
+  box.style.display="block";
+  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
+  const list=document.getElementById("renovarMachineList");
+  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina em uso neste evento.</p>'; return; }
+  list.innerHTML=maquinas.map(m=>{ const last=[...m.history].reverse().find(h=>h.type==="saida"); return `<label class="machine-select-item ${renovarSelected.has(m.serial)?'selected':''}" onclick="toggleRenovarSel('${m.serial}')"><input type="checkbox" ${renovarSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleRenovarSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">Vence: ${formatDate(last?.endDate)}</span></label>`; }).join("");
+  document.getElementById("renovarSelCount").textContent=renovarSelected.size+" selecionadas";
+}
+function toggleRenovarSel(serial) { if(renovarSelected.has(serial)) renovarSelected.delete(serial); else renovarSelected.add(serial); refreshRenovarList(); }
+function toggleAllRenovar() {
+  const ev=document.getElementById("renovarEventoSelect").value;
+  const maquinas=machines.filter(m=>{ if(m.status!=="Em uso") return false; const last=[...m.history].reverse().find(h=>h.type==="saida"); return last&&last.event===ev; });
+  if(renovarSelected.size===maquinas.length) renovarSelected.clear(); else maquinas.forEach(m=>renovarSelected.add(m.serial));
+  refreshRenovarList();
+}
+function confirmarRenovacao() {
+  if(!renovarSelected.size){ alert("Selecione ao menos uma máquina."); return; }
+  const novaData=document.getElementById("novaDataRetorno").value;
+  if(!novaData){ alert("Informe a nova data de retorno."); return; }
+  const result=document.getElementById("renovarResult");
+  if(!confirm(`Renovar prazo de ${renovarSelected.size} máquina(s) até ${formatDate(novaData)}?`)) return;
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  const selected=machines.filter(m=>renovarSelected.has(m.serial));
+  selected.forEach(m=>{
+    const last=[...m.history].reverse().find(h=>h.type==="saida");
+    if(last) last.endDate=novaData;
+    m.history.push({type:"renovação de prazo",endDate:novaData,date:new Date().toISOString(),user:userName,userEmail});
+  });
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Prazo renovado!</b><br>Nova data de retorno: ${formatDate(novaData)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  renovarSelected.clear(); document.getElementById("novaDataRetorno").value="";
+  refreshRenovarEventos(); save();
+}
+
+// ABA CANCELAR EM LOTE
+let cancelarSelected = new Set();
+function refreshCancelarEventos() {
+  const sel=document.getElementById("cancelarEventoSelect");
+  const eventos=new Set();
+  machines.forEach(m=>m.reservations.forEach(r=>r.event&&eventos.add(r.event)));
+  sel.innerHTML='<option value="">Selecione o evento</option>'+[...eventos].map(ev=>`<option value="${ev}">${ev}</option>`).join("");
+  document.getElementById("cancelarMachineBox").style.display="none";
+  cancelarSelected.clear();
+}
+function refreshCancelarList() {
+  const ev=document.getElementById("cancelarEventoSelect").value;
+  const box=document.getElementById("cancelarMachineBox");
+  if(!ev){ box.style.display="none"; return; }
+  box.style.display="block";
+  const items=[];
+  machines.forEach(m=>m.reservations.forEach((r,idx)=>{ if(r.event===ev) items.push({machine:m,reservation:r,idx}); }));
+  const list=document.getElementById("cancelarMachineList");
+  if(!items.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma reserva encontrada para este evento.</p>'; return; }
+  list.innerHTML=items.map(({machine:m,reservation:r})=>`<label class="machine-select-item ${cancelarSelected.has(m.serial)?'selected':''}" onclick="toggleCancelarSel('${m.serial}')"><input type="checkbox" ${cancelarSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleCancelarSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${formatDate(r.startDate)} → ${formatDate(r.endDate)}</span></label>`).join("");
+  document.getElementById("cancelarSelCount").textContent=cancelarSelected.size+" selecionadas";
+}
+function toggleCancelarSel(serial) { if(cancelarSelected.has(serial)) cancelarSelected.delete(serial); else cancelarSelected.add(serial); refreshCancelarList(); }
+function toggleAllCancelar() {
+  const ev=document.getElementById("cancelarEventoSelect").value;
+  const seriais=machines.filter(m=>m.reservations.some(r=>r.event===ev)).map(m=>m.serial);
+  if(cancelarSelected.size===seriais.length) cancelarSelected.clear(); else seriais.forEach(s=>cancelarSelected.add(s));
+  refreshCancelarList();
+}
+function confirmarCancelamentoLote() {
+  if(!cancelarSelected.size){ alert("Selecione ao menos uma máquina."); return; }
+  const ev=document.getElementById("cancelarEventoSelect").value;
+  const result=document.getElementById("cancelarResult");
+  if(!confirm(`Cancelar reservas de ${cancelarSelected.size} máquina(s) para o evento "${ev}"?`)) return;
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  const serials=[...cancelarSelected];
+  serials.forEach(serial=>{
+    const m=machines.find(m=>m.serial===serial); if(!m) return;
+    const idx=m.reservations.findIndex(r=>r.event===ev); if(idx===-1) return;
+    const res=m.reservations[idx];
+    m.history.push({type:"cancelamento de reserva",event:res.event,startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:userName,userEmail});
+    m.reservations.splice(idx,1);
+  });
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Reservas canceladas!</b><br>Evento: ${ev}<br>Máquinas: ${serials.join(", ")}`;
+  cancelarSelected.clear(); refreshCancelarEventos(); save();
+}
+
+// ABA MANUTENCAO EM LOTE
+let manutSelected = new Set();
+function refreshManutList() {
+  const brands=Array.from(document.querySelectorAll('input[name="manutBrands"]:checked')).map(i=>i.value);
+  const maquinas=machines.filter(m=>brands.includes(m.brand)&&m.status==="Disponível");
+  const list=document.getElementById("manutMachineList");
+  if(!maquinas.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível.</p>'; return; }
+  list.innerHTML=maquinas.map(m=>`<label class="machine-select-item ${manutSelected.has(m.serial)?'selected':''}" onclick="toggleManutSel('${m.serial}')"><input type="checkbox" ${manutSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleManutSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==="saida").length} uso(s)</span></label>`).join("");
+  document.getElementById("manutSelCount").textContent=manutSelected.size+" selecionadas";
+}
+function toggleManutSel(serial) { if(manutSelected.has(serial)) manutSelected.delete(serial); else manutSelected.add(serial); refreshManutList(); }
+function toggleAllManut() {
+  const brands=Array.from(document.querySelectorAll('input[name="manutBrands"]:checked')).map(i=>i.value);
+  const maquinas=machines.filter(m=>brands.includes(m.brand)&&m.status==="Disponível");
+  if(manutSelected.size===maquinas.length) manutSelected.clear(); else maquinas.forEach(m=>manutSelected.add(m.serial));
+  refreshManutList();
+}
+function confirmarManutencaoLote() {
+  if(!manutSelected.size){ alert("Selecione ao menos uma máquina."); return; }
+  const motivo=document.getElementById("manutMotivo").value.trim();
+  const result=document.getElementById("manutResult");
+  if(!confirm(`Enviar ${manutSelected.size} máquina(s) para manutenção?`)) return;
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
+  const selected=machines.filter(m=>manutSelected.has(m.serial));
+  selected.forEach(m=>{ m.status="Manutenção"; m.history.push({type:"manutenção",observation:motivo||"",date:new Date().toISOString(),user:userName,userEmail,batch:true}); });
+  result.className="batch-result show";
+  result.innerHTML=`<b>✅ Enviadas para manutenção!</b><br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  manutSelected.clear(); document.getElementById("manutMotivo").value="";
+  refreshManutList(); save();
+}
+
+// CADASTRO
+document.getElementById("machineForm").addEventListener("submit",function(e){
   e.preventDefault();
   const serial=document.getElementById("serial").value.trim().toUpperCase();
   const brand=document.getElementById("brand").value;
-  if (!serial||!brand) { alert("Preencha todos os dados."); return; }
-  if (machines.some(m=>m.serial===serial)) { alert("Máquina já cadastrada!"); return; }
+  if(!serial||!brand){ alert("Preencha todos os dados."); return; }
+  if(machines.some(m=>m.serial===serial)){ alert("Máquina já cadastrada!"); return; }
   machines.push({serial,brand,status:"Disponível",history:[],reservations:[],showHistory:false});
   save(); this.reset();
 });
 
-// ── LOTE HELPERS ─────────────────────────────────────
-function getSelectedBrands(name) {
-  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value);
-}
-
-// ── MODO DE SELEÇÃO ───────────────────────────────────
-let reserveMode = 'auto';
-let exitMode    = 'auto';
-let reserveSelected = new Set();
-let exitSelected    = new Set();
+// MODO SELECAO (RESERVA E SAIDA)
+function getSelectedBrands(name){ return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value); }
+let reserveMode='auto', exitMode='auto', reserveSelected=new Set(), exitSelected=new Set();
 
 function setReserveMode(mode) {
-  reserveMode = mode;
-  document.getElementById('reserveAutoBtn').className   = mode==='auto'   ? 'mode-btn mode-btn-active' : 'mode-btn';
-  document.getElementById('reserveManualBtn').className = mode==='manual' ? 'mode-btn mode-btn-active' : 'mode-btn';
-  document.getElementById('reserveAutoSection').style.display   = mode==='auto'   ? 'block' : 'none';
-  document.getElementById('reserveManualSection').style.display = mode==='manual' ? 'block' : 'none';
-  if (mode==='manual') refreshReserveMachineList();
+  reserveMode=mode;
+  document.getElementById('reserveAutoBtn').className   = mode==='auto'   ?'mode-btn mode-btn-active':'mode-btn';
+  document.getElementById('reserveManualBtn').className = mode==='manual' ?'mode-btn mode-btn-active':'mode-btn';
+  document.getElementById('reserveAutoSection').style.display   = mode==='auto'   ?'block':'none';
+  document.getElementById('reserveManualSection').style.display = mode==='manual' ?'block':'none';
+  if(mode==='manual') refreshReserveMachineList();
 }
-
 function setExitMode(mode) {
-  exitMode = mode;
-  document.getElementById('exitAutoBtn').className   = mode==='auto'   ? 'mode-btn mode-btn-active' : 'mode-btn';
-  document.getElementById('exitManualBtn').className = mode==='manual' ? 'mode-btn mode-btn-active' : 'mode-btn';
-  document.getElementById('exitAutoSection').style.display   = mode==='auto'   ? 'block' : 'none';
-  document.getElementById('exitManualSection').style.display = mode==='manual' ? 'block' : 'none';
-  if (mode==='manual') refreshExitMachineList();
+  exitMode=mode;
+  document.getElementById('exitAutoBtn').className   = mode==='auto'   ?'mode-btn mode-btn-active':'mode-btn';
+  document.getElementById('exitManualBtn').className = mode==='manual' ?'mode-btn mode-btn-active':'mode-btn';
+  document.getElementById('exitAutoSection').style.display   = mode==='auto'   ?'block':'none';
+  document.getElementById('exitManualSection').style.display = mode==='manual' ?'block':'none';
+  if(mode==='manual') refreshExitMachineList();
 }
-
 function getEligibleForReserve() {
-  const brands    = getSelectedBrands('batchBrands');
-  const startDate = document.getElementById('batchStartDate').value;
-  const endDate   = document.getElementById('batchEndDate').value;
-  if (!startDate||!endDate) return [];
-  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,startDate,endDate))
-    .sort((a,b)=>(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
+  const brands=getSelectedBrands('batchBrands'); const s=document.getElementById('batchStartDate').value; const e=document.getElementById('batchEndDate').value;
+  if(!s||!e) return [];
+  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e)).sort((a,b)=>(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length));
 }
-
 function getEligibleForExit() {
-  const brands    = getSelectedBrands('batchExitBrands');
-  const startDate = document.getElementById('batchExitStartDate').value;
-  const endDate   = document.getElementById('batchExitEndDate').value;
-  if (!startDate||!endDate) return [];
-  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,startDate,endDate))
-    .sort((a,b)=>(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
+  const brands=getSelectedBrands('batchExitBrands'); const s=document.getElementById('batchExitStartDate').value; const e=document.getElementById('batchExitEndDate').value;
+  if(!s||!e) return [];
+  return machines.filter(m=>brands.includes(m.brand)&&m.status!=='Em uso'&&m.status!=='Manutenção'&&!hasReservationConflict(m,s,e)).sort((a,b)=>(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length));
 }
-
 function refreshReserveMachineList() {
-  const eligible = getEligibleForReserve();
-  const list = document.getElementById('reserveMachineList');
-  if (!eligible.length) { list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período selecionado.</p>'; return; }
-  list.innerHTML = eligible.map(m=>`
-    <label class="machine-select-item ${reserveSelected.has(m.serial)?'selected':''}" onclick="toggleReserveSel('${m.serial}')">
-      <input type="checkbox" ${reserveSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleReserveSel('${m.serial}')" />
-      <div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div>
-      <span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span>
-    </label>`).join('');
-  document.getElementById('reserveSelCount').textContent = reserveSelected.size + ' selecionadas';
+  const eligible=getEligibleForReserve(); const list=document.getElementById('reserveMachineList');
+  if(!eligible.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período.</p>'; return; }
+  list.innerHTML=eligible.map(m=>`<label class="machine-select-item ${reserveSelected.has(m.serial)?'selected':''}" onclick="toggleReserveSel('${m.serial}')"><input type="checkbox" ${reserveSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleReserveSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span></label>`).join('');
+  document.getElementById('reserveSelCount').textContent=reserveSelected.size+' selecionadas';
 }
-
-function toggleReserveSel(serial) {
-  if (reserveSelected.has(serial)) reserveSelected.delete(serial);
-  else reserveSelected.add(serial);
-  refreshReserveMachineList();
-}
-
-function toggleAllReserve() {
-  const eligible = getEligibleForReserve();
-  if (reserveSelected.size === eligible.length) reserveSelected.clear();
-  else eligible.forEach(m=>reserveSelected.add(m.serial));
-  refreshReserveMachineList();
-}
-
+function toggleReserveSel(s){ if(reserveSelected.has(s)) reserveSelected.delete(s); else reserveSelected.add(s); refreshReserveMachineList(); }
+function toggleAllReserve(){ const el=getEligibleForReserve(); if(reserveSelected.size===el.length) reserveSelected.clear(); else el.forEach(m=>reserveSelected.add(m.serial)); refreshReserveMachineList(); }
 function refreshExitMachineList() {
-  const eligible = getEligibleForExit();
-  const list = document.getElementById('exitMachineList');
-  if (!eligible.length) { list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período selecionado.</p>'; return; }
-  list.innerHTML = eligible.map(m=>`
-    <label class="machine-select-item ${exitSelected.has(m.serial)?'selected':''}" onclick="toggleExitSel('${m.serial}')">
-      <input type="checkbox" ${exitSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleExitSel('${m.serial}')" />
-      <div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div>
-      <span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span>
-    </label>`).join('');
-  document.getElementById('exitSelCount').textContent = exitSelected.size + ' selecionadas';
+  const eligible=getEligibleForExit(); const list=document.getElementById('exitMachineList');
+  if(!eligible.length){ list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma máquina disponível para o período.</p>'; return; }
+  list.innerHTML=eligible.map(m=>`<label class="machine-select-item ${exitSelected.has(m.serial)?'selected':''}" onclick="toggleExitSel('${m.serial}')"><input type="checkbox" ${exitSelected.has(m.serial)?'checked':''} onclick="event.stopPropagation();toggleExitSel('${m.serial}')" /><div style="flex:1"><b>${m.serial}</b> <span style="color:#6b7280;font-size:13px">· ${m.brand}</span></div><span style="font-size:12px;color:#6b7280">${m.history.filter(h=>h.type==='saida').length} uso(s)</span></label>`).join('');
+  document.getElementById('exitSelCount').textContent=exitSelected.size+' selecionadas';
 }
+function toggleExitSel(s){ if(exitSelected.has(s)) exitSelected.delete(s); else exitSelected.add(s); refreshExitMachineList(); }
+function toggleAllExit(){ const el=getEligibleForExit(); if(exitSelected.size===el.length) exitSelected.clear(); else el.forEach(m=>exitSelected.add(m.serial)); refreshExitMachineList(); }
 
-function toggleExitSel(serial) {
-  if (exitSelected.has(serial)) exitSelected.delete(serial);
-  else exitSelected.add(serial);
-  refreshExitMachineList();
-}
+['batchStartDate','batchEndDate'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); }));
+['batchExitStartDate','batchExitEndDate'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); }));
+document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); }));
+document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); }));
 
-function toggleAllExit() {
-  const eligible = getEligibleForExit();
-  if (exitSelected.size === eligible.length) exitSelected.clear();
-  else eligible.forEach(m=>exitSelected.add(m.serial));
-  refreshExitMachineList();
-}
-
-// Atualiza lista manual quando datas/marcas mudam
-['batchStartDate','batchEndDate'].forEach(id=>{
-  document.getElementById(id).addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); });
-});
-['batchExitStartDate','batchExitEndDate'].forEach(id=>{
-  document.getElementById(id).addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); });
-});
-document.querySelectorAll('input[name="batchBrands"]').forEach(i=>{
-  i.addEventListener('change',()=>{ if(reserveMode==='manual') refreshReserveMachineList(); });
-});
-document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>{
-  i.addEventListener('change',()=>{ if(exitMode==='manual') refreshExitMachineList(); });
-});
-
-// ── RESERVA EM LOTE ──────────────────────────────────
-document.getElementById("batchReserveForm").addEventListener("submit", function(e) {
+// RESERVA EM LOTE
+document.getElementById("batchReserveForm").addEventListener("submit",function(e){
   e.preventDefault();
-  const eventName  = document.getElementById("batchEvent").value.trim();
-  const city       = document.getElementById("batchCity").value.trim();
-  const responsible= document.getElementById("batchResponsible").value.trim();
-  const brands     = getSelectedBrands("batchBrands");
-  const startDate  = document.getElementById("batchStartDate").value;
-  const endDate    = document.getElementById("batchEndDate").value;
-  const result     = document.getElementById("batchReserveResult");
-
-  if (!eventName||!city||!responsible||!startDate||!endDate) { alert("Preencha todos os dados."); return; }
-  if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
-  if (endDate<startDate) { alert("Data final não pode ser menor."); return; }
-
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  let selected = [];
-
-  if (reserveMode==='auto') {
-    const quantity=Number(document.getElementById("batchQuantity").value);
-    if (!quantity||quantity<=0) { alert("Informe a quantidade."); return; }
-    const eligible=getEligibleForReserve();
-    if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Reserva não realizada.</b><br>Pedido: ${quantity} · Disponíveis: ${eligible.length}`; return; }
-    selected=eligible.slice(0,quantity);
-  } else {
-    if (!reserveSelected.size) { alert("Selecione ao menos uma máquina."); return; }
-    selected=machines.filter(m=>reserveSelected.has(m.serial));
-  }
-
-  selected.forEach(m=>{
-    m.reservations.push({event:eventName,city,responsible,startDate,endDate,createdAt:new Date().toISOString(),batch:true,createdBy:userName,createdByEmail:userEmail});
-    m.history.push({type:"reserva",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail});
-  });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  this.reset();
-  document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true);
-  reserveSelected.clear();
-  save();
+  const eventName=document.getElementById("batchEvent").value.trim(); const city=document.getElementById("batchCity").value.trim(); const responsible=document.getElementById("batchResponsible").value.trim();
+  const brands=getSelectedBrands("batchBrands"); const startDate=document.getElementById("batchStartDate").value; const endDate=document.getElementById("batchEndDate").value;
+  const result=document.getElementById("batchReserveResult");
+  if(!eventName||!city||!responsible||!startDate||!endDate){ alert("Preencha todos os dados."); return; }
+  if(!brands.length){ alert("Selecione ao menos uma marca."); return; }
+  if(endDate<startDate){ alert("Data final não pode ser menor."); return; }
+  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail(); let selected=[];
+  if(reserveMode==='auto'){
+    const qty=Number(document.getElementById("batchQuantity").value); if(!qty||qty<=0){ alert("Informe a quantidade."); return; }
+    const el=getEligibleForReserve(); if(el.length<qty){ result.className="batch-result show error"; result.innerHTML=`<b>Reserva não realizada.</b><br>Pedido: ${qty} · Disponíveis: ${el.length}`; return; }
+    selected=el.slice(0,qty);
+  } else { if(!reserveSelected.size){ alert("Selecione ao menos uma máquina."); return; } selected=machines.filter(m=>reserveSelected.has(m.serial)); }
+  selected.forEach(m=>{ m.reservations.push({event:eventName,city,responsible,startDate,endDate,createdAt:new Date().toISOString(),batch:true,createdBy:userName,createdByEmail:userEmail}); m.history.push({type:"reserva",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail}); });
+  result.className="batch-result show"; result.innerHTML=`<b>✅ Reserva realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
+  this.reset(); document.querySelectorAll('input[name="batchBrands"]').forEach(i=>i.checked=true); reserveSelected.clear(); save();
 });
 
-// ── SAÍDA EM LOTE ─────────────────────────────────────
-document.getElementById("batchExitForm").addEventListener("submit", function(e) {
+// SAIDA EM LOTE
+document.getElementById("batchExitForm").addEventListener("submit",function(e){
   e.preventDefault();
-  const eventName  = document.getElementById("batchExitEvent").value.trim();
-  const city       = document.getElementById("batchExitCity").value.trim();
-  const responsible= document.getElementById("batchExitResponsible").value.trim();
-  const brands     = getSelectedBrands("batchExitBrands");
-  const startDate  = document.getElementById("batchExitStartDate").value;
-  const endDate    = document.getElementById("batchExitEndDate").value;
-  const result     = document.getElementById("batchExitResult");
-
-  if (!eventName||!city||!responsible||!startDate||!endDate) { alert("Preencha todos os dados."); return; }
-  if (!brands.length) { alert("Selecione ao menos uma marca."); return; }
-  if (endDate<startDate) { alert("Data de retorno não pode ser menor."); return; }
-
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  let selected = [];
-
-  if (exitMode==='auto') {
-    const quantity=Number(document.getElementById("batchExitQuantity").value);
-    if (!quantity||quantity<=0) { alert("Informe a quantidade."); return; }
-    const eligible=getEligibleForExit();
-    if (eligible.length<quantity) { result.className="batch-result show error"; result.innerHTML=`<b>Saída não realizada.</b><br>Pedido: ${quantity} · Disponíveis: ${eligible.length}`; return; }
-    selected=eligible.slice(0,quantity);
-  } else {
-    if (!exitSelected.size) { alert("Selecione ao menos uma máquina."); return; }
-    selected=machines.filter(m=>exitSelected.has(m.serial));
-  }
-
-  selected.forEach(m=>{ m.status="Em uso"; m.history.push({type:"saida",event:eventName,city,responsible,startDate,endDate,date:new Date().toISOString(),batch:true,user:userName,userEmail}); });
-  result.className="batch-result show";
-  result.innerHTML=`<b>✅ Saída realizada!</b><br>Evento: ${eventName}<br>${formatDate(startDate)} → ${formatDate(endDate)}<br>Máquinas: ${selected.map(m=>m.serial).join(", ")}`;
-  this.reset();
-  document.querySelectorAll('input[name="batchExitBrands"]').forEach(i=>i.checked=true);
-  exitSelected.clear();
-  save();
-});
-
-// ── SAÍDA INDIVIDUAL ──────────────────────────────────
-function openExitModal(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  if (m.status==="Em uso")     { alert("Já está em uso."); return; }
-  if (m.status==="Manutenção") { alert("Máquina em manutenção."); return; }
-  document.getElementById("exitForm").reset();
-  document.getElementById("exitSerial").value=serial;
-  document.getElementById("exitStartDate").min=getToday();
-  document.getElementById("exitEndDate").min=getToday();
-  document.getElementById("exitConflictMsg").style.display="none";
-  document.getElementById("exitConfirmBtn").disabled=false;
-  document.getElementById("exitModal").classList.add("open");
-}
-function closeExitModal() { document.getElementById("exitModal").classList.remove("open"); }
-
-function checkExitConflict() {
-  const serial=document.getElementById("exitSerial").value;
-  const s=document.getElementById("exitStartDate").value;
-  const e=document.getElementById("exitEndDate").value;
-  const msgEl=document.getElementById("exitConflictMsg");
-  const btnEl=document.getElementById("exitConfirmBtn");
-  if (!s||!e) return;
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const blocked=isBlockedForExit(m,s,e);
-  if (blocked) { msgEl.style.display="block"; msgEl.textContent="⚠️ "+blocked; btnEl.disabled=true; }
-  else         { msgEl.style.display="none";  btnEl.disabled=false; }
-}
-document.getElementById("exitStartDate").addEventListener("change",function(){ document.getElementById("exitEndDate").min=this.value; checkExitConflict(); });
-document.getElementById("exitEndDate").addEventListener("change", checkExitConflict);
-
-document.getElementById("exitForm").addEventListener("submit",function(e){
-  e.preventDefault();
-  const serial=document.getElementById("exitSerial").value;
-  const s=document.getElementById("exitStartDate").value;
-  const en=document.getElementById("exitEndDate").value;
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const blocked=isBlockedForExit(m,s,en);
-  if (blocked) { alert("⚠️ "+blocked); return; }
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.status="Em uso";
-  m.history.push({type:"saida",event:document.getElementById("exitEvent").value.trim(),city:document.getElementById("exitCity").value.trim(),responsible:document.getElementById("exitResponsible").value.trim(),startDate:s,endDate:en,date:new Date().toISOString(),user:userName,userEmail});
-  closeExitModal(); save();
-});
-
-// ── CONFIRMAR SAÍDA PELA RESERVA (card individual) ────
-function confirmarSaidaDaReserva(serial) {
-  const today=getToday();
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const res=m.reservations.find(r=>hasDateOverlap(r.startDate,r.endDate,today,today));
-  if (!res) { alert("Nenhuma reserva ativa para hoje."); return; }
-  if (!confirm(`Confirmar saída de ${serial} para "${res.event}"?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.status="Em uso";
-  m.history.push({type:"saida",event:res.event,city:res.city||"",responsible:res.responsible||"",startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:userName,userEmail,fromReservation:true});
-  save();
-}
-
-// ── ENTRADA ───────────────────────────────────────────
-function registerEntry(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  if (m.status==="Disponível") { alert("Já está disponível."); return; }
-  if (m.status==="Manutenção") { alert("Use o botão Liberar."); return; }
-  const obs=prompt("Observação da devolução (opcional):");
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.status="Disponível";
-  m.history.push({type:"entrada",observation:obs||"",date:new Date().toISOString(),user:userName,userEmail});
-  save();
-}
-
-// ── RESERVA INDIVIDUAL ────────────────────────────────
-function openReserveModal(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  if (m.status==="Em uso")     { alert("Não é possível reservar uma máquina em uso."); return; }
-  if (m.status==="Manutenção") { alert("Máquina em manutenção."); return; }
-  document.getElementById("reserveForm").reset();
-  document.getElementById("reserveSerial").value=serial;
-  document.getElementById("reserveStartDate").min=getToday();
-  document.getElementById("reserveEndDate").min=getToday();
-  document.getElementById("reserveModal").classList.add("open");
-}
-function closeReserveModal() { document.getElementById("reserveModal").classList.remove("open"); }
-document.getElementById("reserveStartDate").addEventListener("change",function(){ document.getElementById("reserveEndDate").min=this.value; });
-document.getElementById("reserveForm").addEventListener("submit",function(e){
-  e.preventDefault();
-  const serial=document.getElementById("reserveSerial").value;
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const eventName=document.getElementById("reserveEvent").value.trim();
-  const s=document.getElementById("reserveStartDate").value;
-  const en=document.getElementById("reserveEndDate").value;
-  if (en<s) { alert("Data final não pode ser menor."); return; }
-  if (hasReservationConflict(m,s,en)) { alert("Conflito: máquina já reservada nesse período."); return; }
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.reservations.push({event:eventName,startDate:s,endDate:en,createdAt:new Date().toISOString(),createdBy:userName,createdByEmail:userEmail});
-  m.history.push({type:"reserva",event:eventName,startDate:s,endDate:en,date:new Date().toISOString(),user:userName,userEmail});
-  closeReserveModal(); save();
-});
-
-// ── VER RESERVAS ──────────────────────────────────────
-function openViewReservesModal(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  document.getElementById("viewReservesModal").dataset.serial = serial;
-  refreshViewReservesContent(serial);
-  document.getElementById("viewReservesModal").classList.add("open");
-}
-
-function refreshViewReservesContent(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const content=document.getElementById("viewReservesContent");
-  if (!m.reservations.length) {
-    content.innerHTML="<p style='color:#6b7280'>Nenhuma reserva cadastrada.</p>";
-    return;
-  }
-  content.innerHTML=m.reservations.map((r,idx)=>`
-    <div class="reservation-detail" style="position:relative">
-      <div style="margin-bottom:6px">
-        <b>${r.event}</b><br>
-        ${formatDate(r.startDate)} → ${formatDate(r.endDate)}
-        ${r.city?`<br>Cidade: ${r.city}`:""}
-        ${r.responsible?`<br>Responsável: ${r.responsible}`:""}
-        ${r.createdBy?`<br><span class="history-user">👤 ${r.createdBy}</span>`:""}
-      </div>
-      <button onclick="cancelReservation('${serial}', ${idx})"
-        style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">
-        Cancelar reserva
-      </button>
-    </div>`).join("");
-}
-
-function cancelReservation(serial, idx) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const res=m.reservations[idx];
-  if (!res) return;
-  if (!confirm(`Cancelar a reserva "${res.event}" (${formatDate(res.startDate)} → ${formatDate(res.endDate)})?`)) return;
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.history.push({
-    type:"cancelamento de reserva",
-    event:res.event,
-    startDate:res.startDate,
-    endDate:res.endDate,
-    city:res.city||"",
-    responsible:res.responsible||"",
-    date:new Date().toISOString(),
-    user:userName,
-    userEmail
-  });
-  m.reservations.splice(idx,1);
-  save();
-  refreshViewReservesContent(serial);
-}
-
-function closeViewReservesModal() { document.getElementById("viewReservesModal").classList.remove("open"); }
-
-// ── MANUTENÇÃO ────────────────────────────────────────
-function sendToMaintenance(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  if (m.status==="Em uso") { alert("Não é possível colocar em manutenção uma máquina em uso."); return; }
-  const reason=prompt("Motivo da manutenção:");
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.status="Manutenção";
-  m.history.push({type:"manutenção",observation:reason||"",date:new Date().toISOString(),user:userName,userEmail});
-  save();
-}
-function returnFromMaintenance(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  const obs=prompt("Observação da liberação:");
-  const userName=getCurrentUserName(); const userEmail=getCurrentUserEmail();
-  m.status="Disponível";
-  m.history.push({type:"retorno manutenção",observation:obs||"",date:new Date().toISOString(),user:userName,userEmail});
-  save();
-}
-
-// ── EXCLUIR ───────────────────────────────────────────
-function deleteMachine(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (!m) return;
-  if (m.status==="Em uso") { alert("Não é possível excluir uma máquina em uso."); return; }
-  if (!confirm("Deseja realmente excluir essa máquina?")) return;
-  machines=machines.filter(m=>m.serial!==serial); save();
-}
-
-// ── HISTÓRICO ─────────────────────────────────────────
-function toggleHistory(serial) {
-  const m=machines.find(m=>m.serial===serial);
-  if (m) { m.showHistory=!m.showHistory; render(); }
-}
-
-// ── FILTROS ───────────────────────────────────────────
-function getEvents() {
-  const ev=new Set();
-  machines.forEach(m=>{ m.history.forEach(h=>h.event&&ev.add(h.event)); m.reservations.forEach(r=>r.event&&ev.add(r.event)); });
-  return [...ev];
-}
-function refreshEventFilter(sel="") {
-  const ef=document.getElementById("eventFilter");
-  ef.innerHTML=`<option value="">Todos os eventos</option>`+getEvents().map(e=>`<option value="${e}" ${e===sel?"selected":""}>${e}</option>`).join("");
-}
-
-function getCurrentEvent(m) {
-  const s=getRealStatus(m);
-  if (s==="Em uso")         { const l=[...m.history].reverse().find(h=>h.type==="saida"); return l?l.event:"-"; }
-  if (s==="Manutenção")     return "Em manutenção";
-  if (s==="Reservada hoje") { const t=getToday(); const a=m.reservations.find(r=>hasDateOverlap(r.startDate,r.endDate,t,t)); return a?a.event:"-"; }
-  return "-";
-}
-function getNextReservation(m) {
-  const today=getToday();
-  return m.reservations.filter(r=>r.endDate>=today).sort((a,b)=>a.startDate.localeCompare(b.startDate))[0]||null;
-}
-
-// ── RENDER PRINCIPAL ──────────────────────────────────
-function render() {
-  updateDashboard();
-  renderDayAlerts();
-
-  const selEv=document.getElementById("eventFilter").value;
-  refreshEventFilter(selEv);
-
-  const search=document.getElementById("searchInput").value.toLowerCase();
-  const brand=document.getElementById("brandFilter").value;
-  const status=document.getElementById("statusFilter").value;
-  const evFilt=document.getElementById("eventFilter").value;
-
-  const filtered=machines.filter(m=>{
-    const rs=getRealStatus(m);
-    return m.serial.toLowerCase().includes(search) &&
-           (!brand||m.brand===brand) &&
-           (!status||rs===status) &&
-           (!evFilt||m.history.some(h=>h.event===evFilt)||m.reservations.some(r=>r.event===evFilt));
-  });
-
-  const list=document.getElementById("machineList");
-  list.innerHTML="";
-  if (!filtered.length) { list.innerHTML="<p style='color:#9ca3af'>Nenhuma máquina encontrada.</p>"; return; }
-
-  filtered.forEach(m=>{
-    const rs=getRealStatus(m);
-    const nextRes=getNextReservation(m);
-    const today=getToday();
-    const resHoje=rs==="Reservada hoje"?m.reservations.find(r=>hasDateOverlap(r.startDate,r.endDate,today,today)):null;
-    const lastSaida=rs==="Em uso"?[...m.history].reverse().find(h=>h.type==="saida"):null;
-
-    // INFO section por status
-    let infoHtml="";
-    if (rs==="Disponível") {
-      infoHtml = nextRes
-        ? `<p><b>Próxima reserva:</b> ${nextRes.event} · ${formatDate(nextRes.startDate)} → ${formatDate(nextRes.endDate)}</p>`
-        : `<p style="color:#9ca3af">Sem reservas futuras</p>`;
-    }
-    if (rs==="Reservada hoje" && resHoje) {
-      infoHtml=`
-        <p><b>Evento:</b> ${resHoje.event}</p>
-        <p><b>Período:</b> ${formatDate(resHoje.startDate)} → ${formatDate(resHoje.endDate)}</p>
-        ${resHoje.city?`<p><b>Cidade:</b> ${resHoje.city}</p>`:""}
-        ${resHoje.responsible?`<p><b>Responsável:</b> ${resHoje.responsible}</p>`:""}
-        <div class="alert-reservada">Sai hoje — clique em <b>Confirmar saída</b></div>`;
-    }
-    if (rs==="Em uso" && lastSaida) {
-      infoHtml=`
-        <p><b>Evento:</b> ${lastSaida.event||"-"}</p>
-        ${lastSaida.city?`<p><b>Cidade:</b> ${lastSaida.city}</p>`:""}
-        <p><b>Retorno previsto:</b> ${formatDate(lastSaida.endDate)}</p>`;
-    }
-    if (rs==="Manutenção") {
-      const lastM=[...m.history].reverse().find(h=>h.type==="manutenção");
-      infoHtml=lastM&&lastM.observation?`<p><b>Motivo:</b> ${lastM.observation}</p>`:"";
-    }
-
-    // AÇÕES por status
-    let acoesHtml="";
-    if (rs==="Disponível") {
-      acoesHtml=`<div class="actions-row">
-        <button onclick="openExitModal('${m.serial}')">Saída</button>
-        <button onclick="openReserveModal('${m.serial}')">Reservar</button>
-        <button class="btn-secundario" onclick="openViewReservesModal('${m.serial}')">Ver reservas</button>
-        <button class="btn-secundario" onclick="toggleHistory('${m.serial}')">${m.showHistory?"Ocultar":"Histórico"}</button>
-        <button class="btn-gray" onclick="sendToMaintenance('${m.serial}')">Manutenção</button>
-        <button class="btn-danger" onclick="deleteMachine('${m.serial}')">Excluir</button>
-      </div>`;
-    }
-    if (rs==="Reservada hoje") {
-      acoesHtml=`<div class="actions-row">
-        <button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva('${m.serial}')">✓ Confirmar saída</button>
-        <button class="btn-secundario" onclick="openViewReservesModal('${m.serial}')">Ver reservas</button>
-        <button class="btn-secundario" onclick="toggleHistory('${m.serial}')">${m.showHistory?"Ocultar":"Histórico"}</button>
-      </div>`;
-    }
-    if (rs==="Em uso") {
-      acoesHtml=`<div class="actions-row">
-        <button class="btn-entrada" onclick="registerEntry('${m.serial}')">📥 Registrar entrada</button>
-        <button class="btn-secundario" onclick="toggleHistory('${m.serial}')">${m.showHistory?"Ocultar":"Histórico"}</button>
-      </div>`;
-    }
-    if (rs==="Manutenção") {
-      acoesHtml=`<div class="actions-row">
-        <button class="release-btn" style="background:var(--green)" onclick="returnFromMaintenance('${m.serial}')">Liberar</button>
-        <button class="btn-secundario" onclick="toggleHistory('${m.serial}')">${m.showHistory?"Ocultar":"Histórico"}</button>
-        <button class="btn-danger" onclick="deleteMachine('${m.serial}')">Excluir</button>
-      </div>`;
-    }
-
-    const historyHtml=m.showHistory?`<div class="history-box">
-      ${!m.history.length?"<p>Sem histórico.</p>":
-        [...m.history].reverse().map(h=>`<div class="history-item">
-          <b>${h.type.toUpperCase()}${h.batch?" EM LOTE":""}</b>
-          ${h.event?`<br>Evento: ${h.event}`:""}
-          ${h.city?`<br>Cidade: ${h.city}`:""}
-          ${h.responsible?`<br>Responsável: ${h.responsible}`:""}
-          ${h.startDate?`<br>${formatDate(h.startDate)} → ${formatDate(h.endDate)}`:""}
-          ${h.observation?`<br>Obs: ${h.observation}`:""}
-          <br><small style="color:#9ca3af">${formatDateTime(h.date)}</small>
-          ${h.user?`<br><span class="history-user">👤 ${h.user}</span>`:""}
-        </div>`).join("")}
-    </div>`:"";
-
-    const div=document.createElement("div");
-    div.className="machine-item";
-    div.innerHTML=`
-      <div class="machine-header">
-        <div>
-          <div class="machine-serial">${m.serial}</div>
-          <div class="machine-brand">${m.brand}</div>
-        </div>
-        <span class="status ${getStatusClass(rs)}">${rs}</span>
-      </div>
-      <div class="machine-info">${infoHtml}</div>
-      <div class="actions">${acoesHtml}</div>
-      ${historyHtml}`;
-    list.appendChild(div);
-  });
-}
-
-// ── DATAS MÍNIMAS ─────────────────────────────────────
-const _today=getToday();
-["batchStartDate","batchEndDate","customStartDate","customEndDate","batchExitStartDate","batchExitEndDate"].forEach(id=>{
-  document.getElementById(id).min=_today;
-});
-document.getElementById("batchStartDate").addEventListener("change",function(){document.getElementById("batchEndDate").min=this.value;});
-document.getElementById("batchExitStartDate").addEventListener("change",function(){document.getElementById("batchExitEndDate").min=this.value;});
-document.getElementById("customStartDate").addEventListener("change",function(){document.getElementById("customEndDate").min=this.value;});
-
-// ── FILTROS LIVE ──────────────────────────────────────
-["searchInput","brandFilter","statusFilter","eventFilter"].forEach(id=>{
-  document.getElementById(id).addEventListener("input",render);
-  document.getElementById(id).addEventListener("change",render);
-});
-</script>
-</body>
-</html>
+  const eventName=document.getEl
