@@ -231,7 +231,7 @@
       <input type="email"    id="loginEmail"    placeholder="E-mail"  required />
       <input type="password" id="loginPassword" placeholder="Senha"   required />
       <div id="loginError">E-mail ou senha incorretos.</div>
-      <button type="submit" id="loginBtn">Entrar</button>
+      <button type="button" id="loginBtn" onclick="doLogin()">Entrar</button>
     </form>
   </div>
 </div>
@@ -580,15 +580,20 @@ function getCurrentUserEmail() { const u=window._currentUser; return u?(u.email|
 
 // LOGIN
 
-document.getElementById("loginForm").addEventListener("submit", async function(e) {
-  e.preventDefault();
+async function doLogin() {
   const email=document.getElementById("loginEmail").value.trim();
   const pass=document.getElementById("loginPassword").value;
-  const btn=document.getElementById("loginBtn"); const err=document.getElementById("loginError");
+  const btn=document.getElementById("loginBtn");
+  const err=document.getElementById("loginError");
+  if(!email||!pass){ alert("Preencha e-mail e senha."); return; }
   btn.textContent="Entrando…"; btn.disabled=true; err.classList.remove("show");
-  try { await window._signIn(email,pass); }
-  catch(ex){ err.classList.add("show"); btn.textContent="Entrar"; btn.disabled=false; }
-});
+  try {
+    if(!window._signIn){ alert("Sistema ainda carregando. Aguarde e tente novamente."); btn.textContent="Entrar"; btn.disabled=false; return; }
+    await window._signIn(email, pass);
+  } catch(ex) {
+    err.classList.add("show"); btn.textContent="Entrar"; btn.disabled=false;
+  }
+}
 function doLogout() { if(confirm("Deseja sair do sistema?")) window._signOut(); }
 
 // FIREBASE
