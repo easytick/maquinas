@@ -1043,7 +1043,7 @@ function darSaidaDaReservaFutura(serial, idx) {
   var today=getToday();
   var conflict=otherReservations.find(function(r){ return hasDateOverlap(res.startDate,res.endDate,r.startDate,r.endDate); });
   if(conflict){alert("Conflito com outra reserva: "+conflict.event+" ("+formatDate(conflict.startDate)+" → "+formatDate(conflict.endDate)+")");return;}
-  if(!confirm("Dar saída de "+serial+" para \""+res.event+"\" agora? Período: "+formatDate(res.startDate)+" → "+formatDate(res.endDate))) return;
+  if(!confirm("Confirmar saída de "+serial+" para: "+res.event+"? Período: "+formatDate(res.startDate)+" → "+formatDate(res.endDate))) return;
   var un=getCurrentUserName(),ue=getCurrentUserEmail();
   m.status="Em uso";
   m.history.push({type:"saida",event:res.event,city:res.city||"",responsible:res.responsible||"",address:res.address||"",startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:un,userEmail:ue,fromReservation:true,earlyExit:true});
