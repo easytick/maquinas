@@ -1197,17 +1197,24 @@ function renderPendentes() {
   var pendentes = financeiro.filter(function(f) { return f.status==='Pendente' && (!evFilt||f.evento===evFilt); });
   var list = document.getElementById('finPendentesList');
   if(!pendentes.length) { list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhum pagamento pendente.</p>'; return; }
-  list.innerHTML = pendentes.map(function(f) {
-    return '<div style="border:1.5px solid #fcd34d;border-radius:12px;padding:14px;background:#fffbeb;margin-bottom:10px">' +
+  list.innerHTML = '';
+  pendentes.forEach(function(f) {
+    var div = document.createElement('div');
+    div.style.cssText = 'border:1.5px solid #fcd34d;border-radius:12px;padding:14px;background:#fffbeb;margin-bottom:10px';
+    div.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
-      '<div><b style="font-size:15px">'+f.evento+'</b><br>' +
-      '<span style="font-size:13px;color:#374151">'+f.nome+' · '+f.tipo+(f.chave?' · '+f.chave:'')+'</span><br>' +
-      '<span style="font-size:13px;color:#374151">Obs: '+(f.obs||'-')+'</span><br>' +
-      '<span style="font-size:12px;color:#9ca3af">Solicitado por '+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div>' +
-      '<b style="font-size:18px;color:#166534;white-space:nowrap">'+formatMoney(f.valor)+'</b></div>' +
-      '<button onclick="openPagarModal(''+f.id+'')" style="margin-top:10px;background:var(--green);font-size:13px;padding:9px">✅ Confirmar pagamento</button>' +
-      '</div>';
-  }).join('');
+      '<div><b style="font-size:15px">' + f.evento + '</b><br>' +
+      '<span style="font-size:13px;color:#374151">' + f.nome + ' · ' + f.tipo + (f.chave?' · '+f.chave:'') + '</span><br>' +
+      '<span style="font-size:13px;color:#374151">Obs: ' + (f.obs||'-') + '</span><br>' +
+      '<span style="font-size:12px;color:#9ca3af">Solicitado por ' + f.solicitadoPor + ' em ' + new Date(f.dataSolicitacao).toLocaleString("pt-BR") + '</span></div>' +
+      '<b style="font-size:18px;color:#166534;white-space:nowrap">' + formatMoney(f.valor) + '</b></div>';
+    var btn = document.createElement('button');
+    btn.textContent = '✅ Confirmar pagamento';
+    btn.style.cssText = 'margin-top:10px;background:var(--green);font-size:13px;padding:9px';
+    btn.onclick = function() { openPagarModal(f.id); };
+    div.appendChild(btn);
+    list.appendChild(div);
+  });
 }
 
 function openPagarModal(id) {
@@ -1248,21 +1255,27 @@ function renderExtrato() {
   var totalPago     = filtered.filter(function(f){ return f.status==='Pago'; }).reduce(function(a,f){ return a+parseFloat(f.valor); },0);
   var totalPendente = filtered.filter(function(f){ return f.status==='Pendente'; }).reduce(function(a,f){ return a+parseFloat(f.valor); },0);
   document.getElementById('finExtratoResumo').innerHTML =
-    'Total pago: <b style="color:#166534">'+formatMoney(totalPago)+'</b> &nbsp;|&nbsp; Total pendente: <b style="color:#92400e">'+formatMoney(totalPendente)+'</b> &nbsp;|&nbsp; Total geral: <b>'+formatMoney(totalPago+totalPendente)+'</b>';
+    'Total pago: <b style="color:#166534">' + formatMoney(totalPago) + '</b> &nbsp;|&nbsp; ' +
+    'Total pendente: <b style="color:#92400e">' + formatMoney(totalPendente) + '</b> &nbsp;|&nbsp; ' +
+    'Total geral: <b>' + formatMoney(totalPago+totalPendente) + '</b>';
   var list = document.getElementById('finExtratoList');
   if(!filtered.length) { list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhuma movimentação encontrada.</p>'; return; }
+  list.innerHTML = '';
   var sorted = filtered.slice().sort(function(a,b){ return new Date(b.dataSolicitacao)-new Date(a.dataSolicitacao); });
-  list.innerHTML = sorted.map(function(f) {
+  sorted.forEach(function(f) {
     var isPago = f.status==='Pago';
-    return '<div style="border:1.5px solid '+(isPago?'#86efac':'#fcd34d')+';border-radius:12px;padding:12px;background:'+(isPago?'#f0fdf4':'#fffbeb')+';margin-bottom:8px">' +
+    var div = document.createElement('div');
+    div.style.cssText = 'border:1.5px solid '+(isPago?'#86efac':'#fcd34d')+';border-radius:12px;padding:12px;background:'+(isPago?'#f0fdf4':'#fffbeb')+';margin-bottom:8px';
+    div.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
-      '<div><b>'+f.evento+'</b> · <span style="font-size:12px;font-weight:bold;padding:2px 8px;border-radius:999px;background:'+(isPago?'#dcfce7':'#fef3c7')+';color:'+(isPago?'#166534':'#92400e')+'">'+f.status+'</span><br>' +
-      '<span style="font-size:13px;color:#374151">'+f.nome+' · '+f.tipo+(f.chave?' · '+f.chave:'')+'</span><br>' +
+      '<div><b>' + f.evento + '</b> · ' +
+      '<span style="font-size:12px;font-weight:bold;padding:2px 8px;border-radius:999px;background:'+(isPago?'#dcfce7':'#fef3c7')+';color:'+(isPago?'#166534':'#92400e')+'">' + f.status + '</span><br>' +
+      '<span style="font-size:13px;color:#374151">' + f.nome + ' · ' + f.tipo + (f.chave?' · '+f.chave:'') + '</span><br>' +
       (isPago?'<span style="font-size:12px;color:#374151">Banco: '+f.banco+' · Pago por: '+f.pagoPor+' em '+new Date(f.dataPagamento).toLocaleString("pt-BR")+'</span><br>':'')+
-      '<span style="font-size:12px;color:#9ca3af">Solicitado por '+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div>' +
-      '<b style="font-size:16px;color:'+(isPago?'#166534':'#92400e')+';white-space:nowrap">''+formatMoney(f.valor)+'</b></div>' +
-      '</div>';
-  }).join('');
+      '<span style="font-size:12px;color:#9ca3af">Solicitado por ' + f.solicitadoPor + ' em ' + new Date(f.dataSolicitacao).toLocaleString("pt-BR") + '</span></div>' +
+      '<b style="font-size:16px;color:'+(isPago?'#166534':'#92400e')+';white-space:nowrap">' + formatMoney(f.valor) + '</b></div>';
+    list.appendChild(div);
+  });
 }
 
 // ── FILTROS LIVE ──────────────────────────────────────
