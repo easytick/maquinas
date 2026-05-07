@@ -153,6 +153,9 @@
     .modal-content form { grid-template-columns:1fr !important; }
 
     #loadingBar { position:fixed; top:0; left:0; height:3px; width:0; background:#60a5fa; transition:width .3s; z-index:9999; }
+    .fin-pendente-alert { background:#fef3c7; border:1.5px solid #fcd34d; border-radius:14px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .fin-pendente-alert b { color:#92400e; display:block; font-size:15px; margin-bottom:3px; }
+    .fin-pendente-alert p { font-size:13px; color:#374151; margin:0; }
 
     @media (min-width:700px) {
       .filters { grid-template-columns:2fr 1fr 1fr 1fr; }
@@ -195,6 +198,7 @@
   <main class="app">
     <div id="alertaSaida" style="display:none"></div>
     <div id="alertaRetorno" style="display:none"></div>
+    <div id="alertaFinanceiro" style="display:none"></div>
     <section class="dashboard">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
       <div class="dash-card"><span id="availableCount">0</span><p>Disponíveis</p></div>
@@ -250,6 +254,7 @@
           <input type="text" id="batchEvent" placeholder="Nome do evento" required />
           <input type="text" id="batchCity" placeholder="Cidade" required />
           <input type="text" id="batchResponsible" placeholder="Responsável" required />
+          <input type="text" id="batchAddress" placeholder="Endereço de entrega (opcional)" />
           <div class="brand-checkboxes">
             <label><input type="checkbox" name="batchBrands" value="Sipag" checked /> Sipag</label>
             <label><input type="checkbox" name="batchBrands" value="PagBank" checked /> PagBank</label>
@@ -281,6 +286,7 @@
           <input type="text" id="batchExitEvent" placeholder="Nome do evento" required />
           <input type="text" id="batchExitCity" placeholder="Cidade" required />
           <input type="text" id="batchExitResponsible" placeholder="Responsável" required />
+          <input type="text" id="batchExitAddress" placeholder="Endereço de entrega (opcional)" />
           <div class="brand-checkboxes">
             <label><input type="checkbox" name="batchExitBrands" value="Sipag" checked /> Sipag</label>
             <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked /> PagBank</label>
@@ -372,6 +378,98 @@
         <div id="manutResult" class="batch-result"></div>
       </div>
     </section>
+    <!-- FINANCEIRO -->
+    <section class="card" id="financeiroSection">
+      <h2>💰 Financeiro</h2>
+
+      <div class="lote-tabs" style="margin:-18px -18px 16px">
+        <button class="lote-tab-btn active" onclick="setFinTab('solicitar')">📋 Solicitar</button>
+        <button class="lote-tab-btn" onclick="setFinTab('pendentes')">⏳ Pendentes</button>
+        <button class="lote-tab-btn" onclick="setFinTab('extrato')">📊 Extrato</button>
+      </div>
+
+      <!-- ABA SOLICITAR -->
+      <div id="fin-solicitar" class="lote-tab-content active">
+        <p class="helper-text">Solicite um pagamento/saque referente a um evento.</p>
+        <div style="display:grid;gap:10px">
+          <input type="text" id="finEvento" placeholder="Nome do evento" />
+          <input type="text" id="finNome" placeholder="Nome do solicitante" />
+          <select id="finTipo">
+            <option value="">Tipo de pagamento</option>
+            <option value="Pix">Pix</option>
+            <option value="Transferência">Transferência</option>
+            <option value="Dinheiro">Dinheiro</option>
+          </select>
+          <input type="text" id="finChave" placeholder="Chave Pix ou dados bancários" />
+          <input type="number" id="finValor" placeholder="Valor (R$)" min="0" step="0.01" />
+          <input type="text" id="finObs" placeholder="Observação (opcional)" />
+          <button onclick="solicitarPagamento()" style="background:var(--green)">💰 Solicitar pagamento</button>
+        </div>
+        <div id="finSolicitarResult" class="batch-result"></div>
+      </div>
+
+      <!-- ABA PENDENTES -->
+      <div id="fin-pendentes" class="lote-tab-content">
+        <p class="helper-text">Pagamentos aguardando confirmação.</p>
+        <div style="display:grid;gap:8px;margin-bottom:10px">
+          <select id="finPendentesFiltroEvento" onchange="renderPendentes()">
+            <option value="">Todos os eventos</option>
+          </select>
+        </div>
+        <div id="finPendentesList"></div>
+      </div>
+
+      <!-- ABA EXTRATO -->
+      <div id="fin-extrato" class="lote-tab-content">
+        <p class="helper-text">Histórico completo de movimentações.</p>
+        <div style="display:grid;gap:8px;margin-bottom:12px">
+          <select id="finExtratoFiltroEvento" onchange="renderExtrato()">
+            <option value="">Todos os eventos</option>
+          </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <select id="finExtratoFiltroStatus" onchange="renderExtrato()">
+              <option value="">Todos os status</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Pago">Pago</option>
+            </select>
+            <select id="finExtratoFiltroBanco" onchange="renderExtrato()">
+              <option value="">Todos os bancos</option>
+              <option value="Santander">Santander</option>
+              <option value="Efi Bank">Efi Bank</option>
+              <option value="Stone">Stone</option>
+              <option value="PagBank">PagBank</option>
+              <option value="Sicoob">Sicoob</option>
+            </select>
+          </div>
+        </div>
+        <div id="finExtratoResumo" style="background:#eef6ff;border-radius:10px;padding:12px;font-size:14px;margin-bottom:12px;line-height:1.7"></div>
+        <div id="finExtratoList"></div>
+      </div>
+    </section>
+
+    <!-- MODAL CONFIRMAR PAGAMENTO -->
+    <div id="pagarModal" class="modal">
+      <div class="modal-content">
+        <h2>Confirmar Pagamento</h2>
+        <input type="hidden" id="pagarId" />
+        <div id="pagarInfo" style="font-size:14px;line-height:1.7;margin-bottom:14px;padding:10px;background:#f9fafb;border-radius:9px"></div>
+        <label>Banco utilizado
+          <select id="pagarBanco">
+            <option value="">Selecione o banco</option>
+            <option value="Santander">Santander</option>
+            <option value="Efi Bank">Efi Bank</option>
+            <option value="Stone">Stone</option>
+            <option value="PagBank">PagBank</option>
+            <option value="Sicoob">Sicoob</option>
+          </select>
+        </label>
+        <div class="modal-actions" style="margin-top:12px">
+          <button onclick="confirmarPagamento()" style="background:var(--green)">✅ Confirmar pagamento</button>
+          <button class="btn-secundario" onclick="closePagarModal()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <section class="card">
       <h2>🔍 Filtros</h2>
       <div class="filters">
@@ -396,6 +494,7 @@
       <label>Evento<input type="text" id="exitEvent" placeholder="Ex: Festa do Café" required /></label>
       <label>Cidade<input type="text" id="exitCity" placeholder="Ex: Nepomuceno" required /></label>
       <label>Responsável<input type="text" id="exitResponsible" placeholder="Nome" required /></label>
+      <label>Endereço de entrega (opcional)<input type="text" id="exitAddress" placeholder="Ex: Rua das Flores, 123 - Nepomuceno" /></label>
       <label>Data de saída<input type="date" id="exitStartDate" onchange="checkExitConflict()" required /></label>
       <label>Data de retorno<input type="date" id="exitEndDate" onchange="checkExitConflict()" required /></label>
       <div id="exitConflictMsg" class="blocked-msg" style="display:none"></div>
@@ -414,6 +513,7 @@
       <label>Evento<input type="text" id="reserveEvent" placeholder="Ex: Rodeio Ijaci" required /></label>
       <label>Data inicial<input type="date" id="reserveStartDate" onchange="document.getElementById('reserveEndDate').min=this.value" required /></label>
       <label>Data final<input type="date" id="reserveEndDate" required /></label>
+      <label>Endereço de entrega (opcional)<input type="text" id="reserveAddress" placeholder="Ex: Rua das Flores, 123 - Nepomuceno" /></label>
       <div class="modal-actions">
         <button type="submit">Confirmar Reserva</button>
         <button type="button" class="btn-secundario" onclick="closeReserveModal()">Cancelar</button>
@@ -498,6 +598,7 @@ function startFirebaseListener() {
     machines = data ? Object.values(data).map(function(m){ return Object.assign({history:[],reservations:[],showHistory:false}, m); }) : [];
     fbStatus.className = "ok"; fbStatus.textContent = "✅ Conectado – dados em tempo real";
     setTimeout(function(){ fbStatus.className = ""; }, 3000);
+    startFinanceiroListener();
     render();
   }, function(err) {
     fbStatus.className = "error"; fbStatus.textContent = "⚠️ Erro: " + err.message;
@@ -571,6 +672,13 @@ function renderDayAlerts() {
   var tr=Object.values(retornosHoje).reduce(function(a,b){ return a+b.length; },0);
   if (tr>0) { elR.style.display="block"; elR.innerHTML='<div class="day-alert retorno"><div class="day-alert-text"><b>📥 '+tr+' máquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(", ")+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo do Dia</button></div>'; }
   else elR.style.display="none";
+  // Alerta financeiro
+  var elFin = document.getElementById("alertaFinanceiro");
+  if(elFin) {
+    var finPendentes = (typeof financeiro !== 'undefined') ? financeiro.filter(function(f){ return f.status==='Pendente'; }) : [];
+    if(finPendentes.length>0) { elFin.style.display="block"; elFin.innerHTML='<div class="fin-pendente-alert"><div><b>💰 '+finPendentes.length+' pagamento'+(finPendentes.length>1?'s':'')+' pendente'+(finPendentes.length>1?'s':'')+'</b><p>'+finPendentes.map(function(f){ return f.evento+': '+formatMoney(f.valor); }).join(' · ')+'</p></div><button onclick="setFinTab(\'pendentes\');document.getElementById(\'financeiroSection\').scrollIntoView()">Ver pendentes</button></div>'; }
+    else elFin.style.display="none";
+  }
 }
 
 // ── RESUMO DO DIA ─────────────────────────────────────
@@ -602,7 +710,7 @@ function renderDayResume(start,end,label) {
   Object.keys(grouped).forEach(function(ev) {
     var items=grouped[ev], pendentes=isToday?items.filter(function(i){ return i.status==="Reservada hoje"; }):items;
     var btnS=(isToday&&pendentes.length)?'<button onclick="confirmarSaidaLote(\''+ev+'\')" style="background:var(--green)">Dar saída em todas ('+pendentes.length+')</button>':"";
-    html+='<div class="day-event-group"><h3>'+ev+' <small style="font-weight:normal;font-size:12px">('+items.length+' máquina'+(items.length>1?'s':'')+')</small> '+btnS+'</h3>'+items.map(function(i){ return '<div class="day-item"><b>'+i.serial+'</b> · '+i.brand+(i.city?' · '+i.city:'')+(i.responsible?' · '+i.responsible:'')+'<br>'+formatDate(i.startDate)+' → '+formatDate(i.endDate)+' · <span class="status '+getStatusClass(i.status)+'" style="font-size:11px;padding:2px 8px">'+i.status+'</span>'+(i.createdBy?'<br><span class="history-user">👤 '+i.createdBy+'</span>':'')+'</div>'; }).join("")+'</div>';
+    html+='<div class="day-event-group"><h3>'+ev+' <small style="font-weight:normal;font-size:12px">('+items.length+' máquina'+(items.length>1?'s':'')+')</small> '+btnS+'</h3>'+items.map(function(i){ return '<div class="day-item"><b>'+i.serial+'</b> · '+i.brand+(i.city?' · '+i.city:'')+(i.responsible?' · '+i.responsible:'')+(i.address?'<br>📍 '+i.address:'')+'<br>'+formatDate(i.startDate)+' → '+formatDate(i.endDate)+' · <span class="status '+getStatusClass(i.status)+'" style="font-size:11px;padding:2px 8px">'+i.status+'</span>'+(i.createdBy?'<br><span class="history-user">👤 '+i.createdBy+'</span>':'')+'</div>'; }).join("")+'</div>';
   });
   if(ret.length){ Object.keys(grRet).forEach(function(ev){ var items=grRet[ev]; var btnE=isToday?'<button class="entrada-btn" onclick="confirmarEntradaLote(\''+ev+'\')">Dar entrada em todas ('+items.length+')</button>':""; html+='<div class="retorno-group"><h3>📥 Retorno: '+ev+' '+btnE+'</h3>'+items.map(function(i){ return '<div class="day-item"><b>'+i.serial+'</b> · '+i.brand+(i.city?' · '+i.city:'')+'<br>Retorno previsto: '+formatDate(i.endDate)+'</div>'; }).join("")+'</div>'; }); }
   box.innerHTML=html;
@@ -709,7 +817,8 @@ function submitReservaLote(e) {
     var el=getEligibleForReserve(); if(el.length<qty){result.className="batch-result show error";result.innerHTML="<b>Reserva não realizada.</b><br>Pedido: "+qty+" · Disponíveis: "+el.length;return;}
     selected=el.slice(0,qty);
   } else { if(!reserveSelected.size){alert("Selecione ao menos uma máquina.");return;} selected=machines.filter(function(m){ return reserveSelected.has(m.serial); }); }
-  selected.forEach(function(m){ m.reservations.push({event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,createdAt:new Date().toISOString(),batch:true,createdBy:un,createdByEmail:ue}); m.history.push({type:"reserva",event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
+  var batchAddr=document.getElementById("batchAddress").value.trim();
+  selected.forEach(function(m){ m.reservations.push({event:eventName,city:city,responsible:responsible,address:batchAddr,startDate:startDate,endDate:endDate,createdAt:new Date().toISOString(),batch:true,createdBy:un,createdByEmail:ue}); m.history.push({type:"reserva",event:eventName,city:city,responsible:responsible,address:batchAddr,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
   result.className="batch-result show"; result.innerHTML="<b>✅ Reserva realizada!</b><br>Evento: "+eventName+"<br>"+formatDate(startDate)+" → "+formatDate(endDate)+"<br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
   document.querySelectorAll('input[name="batchBrands"]').forEach(function(i){ i.checked=true; }); reserveSelected.clear(); save();
 }
@@ -729,7 +838,8 @@ function submitSaidaLote(e) {
     var el=getEligibleForExit(); if(el.length<qty){result.className="batch-result show error";result.innerHTML="<b>Saída não realizada.</b><br>Pedido: "+qty+" · Disponíveis: "+el.length;return;}
     selected=el.slice(0,qty);
   } else { if(!exitSelected.size){alert("Selecione ao menos uma máquina.");return;} selected=machines.filter(function(m){ return exitSelected.has(m.serial); }); }
-  selected.forEach(function(m){ m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:city,responsible:responsible,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
+  var batchExitAddr=document.getElementById("batchExitAddress").value.trim();
+  selected.forEach(function(m){ m.status="Em uso"; m.history.push({type:"saida",event:eventName,city:city,responsible:responsible,address:batchExitAddr,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue}); });
   result.className="batch-result show"; result.innerHTML="<b>✅ Saída realizada!</b><br>Evento: "+eventName+"<br>"+formatDate(startDate)+" → "+formatDate(endDate)+"<br>Máquinas: "+selected.map(function(m){ return m.serial; }).join(", ");
   document.querySelectorAll('input[name="batchExitBrands"]').forEach(function(i){ i.checked=true; }); exitSelected.clear(); save();
 }
@@ -867,7 +977,8 @@ function submitSaidaIndividual(e) {
   var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
   var blocked=isBlockedForExit(m,s,en); if(blocked){alert("⚠️ "+blocked);return;}
   var un=getCurrentUserName(),ue=getCurrentUserEmail();
-  m.status="Em uso"; m.history.push({type:"saida",event:document.getElementById("exitEvent").value.trim(),city:document.getElementById("exitCity").value.trim(),responsible:document.getElementById("exitResponsible").value.trim(),startDate:s,endDate:en,date:new Date().toISOString(),user:un,userEmail:ue});
+  var exitAddr=document.getElementById("exitAddress").value.trim();
+  m.status="Em uso"; m.history.push({type:"saida",event:document.getElementById("exitEvent").value.trim(),city:document.getElementById("exitCity").value.trim(),responsible:document.getElementById("exitResponsible").value.trim(),address:exitAddr,startDate:s,endDate:en,date:new Date().toISOString(),user:un,userEmail:ue});
   closeExitModal(); save();
 }
 
@@ -904,8 +1015,9 @@ function submitReservaIndividual(e) {
   var eventName=document.getElementById("reserveEvent").value.trim(),s=document.getElementById("reserveStartDate").value,en=document.getElementById("reserveEndDate").value;
   if(en<s){alert("Data final não pode ser menor.");return;} if(hasReservationConflict(m,s,en)){alert("Conflito: máquina já reservada nesse período.");return;}
   var un=getCurrentUserName(),ue=getCurrentUserEmail();
-  m.reservations.push({event:eventName,startDate:s,endDate:en,createdAt:new Date().toISOString(),createdBy:un,createdByEmail:ue});
-  m.history.push({type:"reserva",event:eventName,startDate:s,endDate:en,date:new Date().toISOString(),user:un,userEmail:ue});
+  var address=document.getElementById("reserveAddress").value.trim();
+  m.reservations.push({event:eventName,startDate:s,endDate:en,address:address,createdAt:new Date().toISOString(),createdBy:un,createdByEmail:ue});
+  m.history.push({type:"reserva",event:eventName,startDate:s,endDate:en,address:address,date:new Date().toISOString(),user:un,userEmail:ue});
   closeReserveModal(); save();
 }
 
@@ -919,8 +1031,28 @@ function refreshViewReservesContent(serial) {
   var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
   var content=document.getElementById("viewReservesContent");
   if(!m.reservations.length){content.innerHTML="<p style='color:#6b7280'>Nenhuma reserva cadastrada.</p>";return;}
-  content.innerHTML=m.reservations.map(function(r,idx){ return '<div class="reservation-detail" style="position:relative"><div style="margin-bottom:6px"><b>'+r.event+'</b><br>'+formatDate(r.startDate)+' → '+formatDate(r.endDate)+(r.city?'<br>Cidade: '+r.city:'')+(r.responsible?'<br>Responsável: '+r.responsible:'')+(r.createdBy?'<br><span class="history-user">👤 '+r.createdBy+'</span>':'')+'</div><button onclick="cancelReservation(\''+serial+'\','+idx+')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">Cancelar reserva</button></div>'; }).join("");
+  content.innerHTML=m.reservations.map(function(r,idx){ return '<div class="reservation-detail" style="position:relative"><div style="margin-bottom:6px"><b>'+r.event+'</b><br>'+formatDate(r.startDate)+' → '+formatDate(r.endDate)+(r.city?'<br>Cidade: '+r.city:'')+(r.responsible?'<br>Responsável: '+r.responsible:'')+(r.address?'<br>Endereço: '+r.address:'')+(r.createdBy?'<br><span class="history-user">👤 '+r.createdBy+'</span>':'')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button onclick="darSaidaDaReservaFutura(\''+serial+'\','+idx+')" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">🚀 Dar saída agora</button></div><button onclick="cancelReservation(\''+serial+'\','+idx+')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:12px;padding:5px 12px;width:auto;font-weight:bold">❌ Cancelar</button></div></div>'; }).join("");
 }
+function darSaidaDaReservaFutura(serial, idx) {
+  var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
+  var res=m.reservations[idx]; if(!res) return;
+  if(m.status==="Em uso"){alert("Essa máquina já está em uso.");return;}
+  if(m.status==="Manutenção"){alert("Máquina em manutenção.");return;}
+  // Check conflicts with other reservations (excluding this one)
+  var otherReservations=m.reservations.filter(function(_,i){ return i!==idx; });
+  var today=getToday();
+  var conflict=otherReservations.find(function(r){ return hasDateOverlap(res.startDate,res.endDate,r.startDate,r.endDate); });
+  if(conflict){alert("Conflito com outra reserva: "+conflict.event+" ("+formatDate(conflict.startDate)+" → "+formatDate(conflict.endDate)+")");return;}
+  if(!confirm("Dar saída de "+serial+" para ""+res.event+"" agora?
+Período original: "+formatDate(res.startDate)+" → "+formatDate(res.endDate))) return;
+  var un=getCurrentUserName(),ue=getCurrentUserEmail();
+  m.status="Em uso";
+  m.history.push({type:"saida",event:res.event,city:res.city||"",responsible:res.responsible||"",address:res.address||"",startDate:res.startDate,endDate:res.endDate,date:new Date().toISOString(),user:un,userEmail:ue,fromReservation:true,earlyExit:true});
+  save();
+  refreshViewReservesContent(serial);
+  alert("✅ Saída registrada!");
+}
+
 function cancelReservation(serial,idx) {
   var m=machines.find(function(m){ return m.serial===serial; }); if(!m) return;
   var res=m.reservations[idx]; if(!res) return;
@@ -983,11 +1115,155 @@ function render() {
     if(rs==="Reservada hoje") acoesHtml='<div class="actions-row"><button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva(\''+m.serial+'\')">✓ Confirmar saída</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button></div>';
     if(rs==="Em uso") acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button></div>';
     if(rs==="Manutenção") acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?"Ocultar":"Histórico")+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
-    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?"<p>Sem histórico.</p>":m.history.slice().reverse().map(function(h){ return '<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?" EM LOTE":"")+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.responsible?'<br>Responsável: '+h.responsible:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' → '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">👤 '+h.user+'</span>':'')+'</div>'; }).join(""))+'</div>':"";
+    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?"<p>Sem histórico.</p>":m.history.slice().reverse().map(function(h){ return '<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?" EM LOTE":"")+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.responsible?'<br>Responsável: '+h.responsible:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' → '+formatDate(h.endDate):'')+(h.address?'<br>Endereço: '+h.address:'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">👤 '+h.user+'</span>':'')+'</div>'; }).join(""))+'</div>':"";
     var div=document.createElement("div"); div.className="machine-item";
     div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
     list.appendChild(div);
   });
+}
+
+
+// ════════════════════════════════════════════════════
+// FINANCEIRO
+// ════════════════════════════════════════════════════
+var financeiro = [];
+
+function saveFinanceiro() {
+  var obj = {};
+  financeiro.forEach(function(f) { obj[f.id] = f; });
+  db.ref("financeiro").set(obj);
+}
+
+function startFinanceiroListener() {
+  db.ref("financeiro").on("value", function(snapshot) {
+    var data = snapshot.val();
+    financeiro = data ? Object.values(data) : [];
+    renderDayAlerts();
+    var finTab = document.querySelector('#fin-pendentes.active');
+    if(finTab) renderPendentes();
+    var extratoTab = document.querySelector('#fin-extrato.active');
+    if(extratoTab) renderExtrato();
+  });
+}
+
+var FIN_TABS = ['solicitar','pendentes','extrato'];
+function setFinTab(tab) {
+  FIN_TABS.forEach(function(t) {
+    document.getElementById('fin-'+t).classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i) {
+    btn.classList.toggle('active', FIN_TABS[i]===tab);
+  });
+  if(tab==='pendentes') renderPendentes();
+  if(tab==='extrato')   renderExtrato();
+}
+
+function solicitarPagamento() {
+  var evento = document.getElementById('finEvento').value.trim();
+  var nome   = document.getElementById('finNome').value.trim();
+  var tipo   = document.getElementById('finTipo').value;
+  var chave  = document.getElementById('finChave').value.trim();
+  var valor  = parseFloat(document.getElementById('finValor').value);
+  var obs    = document.getElementById('finObs').value.trim();
+  var result = document.getElementById('finSolicitarResult');
+
+  if(!evento||!nome||!tipo||!valor||valor<=0) { alert("Preencha todos os campos obrigatórios."); return; }
+
+  var id = 'fin_' + Date.now();
+  var un = getCurrentUserName(), ue = getCurrentUserEmail();
+  var item = { id:id, evento:evento, nome:nome, tipo:tipo, chave:chave, valor:valor, obs:obs, status:'Pendente', dataSolicitacao:new Date().toISOString(), solicitadoPor:un, solicitadoEmail:ue };
+  financeiro.push(item);
+  saveFinanceiro();
+
+  result.className = 'batch-result show';
+  result.innerHTML = '<b>✅ Pagamento solicitado!</b><br>Evento: '+evento+'<br>Valor: R$ '+valor.toFixed(2)+'<br>Solicitante: '+nome;
+  document.getElementById('finEvento').value=''; document.getElementById('finNome').value=''; document.getElementById('finTipo').value=''; document.getElementById('finChave').value=''; document.getElementById('finValor').value=''; document.getElementById('finObs').value='';
+}
+
+function formatMoney(v) { return 'R$ ' + parseFloat(v).toFixed(2).replace('.',','); }
+
+function refreshFinEventos() {
+  var eventos = new Set();
+  financeiro.forEach(function(f) { if(f.evento) eventos.add(f.evento); });
+  var opts = '<option value="">Todos os eventos</option>' + Array.from(eventos).map(function(e){ return '<option value="'+e+'">'+e+'</option>'; }).join('');
+  var ep = document.getElementById('finPendentesFiltroEvento');
+  var ee = document.getElementById('finExtratoFiltroEvento');
+  if(ep) ep.innerHTML = opts;
+  if(ee) ee.innerHTML = opts;
+}
+
+function renderPendentes() {
+  refreshFinEventos();
+  var evFilt = document.getElementById('finPendentesFiltroEvento').value;
+  var pendentes = financeiro.filter(function(f) { return f.status==='Pendente' && (!evFilt||f.evento===evFilt); });
+  var list = document.getElementById('finPendentesList');
+  if(!pendentes.length) { list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhum pagamento pendente.</p>'; return; }
+  list.innerHTML = pendentes.map(function(f) {
+    return '<div style="border:1.5px solid #fcd34d;border-radius:12px;padding:14px;background:#fffbeb;margin-bottom:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
+      '<div><b style="font-size:15px">'+f.evento+'</b><br>' +
+      '<span style="font-size:13px;color:#374151">'+f.nome+' · '+f.tipo+(f.chave?' · '+f.chave:'')+'</span><br>' +
+      '<span style="font-size:13px;color:#374151">Obs: '+(f.obs||'-')+'</span><br>' +
+      '<span style="font-size:12px;color:#9ca3af">Solicitado por '+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div>' +
+      '<b style="font-size:18px;color:#166534;white-space:nowrap">'+formatMoney(f.valor)+'</b></div>' +
+      '<button onclick="openPagarModal(''+f.id+'')" style="margin-top:10px;background:var(--green);font-size:13px;padding:9px">✅ Confirmar pagamento</button>' +
+      '</div>';
+  }).join('');
+}
+
+function openPagarModal(id) {
+  var f = financeiro.find(function(f){ return f.id===id; });
+  if(!f) return;
+  document.getElementById('pagarId').value = id;
+  document.getElementById('pagarBanco').value = '';
+  document.getElementById('pagarInfo').innerHTML =
+    '<b>'+f.evento+'</b><br>Solicitante: '+f.nome+'<br>'+f.tipo+(f.chave?': '+f.chave:'')+'<br>Valor: <b>'+formatMoney(f.valor)+'</b>'+(f.obs?'<br>Obs: '+f.obs:'');
+  document.getElementById('pagarModal').classList.add('open');
+}
+function closePagarModal() { document.getElementById('pagarModal').classList.remove('open'); }
+
+function confirmarPagamento() {
+  var id    = document.getElementById('pagarId').value;
+  var banco = document.getElementById('pagarBanco').value;
+  if(!banco) { alert("Selecione o banco utilizado."); return; }
+  var f = financeiro.find(function(f){ return f.id===id; });
+  if(!f) return;
+  var un = getCurrentUserName();
+  f.status       = 'Pago';
+  f.banco        = banco;
+  f.dataPagamento= new Date().toISOString();
+  f.pagoPor      = un;
+  saveFinanceiro();
+  closePagarModal();
+  alert('✅ Pagamento confirmado!');
+}
+
+function renderExtrato() {
+  refreshFinEventos();
+  var evFilt     = document.getElementById('finExtratoFiltroEvento').value;
+  var statusFilt = document.getElementById('finExtratoFiltroStatus').value;
+  var bancoFilt  = document.getElementById('finExtratoFiltroBanco').value;
+  var filtered   = financeiro.filter(function(f) {
+    return (!evFilt||f.evento===evFilt) && (!statusFilt||f.status===statusFilt) && (!bancoFilt||f.banco===bancoFilt);
+  });
+  var totalPago     = filtered.filter(function(f){ return f.status==='Pago'; }).reduce(function(a,f){ return a+parseFloat(f.valor); },0);
+  var totalPendente = filtered.filter(function(f){ return f.status==='Pendente'; }).reduce(function(a,f){ return a+parseFloat(f.valor); },0);
+  document.getElementById('finExtratoResumo').innerHTML =
+    'Total pago: <b style="color:#166534">'+formatMoney(totalPago)+'</b> &nbsp;|&nbsp; Total pendente: <b style="color:#92400e">'+formatMoney(totalPendente)+'</b> &nbsp;|&nbsp; Total geral: <b>'+formatMoney(totalPago+totalPendente)+'</b>';
+  var list = document.getElementById('finExtratoList');
+  if(!filtered.length) { list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhuma movimentação encontrada.</p>'; return; }
+  var sorted = filtered.slice().sort(function(a,b){ return new Date(b.dataSolicitacao)-new Date(a.dataSolicitacao); });
+  list.innerHTML = sorted.map(function(f) {
+    var isPago = f.status==='Pago';
+    return '<div style="border:1.5px solid '+(isPago?'#86efac':'#fcd34d')+';border-radius:12px;padding:12px;background:'+(isPago?'#f0fdf4':'#fffbeb')+';margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
+      '<div><b>'+f.evento+'</b> · <span style="font-size:12px;font-weight:bold;padding:2px 8px;border-radius:999px;background:'+(isPago?'#dcfce7':'#fef3c7')+';color:'+(isPago?'#166534':'#92400e')+'">'+f.status+'</span><br>' +
+      '<span style="font-size:13px;color:#374151">'+f.nome+' · '+f.tipo+(f.chave?' · '+f.chave:'')+'</span><br>' +
+      (isPago?'<span style="font-size:12px;color:#374151">Banco: '+f.banco+' · Pago por: '+f.pagoPor+' em '+new Date(f.dataPagamento).toLocaleString("pt-BR")+'</span><br>':'')+
+      '<span style="font-size:12px;color:#9ca3af">Solicitado por '+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div>' +
+      '<b style="font-size:16px;color:'+(isPago?'#166534':'#92400e')+';white-space:nowrap">''+formatMoney(f.valor)+'</b></div>' +
+      '</div>';
+  }).join('');
 }
 
 // ── FILTROS LIVE ──────────────────────────────────────
