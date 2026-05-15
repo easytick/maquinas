@@ -2,16 +2,18 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Controle de Maquinas - Easytick</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Easytick – Maquinas</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#1f2937;min-height:100vh;font-size:15px;line-height:1.5}
+    body{font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#1f2937;min-height:100vh;font-size:15px;line-height:1.5;padding-bottom:70px}
     :root{--blue:#004aad;--blue2:#003b8a;--green:#16a34a;--red:#dc2626;--gray:#374151;--border:#e5e7eb;--shadow:0 2px 12px rgba(0,74,173,.08)}
-    #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--blue);padding:20px}
+
+    /* LOGIN */
+    #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--blue);padding:20px;padding-bottom:20px}
     #loginScreen.hidden{display:none}
     .login-card{background:#fff;border-radius:18px;padding:36px 28px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center}
     .login-logo{font-size:40px;margin-bottom:8px}
@@ -19,165 +21,222 @@
     .login-card p{font-size:13px;color:#6b7280;margin-bottom:22px}
     #loginError{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px;font-size:13px;display:none}
     #loginError.show{display:block}
+
+    /* APP */
     #appScreen{display:none}
     #appScreen.visible{display:block}
-    .header{background:var(--blue);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .header-left{display:flex;align-items:center;gap:12px}
-    .header-icon{width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
-    .header h1{font-size:19px;line-height:1.2}
-    .header-sub{font-size:12px;opacity:.8;margin-top:1px}
+
+    /* HEADER */
+    .header{background:var(--blue);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
+    .header-left{display:flex;align-items:center;gap:10px}
+    .header-icon{font-size:22px}
+    .header h1{font-size:16px;font-weight:bold}
+    .header-sub{font-size:11px;opacity:.75}
     .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-    .user-badge{background:rgba(255,255,255,.15);border-radius:8px;padding:5px 10px;font-size:12px;color:#fff;line-height:1.4}
-    .user-badge b{display:block;font-size:13px}
-    .logout-btn{background:rgba(255,255,255,.18);border:none;border-radius:8px;color:#fff;padding:7px 11px;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;width:auto}
-    .logout-btn:hover{background:rgba(255,255,255,.3)}
-    #fbStatus{font-size:13px;text-align:center;padding:8px 16px;display:none}
+    .user-name{font-size:12px;opacity:.9}
+    .logout-btn{background:rgba(255,255,255,.2);border:none;border-radius:7px;color:#fff;padding:5px 10px;font-size:12px;font-family:Arial,sans-serif;cursor:pointer;width:auto}
+
+    #fbStatus{font-size:13px;text-align:center;padding:6px 16px;display:none}
     #fbStatus.error{background:#fee2e2;color:#991b1b;display:block}
     #fbStatus.ok{background:#dcfce7;color:#166534;display:block}
-    .app{max-width:900px;margin:0 auto;padding:14px}
-    .day-alert{border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .day-alert.saida{background:#fef3c7;border:1.5px solid #fcd34d}
-    .day-alert.retorno{background:#dbeafe;border:1.5px solid #93c5fd}
-    .day-alert.atraso{background:#fce7f3;border:1.5px solid #f9a8d4}
-    .day-alert.financeiro{background:#fef3c7;border:1.5px solid #fcd34d}
-    .day-alert-text b{display:block;font-size:15px;margin-bottom:3px}
-    .day-alert-text p{font-size:13px;color:#374151;margin:0}
-    .day-alert.saida .day-alert-text b{color:#92400e}
-    .day-alert.retorno .day-alert-text b{color:#1e40af}
-    .day-alert.atraso .day-alert-text b{color:#9d174d}
-    .day-alert.financeiro .day-alert-text b{color:#92400e}
-    .day-alert button{white-space:nowrap;font-size:13px;padding:9px 16px;width:auto;flex-shrink:0}
-    .card{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
-    .card h2{font-size:16px;font-weight:bold;margin-bottom:14px;color:var(--blue)}
-    .dashboard{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+
+    /* PAGES */
+    .page{display:none;max-width:680px;margin:0 auto;padding:14px}
+    .page.active{display:block}
+
+    /* BOTTOM NAV */
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+    .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:none;background:none;cursor:pointer;font-family:Arial,sans-serif}
+    .nav-btn .n-icon{font-size:21px}
+    .nav-btn .n-label{font-size:10px;color:#9ca3af}
+    .nav-btn.active .n-label{color:var(--blue);font-weight:bold}
+    .nav-btn .n-dot{width:4px;height:4px;border-radius:999px;background:var(--blue);margin-top:1px;display:none}
+    .nav-btn.active .n-dot{display:block}
+
+    /* CARDS & SECTIONS */
+    .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+    .card-title{font-size:15px;font-weight:bold;color:var(--blue);margin-bottom:12px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-header h2{font-size:15px;font-weight:bold;color:var(--blue)}
+
+    /* DASHBOARD */
+    .dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
     .dash-card{background:#fff;border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow)}
-    .dash-card span{display:block;font-size:30px;font-weight:bold;color:var(--blue)}
+    .dash-card span{display:block;font-size:28px;font-weight:bold;color:var(--blue)}
     .dash-card p{font-size:12px;margin-top:3px;color:#6b7280}
-    form{display:grid;gap:10px}
-    label{display:grid;gap:4px;font-size:13px;font-weight:bold;color:var(--gray)}
-    input,select{width:100%;padding:11px 13px;border-radius:9px;border:1.5px solid var(--border);font-size:14px;font-family:Arial,sans-serif;background:#fafafa;transition:border .2s}
-    input:focus,select:focus{outline:none;border-color:var(--blue);background:#fff}
-    button{width:100%;padding:11px;border-radius:9px;border:none;background:var(--blue);color:#fff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;cursor:pointer;transition:background .15s,transform .1s}
-    button:hover{background:var(--blue2)}
-    button:active{transform:scale(.98)}
-    button:disabled{background:#9ca3af;cursor:not-allowed;opacity:.7}
-    .helper-text{font-size:13px;color:#6b7280;margin-bottom:10px}
-    .filters{display:grid;gap:9px}
-    .day-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:10px}
-    .day-tabs button{background:#eef2ff;color:var(--blue);font-size:13px;padding:9px}
+
+    /* ALERTS */
+    .alert-box{border-radius:14px;padding:13px 15px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .alert-box.saida{background:#fef3c7;border:1.5px solid #fcd34d}
+    .alert-box.retorno{background:#dbeafe;border:1.5px solid #93c5fd}
+    .alert-box.atraso{background:#fce7f3;border:1.5px solid #f9a8d4}
+    .alert-box.financeiro{background:#fef3c7;border:1.5px solid #fcd34d}
+    .alert-box-text b{display:block;font-size:14px;margin-bottom:2px}
+    .alert-box-text p{font-size:12px;color:#374151;margin:0}
+    .alert-box.saida .alert-box-text b{color:#92400e}
+    .alert-box.retorno .alert-box-text b{color:#1e40af}
+    .alert-box.atraso .alert-box-text b{color:#9d174d}
+    .alert-box.financeiro .alert-box-text b{color:#92400e}
+    .alert-box button{white-space:nowrap;font-size:12px;padding:7px 13px;width:auto;flex-shrink:0}
+
+    /* RESUMO DO DIA */
+    .day-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}
+    .day-tabs button{background:#eef2ff;color:var(--blue);font-size:12px;padding:8px}
     .day-tabs button:hover{background:var(--blue);color:#fff}
     .custom-filter{display:grid;gap:7px;margin-bottom:10px}
-    .day-box{padding:12px;border-radius:10px;background:#eef6ff;font-size:14px;line-height:1.7}
-    .day-event-group{margin-top:10px;padding:12px;border-radius:10px;background:#fff;border:1px solid var(--border)}
-    .day-event-group h3{font-size:14px;color:var(--blue);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    .day-event-group h3 button{font-size:12px;padding:5px 12px;width:auto;background:var(--green)}
-    .day-event-group h3 button.entrada-btn{background:var(--blue)}
-    .day-item{padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.6}
+    .day-box{padding:12px;border-radius:10px;background:#eef6ff;font-size:13px;line-height:1.7}
+    .day-event-group{margin-top:10px;padding:11px;border-radius:10px;background:#fff;border:1px solid var(--border)}
+    .day-event-group h3{font-size:13px;color:var(--blue);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+    .day-event-group h3 button{font-size:11px;padding:4px 10px;width:auto;background:var(--green)}
+    .day-item{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.6}
     .day-item:last-child{border-bottom:none}
-    .retorno-group{margin-top:10px;padding:12px;border-radius:10px;background:#eff6ff;border:1px solid #93c5fd}
-    .retorno-group h3{font-size:14px;color:#1e40af;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    .retorno-group h3 button{font-size:12px;padding:5px 12px;width:auto}
-    .atraso-group{margin-top:10px;padding:12px;border-radius:10px;background:#fdf2f8;border:1px solid #f9a8d4}
-    .atraso-group h3{font-size:14px;color:#9d174d;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    .atraso-group h3 button{font-size:12px;padding:5px 12px;width:auto}
-    .lote-tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);margin:-18px -18px 16px}
-    .lote-tab-btn{padding:12px 6px;font-size:12px;border:none;border-right:1px solid var(--border);background:#f9fafb;color:#6b7280;cursor:pointer;font-family:Arial,sans-serif;width:100%;line-height:1.4;transition:all .15s}
-    .lote-tab-btn:last-child{border-right:none}
-    .lote-tab-btn.active{background:#eef6ff;color:var(--blue);font-weight:bold}
-    .lote-tab-btn:hover:not(.active){background:#f3f4f6}
-    .lote-tab-content{display:none}
-    .lote-tab-content.active{display:block}
-    .brand-checkboxes{display:flex;gap:14px;flex-wrap:wrap;padding:11px 13px;border-radius:9px;border:1.5px solid var(--border);background:#fafafa}
-    .brand-checkboxes label{display:flex;align-items:center;gap:6px;font-weight:normal;font-size:14px;cursor:pointer}
-    .brand-checkboxes input{width:auto}
-    .batch-result{margin-top:10px;padding:12px;border-radius:9px;background:#eef6ff;font-size:13px;line-height:1.6;display:none}
-    .batch-result.show{display:block}
-    .batch-result b{font-size:15px}
-    .batch-total{display:block;font-size:22px;font-weight:bold;color:var(--blue);margin-bottom:4px}
-    .batch-result.show.error{background:#fee2e2}
-    .mode-selector{border-top:1px solid var(--border);padding-top:12px}
-    .mode-btn{font-size:13px;padding:9px 8px;background:#f3f4f6;color:#374151;border:1.5px solid var(--border)}
-    .mode-btn-active{background:#eef6ff;color:var(--blue);border-color:var(--blue)}
-    .mode-info{font-size:13px;color:#374151;background:#eef6ff;padding:9px 12px;border-radius:9px;margin-bottom:10px}
-    .machine-select-box{border:1.5px solid var(--border);border-radius:9px;overflow:hidden}
-    .machine-select-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#f9fafb;border-bottom:1px solid var(--border);font-size:13px;color:#374151}
-    .machine-select-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px;cursor:pointer}
-    .machine-select-item:last-child{border-bottom:none}
-    .machine-select-item.selected{background:#eef6ff}
-    .machine-select-item input{width:auto}
-    .search-in-select{padding:8px 12px;border-bottom:1px solid var(--border);background:#f9fafb}
-    .search-in-select input{padding:7px 10px;font-size:13px;margin:0}
-    .search-clear-wrap{position:relative;display:flex;align-items:center}
-    .search-clear-wrap input{padding-right:28px}
-    .search-clear-btn{position:absolute;right:8px;background:none;border:none;color:#9ca3af;font-size:16px;cursor:pointer;width:auto;padding:0;line-height:1;font-weight:bold}
-    .search-clear-btn:hover{color:#374151}
-    .machine-item{border:1.5px solid var(--border);border-radius:14px;padding:14px;background:#fafafa;margin-bottom:10px}
-    .machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .retorno-group{margin-top:10px;padding:11px;border-radius:10px;background:#eff6ff;border:1px solid #93c5fd}
+    .retorno-group h3{font-size:13px;color:#1e40af;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+    .retorno-group h3 button{font-size:11px;padding:4px 10px;width:auto}
+    .atraso-group{margin-top:10px;padding:11px;border-radius:10px;background:#fdf2f8;border:1px solid #f9a8d4}
+    .atraso-group h3{font-size:13px;color:#9d174d;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+    .atraso-group h3 button{font-size:11px;padding:4px 10px;width:auto}
+
+    /* MACHINE CARDS */
+    .machine-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+    .machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
     .machine-serial{font-size:16px;font-weight:bold;color:#111827}
-    .machine-brand{font-size:13px;color:#6b7280;margin-top:2px}
-    .status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:bold;white-space:nowrap}
+    .machine-brand{font-size:12px;color:#6b7280;margin-top:1px}
+    .status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
     .disponivel{background:#dcfce7;color:#166534}
     .em-uso{background:#fee2e2;color:#991b1b}
     .manutencao{background:#e5e7eb;color:#374151}
     .reservada-hoje{background:#fef3c7;color:#92400e}
     .em-atraso{background:#fce7f3;color:#9d174d}
-    .machine-info{border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-size:13px;color:#374151;line-height:1.6}
+    .machine-info{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:12px;color:#374151;line-height:1.6}
     .machine-info p{margin:2px 0}
-    .alert-reservada{margin-top:8px;padding:7px 11px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:13px;color:#92400e}
-    .alert-atraso-card{margin-top:8px;padding:7px 11px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:13px;color:#9d174d}
-    .actions{display:grid;gap:7px;margin-top:10px}
-    .actions-row{display:flex;gap:7px;flex-wrap:wrap}
-    .actions-row button{flex:1;min-width:70px;font-size:13px;padding:9px 8px}
+    .alert-reservada{margin-top:7px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
+    .alert-atraso-card{margin-top:7px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}
+
+    /* FILTER CHIPS */
+    .filter-chips{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+    .filter-chips::-webkit-scrollbar{display:none}
+    .chip{display:inline-block;padding:5px 13px;border-radius:999px;font-size:12px;cursor:pointer;white-space:nowrap;border:1.5px solid var(--border);background:#fff;color:#374151;flex-shrink:0}
+    .chip.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:bold}
+
+    /* SEARCH BAR */
+    .search-bar{background:#fff;border-radius:12px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);border:1.5px solid var(--border)}
+    .search-bar input{border:none;background:none;flex:1;font-size:14px;font-family:Arial,sans-serif;outline:none;color:#1f2937}
+    .search-bar input::placeholder{color:#9ca3af}
+
+    /* ACTIONS LIST */
+    .action-list{display:grid;gap:9px}
+    .action-btn{background:#fff;border-radius:14px;padding:14px 15px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;border:none;font-family:Arial,sans-serif;text-align:left;width:100%}
+    .action-btn .a-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+    .action-btn .a-txt b{display:block;font-size:14px;color:#1f2937}
+    .action-btn .a-txt span{font-size:12px;color:#6b7280}
+    .action-btn .a-arrow{margin-left:auto;color:#9ca3af;font-size:18px}
+
+    /* LOTE TABS */
+    .lote-tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);margin:-16px -16px 14px}
+    .lote-tab-btn{padding:11px 4px;font-size:11px;border:none;border-right:1px solid var(--border);background:#f9fafb;color:#6b7280;cursor:pointer;font-family:Arial,sans-serif;width:100%;line-height:1.4;transition:all .15s}
+    .lote-tab-btn:last-child{border-right:none}
+    .lote-tab-btn.active{background:#eef6ff;color:var(--blue);font-weight:bold}
+    .lote-tab-content{display:none}
+    .lote-tab-content.active{display:block}
+
+    /* FORMS */
+    form{display:grid;gap:9px}
+    label{display:grid;gap:4px;font-size:12px;font-weight:bold;color:var(--gray)}
+    input,select{width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:14px;font-family:Arial,sans-serif;background:#fafafa;transition:border .2s}
+    input:focus,select:focus{outline:none;border-color:var(--blue);background:#fff}
+    button{width:100%;padding:11px;border-radius:9px;border:none;background:var(--blue);color:#fff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;cursor:pointer;transition:background .15s,transform .1s}
+    button:hover{background:var(--blue2)}
+    button:active{transform:scale(.98)}
+    button:disabled{background:#9ca3af;cursor:not-allowed;opacity:.7}
+
+    .helper-text{font-size:13px;color:#6b7280;margin-bottom:10px}
+    .brand-checkboxes{display:flex;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);background:#fafafa}
+    .brand-checkboxes label{display:flex;align-items:center;gap:6px;font-weight:normal;font-size:14px;cursor:pointer}
+    .brand-checkboxes input{width:auto}
+
+    .batch-result{margin-top:10px;padding:12px;border-radius:9px;background:#eef6ff;font-size:13px;line-height:1.6;display:none}
+    .batch-result.show{display:block}
+    .batch-result.show.error{background:#fee2e2}
+    .batch-total{display:block;font-size:20px;font-weight:bold;color:var(--blue);margin-bottom:4px}
+
+    .mode-selector{border-top:1px solid var(--border);padding-top:12px}
+    .mode-btn{font-size:13px;padding:9px 8px;background:#f3f4f6;color:#374151;border:1.5px solid var(--border)}
+    .mode-btn-active{background:#eef6ff;color:var(--blue);border-color:var(--blue)}
+    .mode-info{font-size:13px;color:#374151;background:#eef6ff;padding:9px 12px;border-radius:9px;margin-bottom:10px}
+    .machine-select-box{border:1.5px solid var(--border);border-radius:9px;overflow:hidden}
+    .machine-select-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-bottom:1px solid var(--border);font-size:13px;color:#374151}
+    .machine-select-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
+    .machine-select-item:last-child{border-bottom:none}
+    .machine-select-item.selected{background:#eef6ff}
+    .machine-select-item input{width:auto}
+    .search-in-select{padding:7px 10px;border-bottom:1px solid var(--border);background:#f9fafb}
+    .search-in-select input{padding:7px 10px;font-size:13px;margin:0}
+    .search-clear-wrap{position:relative;display:flex;align-items:center}
+    .search-clear-wrap input{padding-right:28px}
+    .search-clear-btn{position:absolute;right:8px;background:none;border:none;color:#9ca3af;font-size:16px;cursor:pointer;width:auto;padding:0;line-height:1;font-weight:bold}
+    .search-clear-btn:hover{color:#374151}
+
+    /* ACTIONS BUTTONS */
+    .actions{display:grid;gap:6px;margin-top:9px}
+    .actions-row{display:flex;gap:6px;flex-wrap:wrap}
+    .actions-row button{flex:1;min-width:60px;font-size:12px;padding:8px 6px}
     .btn-confirmar-saida{background:var(--green)!important}
-    .btn-confirmar-saida:hover{background:#15803d!important}
     .btn-entrada{background:var(--blue)!important}
     .btn-secundario{background:#f3f4f6!important;color:#374151!important;border:1px solid var(--border)!important}
-    .btn-secundario:hover{background:#e5e7eb!important}
     .btn-danger{background:var(--red)!important}
-    .btn-danger:hover{background:#991b1b!important}
     .btn-gray{background:#374151!important}
-    .history-box{margin-top:10px;padding:11px;background:#f9fafb;border-radius:9px;border:1px solid var(--border)}
-    .history-item{border-bottom:1px solid #e5e7eb;margin-bottom:7px;padding-bottom:7px;font-size:13px;line-height:1.6}
+
+    /* HISTORY */
+    .history-box{margin-top:9px;padding:10px;background:#f9fafb;border-radius:9px;border:1px solid var(--border)}
+    .history-item{border-bottom:1px solid #e5e7eb;margin-bottom:6px;padding-bottom:6px;font-size:12px;line-height:1.6}
     .history-item:last-child{border-bottom:none;margin:0;padding:0}
     .history-user{display:inline-block;background:#ede9fe;color:#5b21b6;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:bold;margin-top:2px}
-    .reservation-detail{margin-top:8px;padding:9px 11px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;font-size:13px;line-height:1.6}
-    .blocked-msg{margin-top:7px;padding:7px 11px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:13px;color:#92400e}
-    .results-count{background:#eef6ff;color:var(--blue);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:bold;margin-bottom:10px;display:none}
-    .modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);padding:16px;z-index:999;align-items:center;justify-content:center}
-    .modal.open{display:flex}
-    .modal-content{background:#fff;width:100%;max-width:400px;padding:22px;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
-    .modal-content h2{font-size:17px;color:var(--blue);margin-bottom:14px}
-    .modal-actions{display:grid;gap:7px;margin-top:8px}
-    .modal-content form{grid-template-columns:1fr!important}
-    #loadingBar{position:fixed;top:0;left:0;height:3px;width:0;background:#60a5fa;transition:width .3s;z-index:9999}
+    .reservation-detail{margin-top:7px;padding:9px 11px;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;font-size:13px;line-height:1.6}
+    .blocked-msg{margin-top:6px;padding:7px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
+
+    /* RESULTS COUNT */
+    .results-count{background:#eef6ff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;margin-bottom:10px;display:none}
+
+    /* FINANCEIRO */
+    .fin-summary{background:var(--blue);color:#fff;border-radius:14px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+    .fin-summary span{display:block;font-size:19px;font-weight:bold}
+    .fin-summary p{font-size:11px;opacity:.8;margin-top:2px}
+    .fin-select-item{border:1.5px solid var(--border);border-radius:12px;padding:12px;background:#fffbeb;margin-bottom:8px;cursor:pointer;transition:all .15s}
+    .fin-select-item.selected{background:#f0fdf4;border-color:#86efac}
     .pix-tipo-row{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px}
     .pix-tipo-btn{padding:8px;font-size:12px;border-radius:8px;border:1.5px solid var(--border);background:#f3f4f6;color:#374151;cursor:pointer;font-family:Arial,sans-serif;width:100%}
     .pix-tipo-btn.active{background:#eef6ff;color:var(--blue);border-color:var(--blue);font-weight:bold}
-    .saldo-box{background:var(--blue);color:#fff;border-radius:12px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
-    .saldo-item span{display:block;font-size:20px;font-weight:bold}
-    .saldo-item p{font-size:11px;opacity:.8;margin-top:2px}
-    .tag-entrada{background:#dcfce7;color:#166534;display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;font-weight:bold}
-    .tag-saida{background:#fee2e2;color:#991b1b;display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;font-weight:bold}
-    .fin-select-item{border:1.5px solid var(--border);border-radius:12px;padding:12px;background:#fffbeb;margin-bottom:8px;cursor:pointer;transition:all .15s}
-    .fin-select-item.selected{background:#f0fdf4;border-color:#86efac}
-    .fin-select-item .fin-check{width:auto;margin-right:8px;flex-shrink:0}
+
+    /* MODALS */
+    .modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);padding:16px;z-index:999;align-items:center;justify-content:center}
+    .modal.open{display:flex}
+    .modal-content{background:#fff;width:100%;max-width:400px;padding:20px;border-radius:18px;box-shadow:0 24px 48px rgba(0,0,0,.25);max-height:88vh;overflow-y:auto}
+    .modal-content h2{font-size:16px;color:var(--blue);margin-bottom:12px}
+    .modal-actions{display:grid;gap:7px;margin-top:8px}
+
+    /* CADASTRO MODAL */
+    .fab{position:fixed;bottom:80px;right:16px;width:50px;height:50px;border-radius:999px;background:var(--blue);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,74,173,.4);cursor:pointer;border:none;z-index:150}
+
+    #loadingBar{position:fixed;top:0;left:0;height:3px;width:0;background:#60a5fa;transition:width .3s;z-index:9999}
+
     @media(min-width:700px){
-      .filters{grid-template-columns:2fr 1fr 1fr 1fr}
-      .dashboard{grid-template-columns:repeat(4,1fr)}
+      .dash-grid{grid-template-columns:repeat(4,1fr)}
       .day-tabs{grid-template-columns:repeat(4,1fr)}
       .custom-filter{grid-template-columns:1fr 1fr 1fr}
-      .actions-row button{min-width:60px}
     }
   </style>
 </head>
 <body>
 <div id="loadingBar"></div>
+
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <div class="login-logo">&#128223;</div>
+    <div class="login-logo">📟</div>
     <h1>Controle de Maquinas</h1>
     <p>Easytick - Faca login para continuar</p>
-    <div style="display:grid;gap:11px">
+    <div style="display:grid;gap:10px">
       <input type="email" id="loginEmail" placeholder="E-mail"/>
       <input type="password" id="loginPassword" placeholder="Senha"/>
       <div id="loginError">E-mail ou senha incorretos.</div>
@@ -185,31 +244,37 @@
     </div>
   </div>
 </div>
+
+<!-- APP -->
 <div id="appScreen">
   <div id="fbStatus"></div>
   <header class="header">
     <div class="header-left">
-      <div class="header-icon">&#128223;</div>
-      <div><h1>Controle de Maquinas</h1><div class="header-sub">Easytick - Sipag, PagBank e Stone</div></div>
+      <span class="header-icon">📟</span>
+      <div><h1>Easytick</h1><div class="header-sub">Controle de Maquinas</div></div>
     </div>
     <div class="header-right">
-      <div class="user-badge"><b id="headerUserName">-</b><span id="headerUserEmail" style="font-size:11px;opacity:.8"></span></div>
+      <span class="user-name" id="headerUserName"></span>
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
-  <main class="app">
+
+  <!-- PAGE: INICIO -->
+  <div id="page-inicio" class="page active">
     <div id="alertaSaida" style="display:none"></div>
     <div id="alertaRetorno" style="display:none"></div>
     <div id="alertaAtraso" style="display:none"></div>
     <div id="alertaFinanceiro" style="display:none"></div>
-    <section class="dashboard">
+
+    <div class="dash-grid">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
       <div class="dash-card"><span id="availableCount">0</span><p>Disponiveis</p></div>
       <div class="dash-card"><span id="inUseCount">0</span><p>Em uso</p></div>
       <div class="dash-card"><span id="maintenanceCount">0</span><p>Manutencao</p></div>
-    </section>
-    <section class="card">
-      <h2>&#128203; Resumo do Dia</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Resumo do Dia</div>
       <div class="day-tabs">
         <button onclick="showDayResume('today')">Hoje</button>
         <button onclick="showDayResume('week')">Esta semana</button>
@@ -222,37 +287,58 @@
         <button onclick="showCustomDayResume()">Filtrar periodo</button>
       </div>
       <div style="margin-bottom:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer;font-weight:normal">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#374151;cursor:pointer;font-weight:normal">
           <input type="checkbox" id="showEmUsoToggle" onchange="if(_lastDayResume)renderDayResume(_lastDayResume.s,_lastDayResume.e,_lastDayResume.l)" style="width:auto"/>
-          Mostrar maquinas em uso no Resumo do Dia
+          Mostrar maquinas em uso
         </label>
       </div>
-      <div id="dayResumeBox" class="day-box">Selecione um periodo para visualizar.</div>
-    </section>
-    <section class="card">
-      <h2>&#10133; Cadastrar Maquina</h2>
-      <form onsubmit="cadastrarMaquina(event)">
-        <input type="text" id="serial" placeholder="Numero de serie" required/>
-        <select id="brand" required>
-          <option value="">Marca</option>
-          <option value="Sipag">Sipag</option>
-          <option value="PagBank">PagBank</option>
-          <option value="Stone">Stone</option>
-        </select>
-        <button type="submit">Cadastrar</button>
-      </form>
-    </section>
-    <section class="card">
+      <div id="dayResumeBox" class="day-box">Selecione um periodo.</div>
+    </div>
+  </div>
+
+  <!-- PAGE: MAQUINAS -->
+  <div id="page-maquinas" class="page">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar por serial..."/>
+      <button onclick="document.getElementById('searchInput').value='';renderMachines()" style="background:none;border:none;color:#9ca3af;width:auto;padding:0;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <span class="chip active" onclick="setStatusFilter('')">Todas</span>
+      <span class="chip" onclick="setStatusFilter('Disponivel')">Disponiveis</span>
+      <span class="chip" onclick="setStatusFilter('Em uso')">Em uso</span>
+      <span class="chip" onclick="setStatusFilter('Reservada hoje')">Reservadas</span>
+      <span class="chip" onclick="setStatusFilter('Em atraso')">Atraso</span>
+      <span class="chip" onclick="setStatusFilter('Manutencao')">Manutencao</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <select id="brandFilter" onchange="renderMachines()">
+        <option value="">Todas as marcas</option>
+        <option value="Sipag">Sipag</option>
+        <option value="PagBank">PagBank</option>
+        <option value="Stone">Stone</option>
+      </select>
+      <select id="eventFilter" onchange="renderMachines()"><option value="">Todos os eventos</option></select>
+    </div>
+    <div id="resultsCount" class="results-count"></div>
+    <div id="machineList"><p style="color:#9ca3af">Aguardando conexao...</p></div>
+  </div>
+
+  <!-- PAGE: ACOES -->
+  <div id="page-acoes" class="page">
+    <div class="card">
       <div class="lote-tabs">
-        <button class="lote-tab-btn active" onclick="setLoteAba('reservar')">&#128230; Reservar</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('saida')">&#128640; Saida</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('entrada')">&#128229; Entrada</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('renovar')">&#128260; Renovar</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">&#10060; Cancelar</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">&#128295; Manutencao</button>
+        <button class="lote-tab-btn active" onclick="setLoteAba('reservar')">📦 Reservar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('saida')">🚀 Saida</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('entrada')">📥 Entrada</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('renovar')">🔄 Renovar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">❌ Cancelar</button>
+        <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">🔧 Manutencao</button>
       </div>
+
+      <!-- RESERVAR -->
       <div id="lote-reservar" class="lote-tab-content active">
-        <h2>&#128230; Reserva em Lote</h2>
+        <p class="helper-text">Reserve varias maquinas para um evento.</p>
         <form onsubmit="submitReservaLote(event)">
           <input type="text" id="batchEvent" placeholder="Nome do evento" required/>
           <input type="text" id="batchCity" placeholder="Cidade" required/>
@@ -266,15 +352,15 @@
           <label>Data inicial<input type="date" id="batchStartDate" required/></label>
           <label>Data final<input type="date" id="batchEndDate" required/></label>
           <div class="mode-selector">
-            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn mode-btn-active">&#129302; Automatico</button>
-              <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">&#128203; Manual</button>
+            <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn mode-btn-active">🤖 Automatico</button>
+              <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Manual</button>
             </div>
             <div id="reserveAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" placeholder="Quantidade" min="1"/></div>
             <div id="reserveManualSection" style="display:none">
               <div class="machine-select-box">
-                <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar serial..." oninput="filterSelectList('reserveMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('reserveMachineList','')">&#x2715;</button></div></div>
+                <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar serial..." oninput="filterSelectList('reserveMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('reserveMachineList','')">✕</button></div></div>
                 <div class="machine-select-header"><span id="reserveSelCount">0 selecionadas</span><button type="button" onclick="toggleAllReserve()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
                 <div id="reserveMachineList" style="max-height:200px;overflow-y:auto"></div>
               </div>
@@ -284,8 +370,10 @@
         </form>
         <div id="batchReserveResult" class="batch-result"></div>
       </div>
+
+      <!-- SAIDA -->
       <div id="lote-saida" class="lote-tab-content">
-        <h2>&#128640; Saida em Lote</h2>
+        <p class="helper-text">De saida em varias maquinas de uma vez.</p>
         <form onsubmit="submitSaidaLote(event)">
           <input type="text" id="batchExitEvent" placeholder="Nome do evento" required/>
           <input type="text" id="batchExitCity" placeholder="Cidade" required/>
@@ -299,15 +387,15 @@
           <label>Data de saida<input type="date" id="batchExitStartDate" required/></label>
           <label>Data de retorno<input type="date" id="batchExitEndDate" required/></label>
           <div class="mode-selector">
-            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <button type="button" id="exitAutoBtn" onclick="setExitMode('auto')" class="mode-btn mode-btn-active">&#129302; Automatico</button>
-              <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">&#128203; Manual</button>
+            <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <button type="button" id="exitAutoBtn" onclick="setExitMode('auto')" class="mode-btn mode-btn-active">🤖 Automatico</button>
+              <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Manual</button>
             </div>
             <div id="exitAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1"/></div>
             <div id="exitManualSection" style="display:none">
               <div class="machine-select-box">
-                <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar serial..." oninput="filterSelectList('exitMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('exitMachineList','')">&#x2715;</button></div></div>
+                <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar serial..." oninput="filterSelectList('exitMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('exitMachineList','')">✕</button></div></div>
                 <div class="machine-select-header"><span id="exitSelCount">0 selecionadas</span><button type="button" onclick="toggleAllExit()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
                 <div id="exitMachineList" style="max-height:200px;overflow-y:auto"></div>
               </div>
@@ -317,12 +405,13 @@
         </form>
         <div id="batchExitResult" class="batch-result"></div>
       </div>
+
+      <!-- ENTRADA -->
       <div id="lote-entrada" class="lote-tab-content">
-        <h2>&#128229; Entrada em Lote</h2>
         <p class="helper-text">Registre a devolucao de varias maquinas.</p>
         <div style="display:grid;gap:10px">
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('entradaEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('entradaEventoSelect','');refreshEntradaList()">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar evento..." oninput="filterEventSelect('entradaEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('entradaEventoSelect','');refreshEntradaList()">✕</button></div></div>
             <select id="entradaEventoSelect" onchange="refreshEntradaList()" style="border:none;border-radius:0;margin:0;background:#fff"></select>
           </div>
           <div id="entradaMachineBox" style="display:none">
@@ -332,16 +421,17 @@
             </div>
           </div>
           <input type="text" id="entradaObservacao" placeholder="Observacao (opcional)"/>
-          <button onclick="confirmarEntradaEmLote()" style="background:var(--green)">&#128229; Registrar entrada</button>
+          <button onclick="confirmarEntradaEmLote()" style="background:var(--green)">📥 Registrar entrada</button>
         </div>
         <div id="entradaResult" class="batch-result"></div>
       </div>
+
+      <!-- RENOVAR -->
       <div id="lote-renovar" class="lote-tab-content">
-        <h2>&#128260; Renovar Prazo</h2>
-        <p class="helper-text">Estenda o prazo sem dar entrada e saida novamente.</p>
+        <p class="helper-text">Estenda o prazo sem dar entrada e saida.</p>
         <div style="display:grid;gap:10px">
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('renovarEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('renovarEventoSelect','');refreshRenovarList()">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar evento..." oninput="filterEventSelect('renovarEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('renovarEventoSelect','');refreshRenovarList()">✕</button></div></div>
             <select id="renovarEventoSelect" onchange="refreshRenovarList()" style="border:none;border-radius:0;margin:0;background:#fff"></select>
           </div>
           <div id="renovarMachineBox" style="display:none">
@@ -351,16 +441,17 @@
             </div>
           </div>
           <label>Nova data de retorno<input type="date" id="novaDataRetorno"/></label>
-          <button onclick="confirmarRenovacao()" style="background:#92400e;color:#fff">&#128260; Renovar prazo</button>
+          <button onclick="confirmarRenovacao()" style="background:#92400e;color:#fff">🔄 Renovar prazo</button>
         </div>
         <div id="renovarResult" class="batch-result"></div>
       </div>
+
+      <!-- CANCELAR -->
       <div id="lote-cancelar" class="lote-tab-content">
-        <h2>&#10060; Cancelar Reservas em Lote</h2>
-        <p class="helper-text">Cancele reservas de um evento de uma vez.</p>
+        <p class="helper-text">Cancele reservas de um evento.</p>
         <div style="display:grid;gap:10px">
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('cancelarEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('cancelarEventoSelect','');refreshCancelarList()">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar evento..." oninput="filterEventSelect('cancelarEventoSelect',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('cancelarEventoSelect','');refreshCancelarList()">✕</button></div></div>
             <select id="cancelarEventoSelect" onchange="refreshCancelarList()" style="border:none;border-radius:0;margin:0;background:#fff"></select>
           </div>
           <div id="cancelarMachineBox" style="display:none">
@@ -369,12 +460,13 @@
               <div id="cancelarMachineList" style="max-height:200px;overflow-y:auto"></div>
             </div>
           </div>
-          <button onclick="confirmarCancelamentoLote()" style="background:var(--red);color:#fff">&#10060; Cancelar selecionadas</button>
+          <button onclick="confirmarCancelamentoLote()" style="background:var(--red);color:#fff">❌ Cancelar selecionadas</button>
         </div>
         <div id="cancelarResult" class="batch-result"></div>
       </div>
+
+      <!-- MANUTENCAO -->
       <div id="lote-manutencao" class="lote-tab-content">
-        <h2>&#128295; Manutencao em Lote</h2>
         <p class="helper-text">Envie varias maquinas para manutencao.</p>
         <div style="display:grid;gap:10px">
           <div class="brand-checkboxes">
@@ -383,28 +475,33 @@
             <label><input type="checkbox" name="manutBrands" value="Stone" checked onchange="refreshManutList()"/> Stone</label>
           </div>
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar serial..." oninput="filterSelectList('manutMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('manutMachineList','')">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar serial..." oninput="filterSelectList('manutMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('manutMachineList','')">✕</button></div></div>
             <div class="machine-select-header"><span id="manutSelCount">0 selecionadas</span><button type="button" onclick="toggleAllManut()" style="font-size:12px;padding:4px 10px;width:auto">Selecionar todas</button></div>
             <div id="manutMachineList" style="max-height:200px;overflow-y:auto"></div>
           </div>
           <input type="text" id="manutMotivo" placeholder="Motivo da manutencao (opcional)"/>
-          <button onclick="confirmarManutencaoLote()" style="background:var(--gray);color:#fff">&#128295; Enviar para manutencao</button>
+          <button onclick="confirmarManutencaoLote()" style="background:var(--gray);color:#fff">🔧 Enviar para manutencao</button>
         </div>
         <div id="manutResult" class="batch-result"></div>
       </div>
-    </section>
-    <section class="card" id="financeiroSection">
-      <div class="lote-tabs" style="margin:-18px -18px 16px">
-        <button class="lote-tab-btn active" onclick="setFinTab('solicitar')">&#128203; Solicitar</button>
-        <button class="lote-tab-btn" onclick="setFinTab('pendentes')">&#9203; Pendentes</button>
-        <button class="lote-tab-btn" onclick="setFinTab('extrato')">&#128202; Extrato</button>
+    </div>
+  </div>
+
+  <!-- PAGE: FINANCEIRO -->
+  <div id="page-financeiro" class="page">
+    <div class="card">
+      <div class="lote-tabs" style="margin:-16px -16px 14px">
+        <button class="lote-tab-btn active" onclick="setFinTab('solicitar')">📋 Solicitar</button>
+        <button class="lote-tab-btn" onclick="setFinTab('pendentes')">⏳ Pendentes</button>
+        <button class="lote-tab-btn" onclick="setFinTab('extrato')">📊 Extrato</button>
       </div>
+
+      <!-- SOLICITAR -->
       <div id="fin-solicitar" class="lote-tab-content active">
-        <h2>&#128176; Financeiro</h2>
         <p class="helper-text">Registre entradas e saidas financeiras.</p>
-        <div style="display:grid;gap:10px">
+        <div style="display:grid;gap:9px">
           <label>Tipo de lancamento
-            <select id="finTipoLancamento" onchange="toggleFinTipo()">
+            <select id="finTipoLancamento">
               <option value="">Selecione</option>
               <optgroup label="Saidas">
                 <option value="saque_evento">Saque de evento</option>
@@ -433,12 +530,12 @@
             </select>
           </label>
           <div id="pixFields" style="display:none">
-            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:6px">Tipo da chave Pix</p>
+            <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px">Tipo da chave Pix</p>
             <div class="pix-tipo-row">
-              <button type="button" class="pix-tipo-btn active" onclick="setPixTipo(this,'Celular')">&#128241; Celular</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'CPF')">&#128219; CPF</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Email')">&#128231; E-mail</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Aleatoria')">&#128273; Aleatoria</button>
+              <button type="button" class="pix-tipo-btn active" onclick="setPixTipo(this,'Celular')">📱 Celular</button>
+              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'CPF')">🪪 CPF</button>
+              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Email')">📧 E-mail</button>
+              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Aleatoria')">🔑 Aleatoria</button>
             </div>
             <input type="hidden" id="finPixTipo" value="Celular"/>
             <input type="text" id="finChavePix" placeholder="Chave Pix"/>
@@ -448,37 +545,39 @@
           </div>
           <input type="number" id="finValor" placeholder="Valor (R$)" min="0" step="0.01"/>
           <input type="text" id="finObs" placeholder="Observacao (opcional)"/>
-          <div id="finItensLista" style="display:none;margin-bottom:10px">
-            <p style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">Lancamentos adicionados:</p>
+          <div id="finItensLista" style="display:none;margin-bottom:4px">
+            <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px">Lancamentos adicionados:</p>
             <div id="finItensContainer"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <button onclick="adicionarItem()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">+ Adicionar outro</button>
-            <button onclick="solicitarPagamento()" style="background:var(--green);font-size:13px">&#128176; Registrar</button>
+            <button onclick="solicitarPagamento()" style="background:var(--green);font-size:13px">💰 Registrar</button>
           </div>
         </div>
         <div id="finSolicitarResult" class="batch-result"></div>
       </div>
+
+      <!-- PENDENTES -->
       <div id="fin-pendentes" class="lote-tab-content">
-        <p class="helper-text">Pagamentos aguardando confirmacao.</p>
-        <div style="display:grid;gap:8px;margin-bottom:10px">
+        <div style="margin-bottom:10px">
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('finPendentesFiltroEvento',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('finPendentesFiltroEvento','');renderPendentes()">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar evento..." oninput="filterEventSelect('finPendentesFiltroEvento',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('finPendentesFiltroEvento','');renderPendentes()">✕</button></div></div>
             <select id="finPendentesFiltroEvento" onchange="renderPendentes()" style="border:none;border-radius:0;margin:0;background:#fff"></select>
           </div>
         </div>
         <div id="finPendentesList"></div>
       </div>
+
+      <!-- EXTRATO -->
       <div id="fin-extrato" class="lote-tab-content">
-        <p class="helper-text">Historico completo de movimentacoes.</p>
-        <div id="finExtratoResumo" class="saldo-box">
-          <div class="saldo-item"><span id="totalEntradas">R$ 0</span><p>Entradas</p></div>
-          <div class="saldo-item"><span id="totalSaidas">R$ 0</span><p>Saidas</p></div>
-          <div class="saldo-item"><span id="totalSaldo">R$ 0</span><p>Saldo</p></div>
+        <div id="finExtratoResumo" class="fin-summary">
+          <div><span id="totalEntradas">R$ 0</span><p>Entradas</p></div>
+          <div><span id="totalSaidas">R$ 0</span><p>Saidas</p></div>
+          <div><span id="totalSaldo">R$ 0</span><p>Saldo</p></div>
         </div>
         <div style="display:grid;gap:8px;margin-bottom:12px">
           <div class="machine-select-box">
-            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('finExtratoFiltroEvento',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('finExtratoFiltroEvento','');renderExtrato()">&#x2715;</button></div></div>
+            <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar evento..." oninput="filterEventSelect('finExtratoFiltroEvento',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterEventSelect('finExtratoFiltroEvento','');renderExtrato()">✕</button></div></div>
             <select id="finExtratoFiltroEvento" onchange="renderExtrato()" style="border:none;border-radius:0;margin:0;background:#fff"></select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -488,14 +587,14 @@
               <option value="saida">Saidas</option>
             </select>
             <select id="finExtratoFiltroStatus" onchange="renderExtrato()">
-              <option value="">Todos os status</option>
+              <option value="">Todos status</option>
               <option value="Pendente">Pendente</option>
               <option value="Pago">Pago</option>
             </select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <input type="date" id="finExtratoDataInicio" onchange="renderExtrato()" placeholder="Data inicial"/>
-            <input type="date" id="finExtratoDataFim" onchange="renderExtrato()" placeholder="Data final"/>
+            <input type="date" id="finExtratoDataInicio" onchange="renderExtrato()"/>
+            <input type="date" id="finExtratoDataFim" onchange="renderExtrato()"/>
           </div>
           <select id="finExtratoFiltroBanco" onchange="renderExtrato()">
             <option value="">Todos os bancos</option>
@@ -508,38 +607,57 @@
         </div>
         <div id="finExtratoList"></div>
       </div>
-    </section>
-    <section class="card">
-      <h2>&#128269; Filtros</h2>
-      <div class="filters">
-        <input type="text" id="searchInput" placeholder="Buscar por serial"/>
-        <select id="brandFilter">
-          <option value="">Todas as marcas</option>
-          <option value="Sipag">Sipag</option>
-          <option value="PagBank">PagBank</option>
-          <option value="Stone">Stone</option>
-        </select>
-        <select id="statusFilter">
-          <option value="">Todos os status</option>
-          <option value="Disponivel">Disponivel</option>
-          <option value="Em uso">Em uso</option>
-          <option value="Reservada hoje">Reservada hoje</option>
-          <option value="Em atraso">Em atraso</option>
-          <option value="Manutencao">Manutencao</option>
-        </select>
-        <div class="machine-select-box" style="position:relative">
-          <div class="search-in-select" style="padding:6px 8px"><input type="text" id="eventFilterSearch" placeholder="&#128269; Pesquisar evento..." oninput="filterEventSelect('eventFilter',this.value)" style="padding:7px 10px;font-size:13px;margin:0"/></div>
-          <select id="eventFilter" style="border:none;border-top:1px solid var(--border);border-radius:0;margin:0;background:#fff"></select>
-        </div>
-      </div>
-    </section>
-    <section class="card">
-      <h2>&#128187; Maquinas</h2>
-      <div id="resultsCount" class="results-count"></div>
-      <div id="machineList"><p style="color:#9ca3af">Aguardando conexao...</p></div>
-    </section>
-  </main>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="setPage('inicio')">
+      <span class="n-icon">🏠</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Inicio</span>
+    </button>
+    <button class="nav-btn" onclick="setPage('maquinas')">
+      <span class="n-icon">📟</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Maquinas</span>
+    </button>
+    <button class="nav-btn" onclick="setPage('acoes')">
+      <span class="n-icon">⚡</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Acoes</span>
+    </button>
+    <button class="nav-btn" onclick="setPage('financeiro')">
+      <span class="n-icon">💰</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Financeiro</span>
+    </button>
+  </nav>
+
+  <!-- FAB Cadastrar -->
+  <button class="fab" id="fabCadastrar" onclick="openCadastroModal()" style="display:none" title="Cadastrar maquina">➕</button>
 </div>
+
+<!-- MODAIS -->
+<div id="cadastroModal" class="modal">
+  <div class="modal-content">
+    <h2>➕ Cadastrar Maquina</h2>
+    <form onsubmit="cadastrarMaquina(event)">
+      <input type="text" id="serial" placeholder="Numero de serie" required/>
+      <select id="brand" required>
+        <option value="">Marca</option>
+        <option value="Sipag">Sipag</option>
+        <option value="PagBank">PagBank</option>
+        <option value="Stone">Stone</option>
+      </select>
+      <div class="modal-actions">
+        <button type="submit">Cadastrar</button>
+        <button type="button" class="btn-secundario" onclick="closeCadastroModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="exitModal" class="modal">
   <div class="modal-content">
     <h2>Registrar Saida</h2>
@@ -559,6 +677,7 @@
     </form>
   </div>
 </div>
+
 <div id="reserveModal" class="modal">
   <div class="modal-content">
     <h2>Reservar Maquina</h2>
@@ -575,18 +694,20 @@
     </form>
   </div>
 </div>
+
 <div id="viewReservesModal" class="modal">
   <div class="modal-content">
     <h2>Reservas da Maquina</h2>
-    <div id="viewReservesContent" style="font-size:14px;line-height:1.7"></div>
-    <div class="modal-actions" style="margin-top:14px"><button class="btn-secundario" onclick="closeViewReservesModal()">Fechar</button></div>
+    <div id="viewReservesContent" style="font-size:13px;line-height:1.7"></div>
+    <div class="modal-actions" style="margin-top:12px"><button class="btn-secundario" onclick="closeViewReservesModal()">Fechar</button></div>
   </div>
 </div>
+
 <div id="pagarModal" class="modal">
   <div class="modal-content">
     <h2>Confirmar Pagamento</h2>
     <input type="hidden" id="pagarId"/>
-    <div id="pagarInfo" style="font-size:14px;line-height:1.7;margin-bottom:14px;padding:10px;background:#f9fafb;border-radius:9px"></div>
+    <div id="pagarInfo" style="font-size:13px;line-height:1.7;margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:9px"></div>
     <label>Banco utilizado
       <select id="pagarBanco">
         <option value="">Selecione o banco</option>
@@ -597,13 +718,13 @@
         <option value="Sicoob">Sicoob</option>
       </select>
     </label>
-    <div class="modal-actions" style="margin-top:12px">
+    <div class="modal-actions" style="margin-top:10px">
       <button onclick="confirmarPagamento()" style="background:var(--green)">Confirmar pagamento</button>
       <button class="btn-secundario" onclick="closePagarModal()">Cancelar</button>
     </div>
   </div>
 </div>
-<script>
+
 // ═══════════════════════════════════════════
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════
@@ -1229,6 +1350,100 @@ function render(){
 // FILTROS LIVE + DATAS
 // ═══════════════════════════════════════════
 ['searchInput','brandFilter','statusFilter','eventFilter'].forEach(function(id){document.getElementById(id).addEventListener('input',render);document.getElementById(id).addEventListener('change',render);});
+var _today=getToday();
+['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
+document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
+document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
+document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
+document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
+document.getElementById('customStartDate').addEventListener('change',function(){document.getElementById('customEndDate').min=this.value;});
+
+
+// ═══════════════════════════════════════════
+// NAVEGACAO POR PAGINAS
+// ═══════════════════════════════════════════
+var currentPage = 'inicio';
+function setPage(page) {
+  currentPage = page;
+  ['inicio','maquinas','acoes','financeiro'].forEach(function(p){
+    document.getElementById('page-'+p).classList.toggle('active', p===page);
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(btn,i){
+    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro'][i]===page);
+  });
+  var fab = document.getElementById('fabCadastrar');
+  if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
+  if(page==='maquinas') renderMachines();
+  if(page==='financeiro') { renderPendentes(); renderExtrato(); }
+}
+
+// ═══════════════════════════════════════════
+// CADASTRO MODAL
+// ═══════════════════════════════════════════
+function openCadastroModal(){ document.getElementById('cadastroModal').classList.add('open'); }
+function closeCadastroModal(){ document.getElementById('cadastroModal').classList.remove('open'); }
+
+// ═══════════════════════════════════════════
+// STATUS FILTER (CHIPS)
+// ═══════════════════════════════════════════
+var currentStatusFilter = '';
+function setStatusFilter(status) {
+  currentStatusFilter = status;
+  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+  event.currentTarget.classList.add('active');
+  renderMachines();
+}
+
+// ═══════════════════════════════════════════
+// RENDER MACHINES (separado do render geral)
+// ═══════════════════════════════════════════
+function renderMachines() {
+  updateDashboard(); renderDayAlerts();
+  var selEv = document.getElementById('eventFilter').value;
+  refreshEventFilter(selEv);
+  var search = document.getElementById('searchInput').value.toLowerCase();
+  var brand  = document.getElementById('brandFilter').value;
+  var status = currentStatusFilter;
+  var evFilt = document.getElementById('eventFilter').value;
+  var filtered = machines.filter(function(m){
+    var rs = getRealStatus(m);
+    return m.serial.toLowerCase().indexOf(search)>-1 && (!brand||m.brand===brand) && (!status||rs===status) && (!evFilt||m.history.some(function(h){return h.event===evFilt;})||m.reservations.some(function(r){return r.event===evFilt;}));
+  });
+  var rc = document.getElementById('resultsCount');
+  if(search||brand||status||evFilt){ rc.style.display='block'; rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:''); }
+  else rc.style.display='none';
+  var list = document.getElementById('machineList'); list.innerHTML='';
+  if(!filtered.length){ list.innerHTML="<p style='color:#9ca3af'>Nenhuma maquina encontrada.</p>"; return; }
+  filtered.forEach(function(m){
+    var rs=getRealStatus(m),nextRes=getNextReservation(m),today=getToday();
+    var resHoje=rs==='Reservada hoje'?m.reservations.find(function(r){return hasDateOverlap(r.startDate,r.endDate,today,today);}):null;
+    var lastSaida=null; if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
+    var infoHtml='';
+    if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
+    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
+    if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'!</div>':'');
+    if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
+    var acoesHtml='';
+    if(rs==='Disponivel') acoesHtml='<div class="actions-row"><button onclick="openExitModal(\''+m.serial+'\')">Saida</button><button onclick="openReserveModal(\''+m.serial+'\')">Reservar</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-gray" onclick="sendToMaintenance(\''+m.serial+'\')">Manutencao</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    if(rs==='Reservada hoje') acoesHtml='<div class="actions-row"><button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva(\''+m.serial+'\')">Confirmar saida</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
+    if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
+    if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
+    var div=document.createElement('div'); div.className='machine-item';
+    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    list.appendChild(div);
+  });
+}
+
+// Override render to use renderMachines + update dashboard
+function render(){ updateDashboard(); renderDayAlerts(); if(currentPage==='maquinas') renderMachines(); }
+
+// Search input live filter
+document.getElementById('searchInput').addEventListener('input', renderMachines);
+document.getElementById('brandFilter').addEventListener('change', renderMachines);
+document.getElementById('eventFilter').addEventListener('change', renderMachines);
+
+// Date mins
 var _today=getToday();
 ['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
 document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
