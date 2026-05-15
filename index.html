@@ -608,7 +608,7 @@
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════
 const firebaseConfig = {
-  piKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+  apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
       authDomain:        "easytick-maquinas.firebaseapp.com",
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
@@ -1056,7 +1056,16 @@ function renderPendentes(){
     var div=document.createElement('div');
     div.className='fin-select-item'+(pendentesSelected.has(f.id)?' selected':'');
     div.onclick=function(){togglePendentesSel(f.id);};
-    div.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px"><input type="checkbox" style="width:auto;margin-right:4px;flex-shrink:0"'+(pendentesSelected.has(f.id)?' checked':'')+' onclick="event.stopPropagation();togglePendentesSel(''+f.id+'')" /><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div><b style="font-size:14px">'+f.evento+'</b><br><span style="font-size:12px;color:#374151">'+getTipoLabel(f.tipoLancamento)+' | '+f.nome+' - '+f.tipoPagamento+(f.chave?' - '+f.chave:'')+'</span><br>'+(f.obs?'<span style="font-size:12px;color:#374151">Obs: '+f.obs+'</span><br>':'')+'<span style="font-size:11px;color:#9ca3af">'+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div><b style="font-size:16px;color:#166534;white-space:nowrap">'+formatMoney(f.valor)+'</b></div></div></div>';
+    var inner = document.createElement('div');
+    inner.style.cssText = 'display:flex;align-items:flex-start;gap:10px';
+    var chk = document.createElement('input');
+    chk.type='checkbox'; chk.style.cssText='width:auto;margin-right:4px;flex-shrink:0';
+    if(pendentesSelected.has(f.id)) chk.checked=true;
+    chk.onclick=function(e){e.stopPropagation();togglePendentesSel(f.id);};
+    var info = document.createElement('div'); info.style.flex='1';
+    info.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div><b style="font-size:14px">'+f.evento+'</b><br><span style="font-size:12px;color:#374151">'+getTipoLabel(f.tipoLancamento)+' | '+f.nome+' - '+f.tipoPagamento+(f.chave?' - '+f.chave:'')+'</span><br>'+(f.obs?'<span style="font-size:12px;color:#374151">Obs: '+f.obs+'</span><br>':'')+'<span style="font-size:11px;color:#9ca3af">'+f.solicitadoPor+' em '+new Date(f.dataSolicitacao).toLocaleString("pt-BR")+'</span></div><b style="font-size:16px;color:#166534;white-space:nowrap">'+formatMoney(f.valor)+'</b></div>';
+    inner.appendChild(chk); inner.appendChild(info);
+    div.appendChild(inner);
     var btn=document.createElement('button');
     btn.textContent='Confirmar individual';
     btn.style.cssText='margin-top:8px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:12px;padding:7px';
