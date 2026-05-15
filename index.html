@@ -730,7 +730,7 @@
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════
 const firebaseConfig = {
-  apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+  piKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
       authDomain:        "easytick-maquinas.firebaseapp.com",
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
@@ -757,8 +757,8 @@ auth.onAuthStateChanged(function(user) {
     currentUser = user;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.add('visible');
-    document.getElementById('headerUserName').textContent  = user.displayName || user.email;
-    document.getElementById('headerUserEmail').textContent = user.displayName ? user.email : '';
+    var hn=document.getElementById('headerUserName'); if(hn) hn.textContent=user.displayName||user.email;
+    var he=document.getElementById('headerUserEmail'); if(he) he.textContent=user.displayName?user.email:'';
     startFirebaseListener();
     startFinanceiroListener();
   } else {
@@ -1330,7 +1330,7 @@ function getNextReservation(m){var today=getToday();return m.reservations.filter
 function render(){
   updateDashboard();renderDayAlerts();
   var selEv=document.getElementById('eventFilter').value;refreshEventFilter(selEv);
-  var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=document.getElementById('statusFilter').value,evFilt=document.getElementById('eventFilter').value;
+  var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=currentStatusFilter,evFilt=document.getElementById('eventFilter').value;
   var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||m.history.some(function(h){return h.event===evFilt;})||m.reservations.some(function(r){return r.event===evFilt;}));});
   var rc=document.getElementById('resultsCount');
   if(search||brand||status||evFilt){rc.style.display='block';rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
@@ -1361,7 +1361,7 @@ function render(){
 // ═══════════════════════════════════════════
 // FILTROS LIVE + DATAS
 // ═══════════════════════════════════════════
-['searchInput','brandFilter','statusFilter','eventFilter'].forEach(function(id){document.getElementById(id).addEventListener('input',render);document.getElementById(id).addEventListener('change',render);});
+['searchInput','brandFilter','eventFilter'].forEach(function(id){var el=document.getElementById(id);if(el){el.addEventListener('input',render);el.addEventListener('change',render);}});
 var _today=getToday();
 ['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
 document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
