@@ -608,7 +608,7 @@
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════
 const firebaseConfig = {
-  apiKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
+  piKey:            "AIzaSyCWDRohBqH0Y6yjIJg99BiTKaziaiF_g60",
       authDomain:        "easytick-maquinas.firebaseapp.com",
       databaseURL:       "https://easytick-maquinas-default-rtdb.firebaseio.com",
       projectId:         "easytick-maquinas",
@@ -705,6 +705,7 @@ function getTipoLabel(tipo){
   return labels[tipo]||tipo||'';
 }
 function hasDateOverlap(sA,eA,sB,eB){return sA<=eB&&eA>=sB;}
+function scrollToMachines(){setTimeout(function(){var el=document.getElementById('machineList');if(el)el.scrollIntoView({behavior:'smooth'});},300);}
 function daysDiff(d){var today=new Date(getToday()+'T00:00:00');var target=new Date(d+'T00:00:00');return Math.floor((today-target)/(1000*60*60*24));}
 
 function getRealStatus(m) {
@@ -771,7 +772,7 @@ function renderDayAlerts(){
   if(tr>0){elR.style.display='block';elR.innerHTML='<div class="day-alert retorno"><div class="day-alert-text"><b>'+tr+' maquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo</button></div>';}
   else elR.style.display='none';
   var ta=Object.values(atrasosHoje).reduce(function(a,b){return a+b.length;},0);
-  if(ta>0){elA.style.display='block';var nomes=Object.keys(atrasosHoje).map(function(ev){var items=atrasosHoje[ev];var d=daysDiff(items[0].last.endDate);return ev+' ('+d+' dia'+(d>1?'s':'')+' de atraso)';}).join(', ');elA.innerHTML='<div class="day-alert atraso"><div class="day-alert-text"><b>'+ta+' maquina'+(ta>1?'s':'')+' em atraso!</b><p>'+nomes+'</p></div><button onclick="document.getElementById(\'statusFilter\').value=\'Em atraso\';render();setTimeout(function(){var el=document.getElementById('machineList');if(el)el.scrollIntoView({behavior:'smooth'});},300)">Ver em atraso</button></div>';}
+  if(ta>0){elA.style.display='block';var nomes=Object.keys(atrasosHoje).map(function(ev){var items=atrasosHoje[ev];var d=daysDiff(items[0].last.endDate);return ev+' ('+d+' dia'+(d>1?'s':'')+' de atraso)';}).join(', ');elA.innerHTML='<div class="day-alert atraso"><div class="day-alert-text"><b>'+ta+' maquina'+(ta>1?'s':'')+' em atraso!</b><p>'+nomes+'</p></div><button onclick="document.getElementById(\'statusFilter\').value=\'Em atraso\';render();scrollToMachines()">Ver em atraso</button></div>';}
   else elA.style.display='none';
   if(elF){var fp=financeiro.filter(function(f){return f.status==='Pendente';});if(fp.length>0){elF.style.display='block';elF.innerHTML='<div class="day-alert financeiro"><div class="day-alert-text"><b>'+fp.length+' pagamento'+(fp.length>1?'s':'')+' pendente'+(fp.length>1?'s':'')+'</b><p>'+fp.map(function(f){return f.evento+': '+formatMoney(f.valor);}).join(' / ')+'</p></div><button onclick="setFinTab(\'pendentes\');document.getElementById(\'financeiroSection\').scrollIntoView()">Ver pendentes</button></div>';}else elF.style.display='none';}
 }
