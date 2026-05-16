@@ -899,15 +899,15 @@ function renderDayAlerts(){
   });
   var elS=document.getElementById('alertaSaida'),elR=document.getElementById('alertaRetorno'),elA=document.getElementById('alertaAtraso'),elF=document.getElementById('alertaFinanceiro');
   var ts=Object.values(saidasHoje).reduce(function(a,b){return a+b.length;},0);
-  if(ts>0){elS.style.display='block';elS.innerHTML='<div class="day-alert saida"><div class="day-alert-text"><b>'+ts+' maquina'+(ts>1?'s':'')+' sai'+(ts>1?'em':'')+' hoje</b><p>'+Object.keys(saidasHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo</button></div>';}
+  if(ts>0){elS.style.display='block';elS.innerHTML='<div class="alert-box saida"><div class="alert-box-text"><b>'+ts+' maquina'+(ts>1?'s':'')+' sai'+(ts>1?'em':'')+' hoje</b><p>'+Object.keys(saidasHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')" style="width:auto;font-size:12px;padding:7px 13px">Ver no Resumo</button></div>';}
   else elS.style.display='none';
   var tr=Object.values(retornosHoje).reduce(function(a,b){return a+b.length;},0);
-  if(tr>0){elR.style.display='block';elR.innerHTML='<div class="day-alert retorno"><div class="day-alert-text"><b>'+tr+' maquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')">Ver no Resumo</button></div>';}
+  if(tr>0){elR.style.display='block';elR.innerHTML='<div class="alert-box retorno"><div class="alert-box-text"><b>'+tr+' maquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')" style="width:auto;font-size:12px;padding:7px 13px">Ver no Resumo</button></div>';}
   else elR.style.display='none';
   var ta=Object.values(atrasosHoje).reduce(function(a,b){return a+b.length;},0);
-  if(ta>0){elA.style.display='block';var nomes=Object.keys(atrasosHoje).map(function(ev){var items=atrasosHoje[ev];var d=daysDiff(items[0].last.endDate);return ev+' ('+d+' dia'+(d>1?'s':'')+' de atraso)';}).join(', ');elA.innerHTML='<div class="day-alert atraso"><div class="day-alert-text"><b>'+ta+' maquina'+(ta>1?'s':'')+' em atraso!</b><p>'+nomes+'</p></div><button onclick="document.getElementById(\'statusFilter\').value=\'Em atraso\';render();scrollToMachines()">Ver em atraso</button></div>';}
+  if(ta>0){elA.style.display='block';var nomes=Object.keys(atrasosHoje).map(function(ev){var items=atrasosHoje[ev];var d=daysDiff(items[0].last.endDate);return ev+' ('+d+' dia'+(d>1?'s':'')+' de atraso)';}).join(', ');elA.innerHTML='<div class="alert-box atraso"><div class="alert-box-text"><b>'+ta+' maquina'+(ta>1?'s':'')+' em atraso!</b><p>'+nomes+'</p></div><button onclick="document.getElementById(\'statusFilter\').value=\'Em atraso\';render();scrollToMachines()" style="width:auto;font-size:12px;padding:7px 13px">Ver em atraso</button></div>';}
   else elA.style.display='none';
-  if(elF){var fp=financeiro.filter(function(f){return f.status==='Pendente';});if(fp.length>0){elF.style.display='block';elF.innerHTML='<div class="day-alert financeiro"><div class="day-alert-text"><b>'+fp.length+' pagamento'+(fp.length>1?'s':'')+' pendente'+(fp.length>1?'s':'')+'</b><p>'+fp.map(function(f){return f.evento+': '+formatMoney(f.valor);}).join(' / ')+'</p></div><button onclick="setFinTab(\'pendentes\');document.getElementById(\'financeiroSection\').scrollIntoView()">Ver pendentes</button></div>';}else elF.style.display='none';}
+  if(elF){var fp=financeiro.filter(function(f){return f.status==='Pendente';});if(fp.length>0){elF.style.display='block';elF.innerHTML='<div class="alert-box financeiro"><div class="alert-box-text"><b>'+fp.length+' pagamento'+(fp.length>1?'s':'')+' pendente'+(fp.length>1?'s':'')+'</b><p>'+fp.map(function(f){return f.evento+': '+formatMoney(f.valor);}).join(' / ')+'</p></div><button onclick="setFinTab(\'pendentes\');document.getElementById(\'financeiroSection\').scrollIntoView()" style="width:auto;font-size:12px;padding:7px 13px">Ver pendentes</button></div>';}else elF.style.display='none';}
 }
 
 // ═══════════════════════════════════════════
@@ -1113,7 +1113,7 @@ function confirmarManutencaoLote(){if(!manutSelected.size){alert('Selecione ao m
 // FINANCEIRO
 // ═══════════════════════════════════════════
 var FIN_ABAS=['solicitar','pendentes','extrato'];
-function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes')renderPendentes();if(tab==='extrato')renderExtrato();}
+function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes'){refreshFinEventos();renderPendentes();}if(tab==='extrato'){refreshFinEventos();renderExtrato();}}
 
 function toggleFinTipo(){}
 function togglePixFields(){var t=document.getElementById('finTipoPagamento').value;document.getElementById('pixFields').style.display=t==='Pix'?'block':'none';document.getElementById('naoPixFields').style.display=(t&&t!=='Pix'&&t!=='Dinheiro')?'block':'none';}
@@ -1161,7 +1161,7 @@ function solicitarPagamento(){
   var totalItens=finItens.length;
   finItens.forEach(function(item){var id2='fin_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);var isEnt=item.isEntrada;financeiro.push({id:id2,tipoLancamento:item.tipoLancamento,isEntrada:isEnt,evento:item.evento,nome:item.nome,tipoPagamento:item.tipoPagamento,chave:item.chave,valor:item.valor,obs:item.obs,status:isEnt?'Pago':'Pendente',dataSolicitacao:new Date().toISOString(),solicitadoPor:un,solicitadoEmail:ue,banco:''});});
   if(totalItens>0){result.innerHTML+='<br>+'+totalItens+' lancamento'+(totalItens>1?'s':'')+' adicionado'+(totalItens>1?'s':'')+' da lista';}
-  finItens=[];renderFinItens();
+  finItens=[];renderFinItens();if(totalItens>0)saveFinanceiro();
 }
 
 function refreshFinEventos(){
@@ -1386,7 +1386,7 @@ function setPage(page) {
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
-  if(page==='financeiro') { renderPendentes(); renderExtrato(); }
+  if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); }
 }
 
 // ═══════════════════════════════════════════
