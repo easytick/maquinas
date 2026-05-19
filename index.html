@@ -890,7 +890,7 @@ function renderDayAlerts(){
   });
   var elS=document.getElementById('alertaSaida'),elR=document.getElementById('alertaRetorno'),elA=document.getElementById('alertaAtraso'),elF=document.getElementById('alertaFinanceiro');
   var ts=Object.values(saidasHoje).reduce(function(a,b){return a+b.length;},0);
-  if(ts>0){elS.style.display='block';elS.innerHTML='<div class="alert-box saida"><div class="alert-box-text"><b>'+ts+' maquina'+(ts>1?'s':'')+' sai'+(ts>1?'em':'')+' hoje</b><p>'+Object.keys(saidasHoje).join(', ')+'</p></div><button onclick="setPage('inicio');showDayResume('today')" style="width:auto;font-size:12px;padding:7px 13px">Ver no Resumo</button></div>';}
+  if(ts>0){elS.style.display='block';elS.innerHTML='<div class="alert-box saida"><div class="alert-box-text"><b>'+ts+' maquina'+(ts>1?'s':'')+' sai'+(ts>1?'em':'')+' hoje</b><p>'+Object.keys(saidasHoje).join(', ')+'</p></div><button onclick=\"goInicio()\" style=\"width:auto;font-size:12px;padding:7px 13px\">Ver no Resumo</button></div>';}
   else elS.style.display='none';
   var tr=Object.values(retornosHoje).reduce(function(a,b){return a+b.length;},0);
   if(tr>0){elR.style.display='block';elR.innerHTML='<div class="alert-box retorno"><div class="alert-box-text"><b>'+tr+' maquina'+(tr>1?'s':'')+' retorna'+(tr>1?'m':'')+' hoje</b><p>'+Object.keys(retornosHoje).join(', ')+'</p></div><button onclick="showDayResume(\'today\')" style="width:auto;font-size:12px;padding:7px 13px" onclick="setPage('inicio')">Ver no Resumo</button></div>';}
@@ -1438,6 +1438,7 @@ function closeCadastroModal(){ document.getElementById('cadastroModal').classLis
 // STATUS FILTER (CHIPS)
 // ═══════════════════════════════════════════
 var currentStatusFilter = '';
+function goInicio(){setPage('inicio');showDayResume('today');}
 function setStatusFilter2(status) {
   currentStatusFilter = status;
   document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
