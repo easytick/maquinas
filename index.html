@@ -1131,30 +1131,50 @@ function parsePixText() {
   function extract(text, keys) {
     for(var i=0;i<keys.length;i++) {
       var key = keys[i];
-      // Match key followed by :* or : and capture everything after until newline
+      // Very flexible: ignore *, spaces, case. Match key + any combo of :*spaces
       var escaped = key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      var regex = new RegExp(escaped+'\\s*:\\s*\\*?\\s*([^\n]+)', 'i');
+      // Allow optional * before and after key, flexible spacing around :
+      var regex = new RegExp('\\*?\\s*'+escaped+'\\s*\\*?\\s*:\\s*\\*?\\s*([^\n]+)', 'i');
       var m = text.match(regex);
-      if(m) return m[1].replace(/\*/g,'').trim();
+      if(m) {
+        // Clean result: remove leading/trailing *, spaces
+        return m[1].replace(/^[\s*]+|[\s*]+$/g,'').trim();
+      }
     }
     return '';
   }
 
-  var nome    = extract(text, ['Nome Evento/Operacao','Nome do fornecedor/Operacao','Nome Evento','Nome do fornecedor','Operacao']);
-  var chave   = extract(text, ['Chave pix','Chave PIX','PIX']);
-  var dest    = extract(text, ['Nome destinatario','Nome destinatário','Destinatario']);
-  var valorRaw= extract(text, ['Valor']);
+  // Try all possible key variations for each field
+  var nome = extract(text, [
+    'Nome Evento/Operacao','Nome Evento/Operação',
+    'Nome do fornecedor/Operacao','Nome do fornecedor/Operação',
+    'Nome do fornecedor','Nome Evento',
+    'Operacao','Operação','Evento'
+  ]);
+  var chave = extract(text, [
+    'Chave pix','Chave PIX','Chave Pix',
+    'PIX','Pix'
+  ]);
+  var dest = extract(text, [
+    'Nome destinatario','Nome destinatário',
+    'Destinatario','Destinatário',
+    'Nome do destinatario','Nome do destinatário'
+  ]);
+  var valorRaw = extract(text, ['Valor']);
 
-  // Fix valor: handle both comma and dot decimal separators
-  // R$6.696,42 -> 6696.42 | R$6,696.42 -> 6696.42
-  var valorClean = valorRaw.replace(/R\$\s*/gi,'').trim();
-  // If has comma after digits (Brazilian format: 6.696,42)
-  if(/\d,\d{2}$/.test(valorClean)) {
-    valorClean = valorClean.replace(/\./g,'').replace(',','.');
-  } else {
-    valorClean = valorClean.replace(/,/g,'');
+  // Parse valor - handle R$2.833,58 or R$2833.58 or 2.833,58 or 2833,58
+  var valorClean = valorRaw.replace(/R\$\s*/gi,'').replace(/\s/g,'').trim();
+  var valor = '';
+  if(valorClean) {
+    // Brazilian format: dots as thousands separator, comma as decimal
+    if(/\d,\d{1,2}$/.test(valorClean)) {
+      valorClean = valorClean.replace(/\./g,'').replace(',','.');
+    } else {
+      // Already using dot as decimal or no decimal
+      valorClean = valorClean.replace(/,/g,'');
+    }
+    valor = parseFloat(valorClean) || '';
   }
-  var valor = parseFloat(valorClean) || '';
 
   if(nome)  document.getElementById('finEvento').value = nome;
   if(dest)  document.getElementById('finNome').value   = dest;
@@ -1165,11 +1185,21 @@ function parsePixText() {
     togglePixFields();
     document.getElementById('finChavePix').value = chave;
     var chaveDigits = chave.replace(/\D/g,'');
-    if(/^[\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,}$/.test(chave)) setPixTipoByName('Email');
-    else if(chaveDigits.length === 11) setPixTipoByName('CPF');
-    else if(chaveDigits.length === 14) setPixTipoByName('CPF');
-    else if(chaveDigits.length === 10 || chaveDigits.length === 11) setPixTipoByName('Celular');
-    else setPixTipoByName('Aleatoria');
+    if(/^[\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,}$/.test(chave)) {
+      setPixTipoByName('Email');
+    } else if(chaveDigits.length === 14) {
+      setPixTipoByName('CPF'); // CNPJ
+    } else if(chaveDigits.length === 11 && /^[9][0-9]/.test(chaveDigits.substring(2))) {
+      setPixTipoByName('Celular'); // DDD + 9 + numero
+    } else if(chaveDigits.length === 11) {
+      setPixTipoByName('CPF'); // CPF tem 11 digitos
+    } else if(chaveDigits.length === 10) {
+      setPixTipoByName('Celular');
+    } else if(chave.length >= 32) {
+      setPixTipoByName('Aleatoria');
+    } else {
+      setPixTipoByName('Celular');
+    }
   }
 
   if(!document.getElementById('finTipoLancamento').value)
