@@ -758,7 +758,7 @@ auth.onAuthStateChanged(function(user) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.add('visible');
     document.getElementById('headerUserName').textContent  = user.displayName || user.email;
-    document.getElementById('headerUserEmail').textContent = user.displayName ? user.email : '';
+    var he=document.getElementById('headerUserEmail'); if(he) he.textContent = user.displayName ? user.email : '';
     startFirebaseListener();
     startFinanceiroListener();
   } else {
@@ -1349,7 +1349,7 @@ function render(){
 // ═══════════════════════════════════════════
 // FILTROS LIVE + DATAS
 // ═══════════════════════════════════════════
-['searchInput','brandFilter','statusFilter','eventFilter'].forEach(function(id){document.getElementById(id).addEventListener('input',render);document.getElementById(id).addEventListener('change',render);});
+['searchInput','brandFilter','eventFilter'].forEach(function(id){var el=document.getElementById(id);if(el){el.addEventListener('input',render);el.addEventListener('change',render);}});
 var _today=getToday();
 document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
