@@ -1154,7 +1154,6 @@ function solicitarPagamento(){
 }
 
 function refreshFinEventos(){
-  var eventos=new Set();
   financeiro.forEach(function(f){if(f.evento)eventos.add(f.evento);});
   var opts='<option value="">Todos os eventos</option>'+Array.from(eventos).map(function(e){return'<option value="'+e+'">'+e+'</option>';}).join('');
   ['finPendentesFiltroEvento','finExtratoFiltroEvento'].forEach(function(id){
@@ -1352,8 +1351,6 @@ function render(){
 // ═══════════════════════════════════════════
 ['searchInput','brandFilter','statusFilter','eventFilter'].forEach(function(id){document.getElementById(id).addEventListener('input',render);document.getElementById(id).addEventListener('change',render);});
 var _today=getToday();
-['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
-document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
@@ -1402,7 +1399,6 @@ function scrollToMachines(){setTimeout(function(){var el=document.getElementById
 function daysDiff(d){var today=new Date(getToday()+'T00:00:00');var target=new Date(d+'T00:00:00');return Math.floor((today-target)/(1000*60*60*24));}
 
 // ── STARTFINANCEIROLISTEN ─────────────────────────
-var financeiro=[];
 function startFinanceiroListener(){
   db.ref('financeiro').on('value',function(snap){
     var d=snap.val();financeiro=d?Object.values(d):[];
@@ -1412,8 +1408,6 @@ function startFinanceiroListener(){
 function saveFinanceiro(){var obj={};financeiro.forEach(function(f){obj[f.id]=f;});db.ref('financeiro').set(obj);}
 
 // ── EVENTOS ───────────────────────────────────────
-var eventos=[];
-var _eventoTargetField=null;
 function startEventosListener(){
   db.ref('eventos').on('value',function(snap){
     var d=snap.val();eventos=d?Object.values(d):[];
@@ -1503,25 +1497,8 @@ function excluirEvento(id){
 }
 
 // ── OVERRIDES ─────────────────────────────────────
-auth.onAuthStateChanged(function(user){
-  if(user){
-    currentUser=user;
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('appScreen').classList.add('visible');
-    var hn=document.getElementById('headerUserName');if(hn)hn.textContent=user.displayName||user.email;
-    startFirebaseListener();
-    startFinanceiroListener();
-    startEventosListener();
-  } else {
-    currentUser=null;
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('appScreen').classList.remove('visible');
-  }
-});
 
 // ── NAVIGATION ────────────────────────────────────
-var currentPage='inicio';
-var currentStatusFilter='';
 function setPage(page){
   currentPage=page;
   ['inicio','maquinas','acoes','financeiro'].forEach(function(p){document.getElementById('page-'+p).classList.toggle('active',p===page);});
@@ -1636,7 +1613,6 @@ function refreshEventFilter(){
 }
 
 // ── FINANCEIRO ────────────────────────────────────
-var FIN_ABAS=['solicitar','pendentes','extrato'];
 function setFinTab(tab){
   FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});
   document.querySelectorAll('#page-financeiro .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});
@@ -1644,7 +1620,6 @@ function setFinTab(tab){
   if(tab==='extrato'){refreshFinEventos();renderExtrato();}
 }
 function togglePixFields(){var t=document.getElementById('finTipoPagamento').value;document.getElementById('pixFields').style.display=t==='Pix'?'block':'none';document.getElementById('naoPixFields').style.display=(t&&t!=='Pix'&&t!=='Dinheiro')?'block':'none';}
-var _pixTipo='Celular';
 function setPixTipo(btn,tipo){document.querySelectorAll('.pix-tipo-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');_pixTipo=tipo;document.getElementById('finPixTipo').value=tipo;}
 function setPixTipoByName(name){document.querySelectorAll('.pix-tipo-btn').forEach(function(b){b.classList.remove('active');if(b.textContent.indexOf(name)>-1)b.classList.add('active');});document.getElementById('finPixTipo').value=name;}
 
@@ -1706,7 +1681,6 @@ function refreshFinEventos(){
   ['finPendentesFiltroEvento','finExtratoFiltroEvento'].forEach(function(id){var el=document.getElementById(id);if(el){var cur=el.value;el.innerHTML=opts;if(cur)el.value=cur;}});
 }
 
-var finItens=[];
 function adicionarItem(){
   var tipoLanc=document.getElementById('finTipoLancamento').value;
   var evento=document.getElementById('finEvento').value.trim();
@@ -1756,7 +1730,6 @@ function solicitarPagamento(){
   finItens=[];renderFinItens();
 }
 
-var pendentesSelected=new Set();
 function renderPendentes(){
   refreshFinEventos();
   var evFilt=document.getElementById('finPendentesFiltroEvento').value;
@@ -1826,9 +1799,6 @@ document.getElementById('brandFilter').addEventListener('change',renderMachines)
 document.getElementById('eventFilter').addEventListener('change',renderMachines);
 
 // ── DATE MINS ─────────────────────────────────────
-var _today=getToday();
-['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
-document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
