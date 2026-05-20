@@ -45,7 +45,7 @@
     .page.active{display:block}
 
     /* BOTTOM NAV */
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
     .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:none;background:none;cursor:pointer;font-family:Arial,sans-serif}
     .nav-btn .n-icon{font-size:21px}
     .nav-btn .n-label{font-size:10px;color:#9ca3af}
@@ -216,12 +216,25 @@
     .modal-actions{display:grid;gap:7px;margin-top:8px}
 
     /* CADASTRO MODAL */
+    .rec-tab{display:none}.rec-tab.active{display:block}
+    .rec-chip{display:inline-block;padding:5px 12px;border-radius:999px;font-size:12px;cursor:pointer;white-space:nowrap;border:1.5px solid var(--border);background:#fff;color:#374151;flex-shrink:0}
+    .rec-chip.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:bold}
+    .rec-card{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid transparent}
+    .rec-card.emdia{border-left-color:#16a34a}
+    .rec-card.vencendo{border-left-color:#f59e0b}
+    .rec-card.atrasado{border-left-color:var(--red)}
+    .rec-card.inativo{border-left-color:#9ca3af;opacity:.65}
+    .rec-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
+    .rec-badge.emdia{background:#dcfce7;color:#166534}
+    .rec-badge.vencendo{background:#fef3c7;color:#92400e}
+    .rec-badge.atrasado{background:#fee2e2;color:#991b1b}
+    .rec-badge.inativo{background:#e5e7eb;color:#374151}
     .fab{position:fixed;bottom:80px;right:16px;width:50px;height:50px;border-radius:999px;background:var(--blue);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,74,173,.4);cursor:pointer;border:none;z-index:150}
 
     #loadingBar{position:fixed;top:0;left:0;height:3px;width:0;background:#60a5fa;transition:width .3s;z-index:9999}
 
     @media(min-width:700px){
-      .dash-grid{grid-template-columns:repeat(4,1fr)}
+      .dash-grid{grid-template-columns:repeat(5,1fr)}
       .day-tabs{grid-template-columns:repeat(4,1fr)}
       .custom-filter{grid-template-columns:1fr 1fr 1fr}
     }
@@ -265,6 +278,7 @@
     <div id="alertaRetorno" style="display:none"></div>
     <div id="alertaAtraso" style="display:none"></div>
     <div id="alertaFinanceiro" style="display:none"></div>
+    <div id="alertaRecorrentes" style="display:none"></div>
 
     <div class="dash-grid">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
@@ -623,13 +637,104 @@
       <div class="n-dot"></div>
       <span class="n-label">Financeiro</span>
     </button>
+    <button class="nav-btn" onclick="setPage('recorrentes')">
+      <span class="n-icon">🔄</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Recorrentes</span>
+    </button>
   </nav>
 
   <!-- FAB Cadastrar -->
   <button class="fab" id="fabCadastrar" onclick="openCadastroModal()" style="display:none" title="Cadastrar maquina">➕</button>
+
+  <!-- RECORRENTES PAGE -->
+  <div id="page-recorrentes" class="page">
+    <div style="background:#fff;border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);margin:-14px -14px 14px;position:sticky;top:52px;z-index:90">
+      <button class="rec-sub-btn" id="rsub-painel" onclick="setRecTab('painel')" style="padding:10px 4px;font-size:11px;border:none;border-right:1px solid var(--border);background:#eef6ff;color:var(--blue);font-weight:bold;font-family:Arial,sans-serif;cursor:pointer">📊 Painel</button>
+      <button class="rec-sub-btn" id="rsub-cadastro" onclick="setRecTab('cadastro')" style="padding:10px 4px;font-size:11px;border:none;border-right:1px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">➕ Cadastrar</button>
+      <button class="rec-sub-btn" id="rsub-extrato" onclick="setRecTab('extrato')" style="padding:10px 4px;font-size:11px;border:none;background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">📋 Extrato</button>
+    </div>
+
+    <!-- PAINEL -->
+    <div id="rec-painel" class="rec-tab active">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)"><span id="recEmDiaCount" style="display:block;font-size:22px;font-weight:bold;color:var(--green)">0</span><p style="font-size:11px;color:#6b7280;margin-top:2px">Em dia</p></div>
+        <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)"><span id="recVencendoCount" style="display:block;font-size:22px;font-weight:bold;color:#92400e">0</span><p style="font-size:11px;color:#6b7280;margin-top:2px">Vencendo</p></div>
+        <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)"><span id="recAtrasadoCount" style="display:block;font-size:22px;font-weight:bold;color:var(--red)">0</span><p style="font-size:11px;color:#6b7280;margin-top:2px">Atrasados</p></div>
+      </div>
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;scrollbar-width:none;padding-bottom:2px">
+        <span class="rec-chip active" onclick="setRecFiltro(this,'')">Todos</span>
+        <span class="rec-chip" onclick="setRecFiltro(this,'atrasado')">⚠️ Atrasados</span>
+        <span class="rec-chip" onclick="setRecFiltro(this,'vencendo')">🔔 Vencendo</span>
+        <span class="rec-chip" onclick="setRecFiltro(this,'emdia')">✅ Em dia</span>
+        <span class="rec-chip" onclick="setRecFiltro(this,'inativo')">⏸️ Inativos</span>
+      </div>
+      <div id="recClienteList"><p style="color:#9ca3af;font-size:13px">Nenhum cliente cadastrado.</p></div>
+    </div>
+
+    <!-- CADASTRAR -->
+    <div id="rec-cadastro" class="rec-tab" style="display:none">
+      <div class="card">
+        <div style="font-size:14px;font-weight:bold;color:var(--blue);margin-bottom:12px">➕ Novo Cliente Recorrente</div>
+        <form onsubmit="cadastrarRecorrente(event)">
+          <input type="text" id="recNome" placeholder="Nome do cliente / estabelecimento" required/>
+          <label>Tipo de plano<select id="recTipo"><option value="Ficha">Ficha</option><option value="Ingresso">Ingresso</option><option value="Mensalidade">Mensalidade</option><option value="Outro">Outro</option></select></label>
+          <label>Valor mensal (R$)<input type="number" id="recValor" placeholder="Ex: 350.00" min="0" step="0.01" required/></label>
+          <label>Dia de vencimento (1-28)<input type="number" id="recDiaVenc" placeholder="Ex: 10" min="1" max="28" required/></label>
+          <input type="text" id="recObs" placeholder="Observacao (opcional)"/>
+          <button type="submit" style="background:var(--green)">Cadastrar cliente</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- EXTRATO -->
+    <div id="rec-extrato" class="rec-tab" style="display:none">
+      <div style="background:var(--blue);color:#fff;border-radius:12px;padding:13px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+        <div><span id="recTotalRecebido" style="display:block;font-size:18px;font-weight:bold">R$ 0,00</span><p style="font-size:11px;opacity:.8;margin-top:2px">Recebido</p></div>
+        <div><span id="recTotalAberto" style="display:block;font-size:18px;font-weight:bold">R$ 0,00</span><p style="font-size:11px;opacity:.8;margin-top:2px">Em aberto</p></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <select id="recExtratoMes" onchange="renderRecExtrato()"><option value="">Todos os meses</option></select>
+        <select id="recExtratoCliente" onchange="renderRecExtrato()"><option value="">Todos os clientes</option></select>
+      </div>
+      <div id="recExtratoList"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAIS -->
+<div id="recPagoModal" class="modal">
+  <div class="modal-content">
+    <h2>✅ Registrar Pagamento</h2>
+    <input type="hidden" id="recPagoId"/>
+    <div id="recPagoInfo" style="font-size:13px;line-height:1.7;margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:9px"></div>
+    <label>Forma de pagamento<select id="recPagoForma"><option value="">Selecione</option><option value="Pix">Pix</option><option value="Boleto">Boleto</option><option value="Transferencia">Transferencia</option><option value="Dinheiro">Dinheiro</option></select></label>
+    <label>Banco que recebeu<select id="recPagoBanco"><option value="">Selecione</option><option value="Santander">Santander</option><option value="Efi Bank">Efi Bank</option><option value="Stone">Stone</option><option value="PagBank">PagBank</option><option value="Sicoob">Sicoob</option></select></label>
+    <label>Data do recebimento<input type="date" id="recPagoData"/></label>
+    <div class="modal-actions" style="margin-top:10px">
+      <button onclick="confirmarRecPago()" style="background:var(--green)">✅ Confirmar recebimento</button>
+      <button class="btn-secundario" onclick="closeRecPagoModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div id="recEditModal" class="modal">
+  <div class="modal-content">
+    <h2>✏️ Editar Cliente</h2>
+    <input type="hidden" id="recEditId"/>
+    <form onsubmit="salvarEditRecorrente(event)">
+      <input type="text" id="recEditNome" placeholder="Nome" required/>
+      <label>Tipo<select id="recEditTipo"><option value="Ficha">Ficha</option><option value="Ingresso">Ingresso</option><option value="Mensalidade">Mensalidade</option><option value="Outro">Outro</option></select></label>
+      <label>Valor (R$)<input type="number" id="recEditValor" min="0" step="0.01" required/></label>
+      <label>Dia de vencimento<input type="number" id="recEditDiaVenc" min="1" max="28" required/></label>
+      <input type="text" id="recEditObs" placeholder="Observacao (opcional)"/>
+      <div class="modal-actions">
+        <button type="submit">Salvar</button>
+        <button type="button" class="btn-secundario" onclick="closeRecEditModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
 <div id="cadastroModal" class="modal">
   <div class="modal-content">
     <h2>➕ Cadastrar Maquina</h2>
@@ -1471,16 +1576,17 @@ document.getElementById('customStartDate').addEventListener('change',function(){
 var currentPage = 'inicio';
 function setPage(page) {
   currentPage = page;
-  ['inicio','maquinas','acoes','financeiro'].forEach(function(p){
+  ['inicio','maquinas','acoes','financeiro','recorrentes'].forEach(function(p){
     document.getElementById('page-'+p).classList.toggle('active', p===page);
   });
   document.querySelectorAll('.nav-btn').forEach(function(btn,i){
-    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro'][i]===page);
+    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes'][i]===page);
   });
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
   if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); }
+  if(page==='recorrentes') { renderRecPainel(); }
 }
 
 // ═══════════════════════════════════════════
@@ -1564,6 +1670,296 @@ document.getElementById('batchEndDate').addEventListener('change',function(){if(
 document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('customStartDate').addEventListener('change',function(){document.getElementById('customEndDate').min=this.value;});
+
+// ═══════════════════════════════════════════
+// RECORRENTES
+// ═══════════════════════════════════════════
+var recorrentes = [];
+var recFiltroAtual = '';
+
+function startRecorrentesListener() {
+  db.ref('recorrentes').on('value', function(snap) {
+    var d = snap.val();
+    recorrentes = d ? Object.values(d) : [];
+    renderRecPainel();
+    renderDayAlertsRec();
+  });
+}
+function saveRecorrentes() {
+  var obj = {};
+  recorrentes.forEach(function(r) { obj[r.id] = r; });
+  db.ref('recorrentes').set(obj);
+}
+
+function getRecStatus(r) {
+  if (r.status === 'inativo') return 'inativo';
+  var today = getToday();
+  var dd = parseInt(r.diaVenc);
+  var now = new Date(today + 'T00:00:00');
+  var year = now.getFullYear(), month = now.getMonth();
+  var lastPag = getLastRecPag(r);
+  if (lastPag) {
+    var lastDate = new Date(lastPag.data + 'T00:00:00');
+    if (lastDate.getFullYear() === year && lastDate.getMonth() === month) return 'emdia';
+  }
+  var vencThisMonth = new Date(year, month, dd);
+  var diff = Math.floor((now - vencThisMonth) / (1000*60*60*24));
+  if (diff > 0) return 'atrasado';
+  if (diff >= -5) return 'vencendo';
+  return 'emdia';
+}
+
+function getVencLabel(r) {
+  var now = new Date(getToday() + 'T00:00:00');
+  var venc = new Date(now.getFullYear(), now.getMonth(), parseInt(r.diaVenc));
+  var diff = Math.floor((venc - now) / (1000*60*60*24));
+  if (diff === 0) return 'Vence hoje';
+  if (diff > 0) return 'Vence em ' + diff + ' dia' + (diff > 1 ? 's' : '');
+  return Math.abs(diff) + ' dia' + (Math.abs(diff) > 1 ? 's' : '') + ' de atraso';
+}
+
+function getLastRecPag(r) {
+  if (!r.pagamentos || !r.pagamentos.length) return null;
+  return r.pagamentos.slice().sort(function(a,b){ return new Date(b.data)-new Date(a.data); })[0];
+}
+
+function setRecTab(tab) {
+  ['painel','cadastro','extrato'].forEach(function(t) {
+    var el = document.getElementById('rec-'+t);
+    var btn = document.getElementById('rsub-'+t);
+    if (el) el.style.display = t===tab ? 'block' : 'none';
+    if (btn) { btn.style.background=t===tab?'#eef6ff':'#f9fafb'; btn.style.color=t===tab?'var(--blue)':'#6b7280'; btn.style.fontWeight=t===tab?'bold':'normal'; }
+  });
+  if (tab==='extrato') renderRecExtrato();
+  if (tab==='painel') renderRecPainel();
+}
+
+function setRecFiltro(el, filtro) {
+  recFiltroAtual = filtro;
+  document.querySelectorAll('.rec-chip').forEach(function(c){ c.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderRecPainel();
+}
+
+function cadastrarRecorrente(e) {
+  e.preventDefault();
+  var nome = document.getElementById('recNome').value.trim();
+  var tipo = document.getElementById('recTipo').value;
+  var valor = parseFloat(document.getElementById('recValor').value);
+  var diaVenc = parseInt(document.getElementById('recDiaVenc').value);
+  var obs = document.getElementById('recObs').value.trim();
+  if (!nome || !valor || !diaVenc) { alert('Preencha todos os campos obrigatorios.'); return; }
+  var id = 'rec_' + Date.now();
+  recorrentes.push({ id:id, nome:nome, tipo:tipo, valor:valor, diaVenc:diaVenc, obs:obs, status:'ativo', pagamentos:[], criadoEm:new Date().toISOString() });
+  saveRecorrentes();
+  document.getElementById('recNome').value=''; document.getElementById('recValor').value=''; document.getElementById('recDiaVenc').value=''; document.getElementById('recObs').value='';
+  alert('Cliente "'+nome+'" cadastrado!');
+  setRecTab('painel');
+}
+
+function openRecPagoModal(id) {
+  var r = recorrentes.find(function(x){ return x.id===id; }); if (!r) return;
+  document.getElementById('recPagoId').value = id;
+  document.getElementById('recPagoForma').value = '';
+  document.getElementById('recPagoBanco').value = '';
+  document.getElementById('recPagoData').value = getToday();
+  document.getElementById('recPagoInfo').innerHTML = '<b>'+r.nome+'</b><br>Tipo: '+r.tipo+'<br>Valor: <b>'+formatMoney(r.valor)+'</b><br>Vencimento: dia '+r.diaVenc;
+  document.getElementById('recPagoModal').classList.add('open');
+}
+function closeRecPagoModal() { document.getElementById('recPagoModal').classList.remove('open'); }
+function confirmarRecPago() {
+  var id=document.getElementById('recPagoId').value, forma=document.getElementById('recPagoForma').value, banco=document.getElementById('recPagoBanco').value, data=document.getElementById('recPagoData').value;
+  if (!forma) { alert('Selecione a forma de pagamento.'); return; }
+  if (!banco) { alert('Selecione o banco.'); return; }
+  var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
+  if (!r.pagamentos) r.pagamentos=[];
+  r.pagamentos.push({id:'pag_'+Date.now(), data:data, forma:forma, banco:banco, valor:r.valor, registradoPor:getCurrentUserName(), registradoEm:new Date().toISOString()});
+  saveRecorrentes(); closeRecPagoModal(); alert('Pagamento registrado!');
+}
+
+function toggleRecStatus(id) {
+  var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
+  if (r.status==='inativo') { if(!confirm('Reativar "'+r.nome+'"?'))return; r.status='ativo'; }
+  else { if(!confirm('Desativar "'+r.nome+'"?'))return; r.status='inativo'; }
+  saveRecorrentes();
+}
+
+function openRecEditModal(id) {
+  var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
+  document.getElementById('recEditId').value=id;
+  document.getElementById('recEditNome').value=r.nome;
+  document.getElementById('recEditTipo').value=r.tipo;
+  document.getElementById('recEditValor').value=r.valor;
+  document.getElementById('recEditDiaVenc').value=r.diaVenc;
+  document.getElementById('recEditObs').value=r.obs||'';
+  document.getElementById('recEditModal').classList.add('open');
+}
+function closeRecEditModal() { document.getElementById('recEditModal').classList.remove('open'); }
+function salvarEditRecorrente(e) {
+  e.preventDefault();
+  var id=document.getElementById('recEditId').value;
+  var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
+  r.nome=document.getElementById('recEditNome').value.trim();
+  r.tipo=document.getElementById('recEditTipo').value;
+  r.valor=parseFloat(document.getElementById('recEditValor').value);
+  r.diaVenc=parseInt(document.getElementById('recEditDiaVenc').value);
+  r.obs=document.getElementById('recEditObs').value.trim();
+  saveRecorrentes(); closeRecEditModal();
+}
+
+function toggleRecHist(id) {
+  var el=document.getElementById('rechist-'+id);
+  if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+function renderRecPainel() {
+  var all = recorrentes;
+  var atrasados = all.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='atrasado';});
+  var vencendo  = all.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='vencendo';});
+  var emdia     = all.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='emdia';});
+  var inativos  = all.filter(function(r){return r.status==='inativo';});
+
+  var ec=document.getElementById('recEmDiaCount'), vc=document.getElementById('recVencendoCount'), ac=document.getElementById('recAtrasadoCount');
+  if(ec) ec.textContent=emdia.length;
+  if(vc) vc.textContent=vencendo.length;
+  if(ac) ac.textContent=atrasados.length;
+
+  var filtered = all;
+  if(recFiltroAtual==='atrasado') filtered=atrasados;
+  else if(recFiltroAtual==='vencendo') filtered=vencendo;
+  else if(recFiltroAtual==='emdia') filtered=emdia;
+  else if(recFiltroAtual==='inativo') filtered=inativos;
+
+  var list=document.getElementById('recClienteList'); if(!list) return;
+  list.innerHTML='';
+  if(!filtered.length){list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhum cliente encontrado.</p>';return;}
+
+  var order={atrasado:0,vencendo:1,emdia:2,inativo:3};
+  filtered=filtered.slice().sort(function(a,b){return(order[getRecStatus(a)]||0)-(order[getRecStatus(b)]||0);});
+
+  filtered.forEach(function(r) {
+    var st=getRecStatus(r), lastPag=getLastRecPag(r);
+    var badgeText = st==='emdia'?'Em dia':st==='inativo'?'Inativo':getVencLabel(r);
+
+    var div=document.createElement('div');
+    div.className='rec-card '+st;
+    div.innerHTML=
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">'+
+        '<div><div style="font-size:15px;font-weight:bold;color:#111827">'+r.nome+'</div>'+
+        '<div style="font-size:12px;color:#6b7280;margin-top:1px">'+r.tipo+'</div></div>'+
+        '<span class="rec-badge '+st+'">'+badgeText+'</span>'+
+      '</div>'+
+      '<div style="border-top:1px solid var(--border);padding-top:7px;font-size:12px;color:#374151;line-height:1.7">'+
+        '<b>Valor:</b> '+formatMoney(r.valor)+'/mes &nbsp;·&nbsp; <b>Vence:</b> dia '+r.diaVenc+
+        (r.obs?'<br><b>Obs:</b> '+r.obs:'')+
+        (lastPag?'<br><b>Ultimo pag:</b> '+formatDate(lastPag.data)+' via '+lastPag.forma+' - '+lastPag.banco:'<br><span style="color:#9ca3af">Sem pagamentos registrados</span>')+
+      '</div>';
+
+    // Historico
+    var histDiv=document.createElement('div');
+    histDiv.id='rechist-'+r.id; histDiv.style.display='none';
+    histDiv.style.cssText='margin-top:8px;padding:9px;background:#f9fafb;border-radius:9px;border:1px solid var(--border);font-size:12px';
+    histDiv.innerHTML=(!r.pagamentos||!r.pagamentos.length)?'<p style="color:#9ca3af">Sem historico.</p>':
+      r.pagamentos.slice().reverse().map(function(p){
+        return '<div style="padding:5px 0;border-bottom:1px solid var(--border)"><b>'+formatDate(p.data)+'</b> - '+formatMoney(p.valor)+' via '+p.forma+' ('+p.banco+')<br><span style="color:#9ca3af">'+p.registradoPor+'</span></div>';
+      }).join('');
+    div.appendChild(histDiv);
+
+    // Botoes
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;gap:6px;margin-top:9px;flex-wrap:wrap';
+
+    if(st!=='inativo'){
+      var bp=document.createElement('button');
+      bp.textContent='✅ Marcar pago';
+      bp.style.cssText='flex:1;min-width:80px;font-size:12px;padding:8px 6px;border-radius:8px;border:none;background:#dcfce7;color:#166534;font-family:Arial,sans-serif;cursor:pointer;font-weight:bold';
+      bp.onclick=(function(id){return function(){openRecPagoModal(id);};})(r.id);
+      row.appendChild(bp);
+    }
+
+    var bh=document.createElement('button');
+    bh.textContent='📋 Hist.';
+    bh.style.cssText='flex:1;min-width:55px;font-size:12px;padding:8px 6px;border-radius:8px;border:1px solid var(--border);background:#f3f4f6;color:#374151;font-family:Arial,sans-serif;cursor:pointer';
+    bh.onclick=(function(id){return function(){toggleRecHist(id);};})(r.id);
+    row.appendChild(bh);
+
+    var be=document.createElement('button');
+    be.textContent='✏️ Editar';
+    be.style.cssText='flex:1;min-width:60px;font-size:12px;padding:8px 6px;border-radius:8px;border:none;background:#dbeafe;color:#1e40af;font-family:Arial,sans-serif;cursor:pointer';
+    be.onclick=(function(id){return function(){openRecEditModal(id);};})(r.id);
+    row.appendChild(be);
+
+    var bt=document.createElement('button');
+    bt.textContent=st==='inativo'?'▶️ Reativar':'⏸️ Desativar';
+    bt.style.cssText='flex:1;min-width:70px;font-size:12px;padding:8px 6px;border-radius:8px;border:none;font-family:Arial,sans-serif;cursor:pointer;background:'+(st==='inativo'?'#dcfce7;color:#166534':'#fee2e2;color:#991b1b');
+    bt.onclick=(function(id){return function(){toggleRecStatus(id);};})(r.id);
+    row.appendChild(bt);
+
+    div.appendChild(row);
+    list.appendChild(div);
+  });
+}
+
+function renderRecExtrato() {
+  var cSel=document.getElementById('recExtratoCliente');
+  if(cSel){var cur=cSel.value;cSel.innerHTML='<option value="">Todos os clientes</option>'+recorrentes.map(function(r){return'<option value="'+r.id+'">'+r.nome+'</option>';}).join('');if(cur)cSel.value=cur;}
+  var mSel=document.getElementById('recExtratoMes');
+  if(mSel){var months=new Set();recorrentes.forEach(function(r){(r.pagamentos||[]).forEach(function(p){months.add(p.data.substring(0,7));});});var curM=mSel.value;mSel.innerHTML='<option value="">Todos os meses</option>'+Array.from(months).sort().reverse().map(function(m){var p2=m.split('-');var lbl=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(p2[1])-1]+' '+p2[0];return'<option value="'+m+'">'+lbl+'</option>';}).join('');if(curM)mSel.value=curM;}
+
+  var filtroMes=mSel?mSel.value:'', filtroCliente=cSel?cSel.value:'';
+  var allPags=[];
+  recorrentes.forEach(function(r){(r.pagamentos||[]).forEach(function(p){allPags.push(Object.assign({},p,{cNome:r.nome,cTipo:r.tipo,cId:r.id}));});});
+  var filtered=allPags.filter(function(p){if(filtroMes&&!p.data.startsWith(filtroMes))return false;if(filtroCliente&&p.cId!==filtroCliente)return false;return true;});
+
+  var totalPago=filtered.reduce(function(a,p){return a+parseFloat(p.valor);},0);
+  var mesRef=filtroMes||getToday().substring(0,7);
+  var totalAberto=recorrentes.filter(function(r){if(r.status==='inativo')return false;return!(r.pagamentos||[]).some(function(p){return p.data.startsWith(mesRef);});}).reduce(function(a,r){return a+parseFloat(r.valor);},0);
+
+  var tr=document.getElementById('recTotalRecebido'),ta=document.getElementById('recTotalAberto');
+  if(tr)tr.textContent=formatMoney(totalPago);
+  if(ta)ta.textContent=formatMoney(totalAberto);
+
+  var list=document.getElementById('recExtratoList');if(!list)return;list.innerHTML='';
+  if(!filtered.length){list.innerHTML='<p style="color:#9ca3af;font-size:13px">Nenhum pagamento encontrado.</p>';return;}
+  filtered.slice().sort(function(a,b){return new Date(b.data)-new Date(a.data);}).forEach(function(p){
+    var div=document.createElement('div');
+    div.style.cssText='border-radius:10px;padding:11px 13px;margin-bottom:8px;background:#f0fdf4;border:1.5px solid #86efac';
+    div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><b>'+p.cNome+'</b><br><span style="font-size:12px;color:#374151">'+p.cTipo+' · '+p.forma+' · '+p.banco+'</span><br><span style="font-size:11px;color:#9ca3af">'+formatDate(p.data)+' · '+p.registradoPor+'</span></div><b style="font-size:15px;color:#166534;white-space:nowrap">+ '+formatMoney(p.valor)+'</b></div>';
+    list.appendChild(div);
+  });
+}
+
+function renderDayAlertsRec() {
+  var atrasados=recorrentes.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='atrasado';});
+  var vencendo=recorrentes.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='vencendo';});
+  var elR=document.getElementById('alertaRecorrentes');if(!elR)return;
+  if(atrasados.length||vencendo.length){
+    elR.style.display='block';elR.innerHTML='';
+    var div=document.createElement('div');div.className='alert-box atraso';
+    var txt=document.createElement('div');txt.className='alert-box-text';
+    var b=document.createElement('b');
+    var msg=[];
+    if(atrasados.length)msg.push(atrasados.length+' plano'+(atrasados.length>1?'s':'')+' em atraso');
+    if(vencendo.length)msg.push(vencendo.length+' vencendo em breve');
+    b.textContent='🔄 '+msg.join(' · ');
+    var p=document.createElement('p');
+    p.textContent=atrasados.concat(vencendo).slice(0,3).map(function(r){return r.nome;}).join(', ');
+    txt.appendChild(b);txt.appendChild(p);
+    var btn=document.createElement('button');
+    btn.textContent='Ver recorrentes';
+    btn.style.cssText='width:auto;font-size:12px;padding:7px 13px;flex-shrink:0';
+    btn.onclick=function(){setPage('recorrentes');};
+    div.appendChild(txt);div.appendChild(btn);elR.appendChild(div);
+  } else { elR.style.display='none'; }
+}
+
+// Hook into startFirebaseListener
+var _origSFL = startFirebaseListener;
+startFirebaseListener = function() {
+  _origSFL();
+  startRecorrentesListener();
+};
+
 </script>
 </body>
 </html>
