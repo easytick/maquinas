@@ -679,8 +679,27 @@
         <form onsubmit="cadastrarRecorrente(event)">
           <input type="text" id="recNome" placeholder="Nome do cliente / estabelecimento" required/>
           <label>Tipo de plano<select id="recTipo"><option value="Ficha">Ficha</option><option value="Ingresso">Ingresso</option><option value="Mensalidade">Mensalidade</option><option value="Outro">Outro</option></select></label>
-          <label>Valor mensal (R$)<input type="number" id="recValor" placeholder="Ex: 350.00" min="0" step="0.01" required/></label>
-          <label>Dia de vencimento (1-28)<input type="number" id="recDiaVenc" placeholder="Ex: 10" min="1" max="28" required/></label>
+          <label>Frequencia de cobranca
+            <select id="recFrequencia" onchange="toggleRecFrequencia()">
+              <option value="mensal">📅 Mensal — todo mes</option>
+              <option value="anual">📆 Anual — uma vez por ano</option>
+              <option value="unica">1️⃣ Unica — pagamento unico</option>
+            </select>
+          </label>
+          <label>Valor (R$)<input type="number" id="recValor" placeholder="Ex: 350.00" min="0" step="0.01" required/></label>
+          <div id="recDiaVencWrap">
+            <label>Dia de vencimento (1-28)<input type="number" id="recDiaVenc" placeholder="Ex: 10" min="1" max="28"/></label>
+          </div>
+          <div id="recMesVencWrap" style="display:none">
+            <label>Mes de vencimento
+              <select id="recMesVenc">
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Marco</option>
+                <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </label>
+          </div>
           <input type="text" id="recObs" placeholder="Observacao (opcional)"/>
           <button type="submit" style="background:var(--green)">Cadastrar cliente</button>
         </form>
@@ -725,8 +744,10 @@
     <form onsubmit="salvarEditRecorrente(event)">
       <input type="text" id="recEditNome" placeholder="Nome" required/>
       <label>Tipo<select id="recEditTipo"><option value="Ficha">Ficha</option><option value="Ingresso">Ingresso</option><option value="Mensalidade">Mensalidade</option><option value="Outro">Outro</option></select></label>
+      <label>Frequencia<select id="recEditFrequencia" onchange="toggleRecEditFrequencia()"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="unica">Unica</option></select></label>
       <label>Valor (R$)<input type="number" id="recEditValor" min="0" step="0.01" required/></label>
-      <label>Dia de vencimento<input type="number" id="recEditDiaVenc" min="1" max="28" required/></label>
+      <div id="recEditDiaWrap"><label>Dia de vencimento<input type="number" id="recEditDiaVenc" min="1" max="28"/></label></div>
+      <div id="recEditMesWrap" style="display:none"><label>Mes de vencimento<select id="recEditMesVenc"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Marco</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select></label></div>
       <input type="text" id="recEditObs" placeholder="Observacao (opcional)"/>
       <div class="modal-actions">
         <button type="submit">Salvar</button>
@@ -1692,12 +1713,50 @@ function saveRecorrentes() {
 }
 
 function getRecStatus(r) {
-  if (r.status === 'inativo') return 'inativo';
+  if (r.status === 'inativo' || r.status === 'concluido') return 'inativo';
+  var freq = r.frequencia || 'mensal';
   var today = getToday();
-  var dd = parseInt(r.diaVenc);
   var now = new Date(today + 'T00:00:00');
   var year = now.getFullYear(), month = now.getMonth();
   var lastPag = getLastRecPag(r);
+
+  // UNICA: se ja pagou, em dia; se nao, vencendo
+  if (freq === 'unica') {
+    if (lastPag) return 'emdia';
+    return 'vencendo';
+  }
+
+  // ANUAL: vence uma vez por ano (diaVenc + mesVenc)
+  if (freq === 'anual') {
+    var mesVenc = (r.mesVenc || 1) - 1; // 0-indexed
+    var diaVenc = parseInt(r.diaVenc) || 1;
+    if (lastPag) {
+      var lastDate = new Date(lastPag.data + 'T00:00:00');
+      var vencAnual = new Date(lastDate.getFullYear(), mesVenc, diaVenc);
+      // Proximo vencimento apos ultimo pagamento
+      if (lastDate < vencAnual) {
+        var diffAnual = Math.floor((now - vencAnual) / (1000*60*60*24));
+        if (diffAnual > 0) return 'atrasado';
+        if (diffAnual >= -30) return 'vencendo';
+        return 'emdia';
+      }
+      // Proximo ano
+      var proxVenc = new Date(lastDate.getFullYear() + 1, mesVenc, diaVenc);
+      var diffProx = Math.floor((now - proxVenc) / (1000*60*60*24));
+      if (diffProx > 0) return 'atrasado';
+      if (diffProx >= -30) return 'vencendo';
+      return 'emdia';
+    }
+    // Nunca pagou - check vencimento deste ano
+    var vencEsteAno = new Date(year, mesVenc, diaVenc);
+    var diffEste = Math.floor((now - vencEsteAno) / (1000*60*60*24));
+    if (diffEste > 0) return 'atrasado';
+    if (diffEste >= -30) return 'vencendo';
+    return 'emdia';
+  }
+
+  // MENSAL (default)
+  var dd = parseInt(r.diaVenc);
   if (lastPag) {
     var lastDate = new Date(lastPag.data + 'T00:00:00');
     if (lastDate.getFullYear() === year && lastDate.getMonth() === month) return 'emdia';
@@ -1710,14 +1769,46 @@ function getRecStatus(r) {
 }
 
 function getVencLabel(r) {
+  var freq = r.frequencia || 'mensal';
+  if (freq === 'unica') return 'Pagamento unico';
   var now = new Date(getToday() + 'T00:00:00');
-  var venc = new Date(now.getFullYear(), now.getMonth(), parseInt(r.diaVenc));
+  var venc;
+  if (freq === 'anual') {
+    var mes = (r.mesVenc || 1) - 1;
+    venc = new Date(now.getFullYear(), mes, parseInt(r.diaVenc)||1);
+    if (venc < now) venc = new Date(now.getFullYear()+1, mes, parseInt(r.diaVenc)||1);
+  } else {
+    venc = new Date(now.getFullYear(), now.getMonth(), parseInt(r.diaVenc));
+  }
   var diff = Math.floor((venc - now) / (1000*60*60*24));
   if (diff === 0) return 'Vence hoje';
   if (diff > 0) return 'Vence em ' + diff + ' dia' + (diff > 1 ? 's' : '');
   return Math.abs(diff) + ' dia' + (Math.abs(diff) > 1 ? 's' : '') + ' de atraso';
 }
 
+var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function getFreqLabel(r) {
+  var freq = r.frequencia || 'mensal';
+  if (freq === 'mensal') return '📅 Mensal';
+  if (freq === 'anual')  return '📆 Anual';
+  if (freq === 'unica')  return '1️⃣ Unica';
+  return freq;
+}
+function getVencInfo(r) {
+  var freq = r.frequencia || 'mensal';
+  if (freq === 'unica') return 'Pagamento unico';
+  if (freq === 'anual') {
+    var mes = MESES[(r.mesVenc||1)-1];
+    return 'Vence: dia '+r.diaVenc+' de '+mes;
+  }
+  return 'Vence: dia '+r.diaVenc;
+}
+function getFreqLabelById(freq) {
+  if (freq==='mensal') return 'Mensal';
+  if (freq==='anual')  return 'Anual';
+  if (freq==='unica')  return 'Unico';
+  return freq||'';
+}
 function getLastRecPag(r) {
   if (!r.pagamentos || !r.pagamentos.length) return null;
   return r.pagamentos.slice().sort(function(a,b){ return new Date(b.data)-new Date(a.data); })[0];
@@ -1741,18 +1832,35 @@ function setRecFiltro(el, filtro) {
   renderRecPainel();
 }
 
+function toggleRecFrequencia() {
+  var freq = document.getElementById('recFrequencia').value;
+  document.getElementById('recDiaVencWrap').style.display = freq==='unica' ? 'none' : 'block';
+  document.getElementById('recMesVencWrap').style.display = freq==='anual' ? 'block' : 'none';
+  var lbl = document.querySelector('#recDiaVencWrap label');
+  if(lbl) lbl.childNodes[0].textContent = freq==='anual' ? 'Dia do vencimento anual (1-28)' : 'Dia de vencimento (1-28)';
+}
+function toggleRecEditFrequencia() {
+  var freq = document.getElementById('recEditFrequencia').value;
+  document.getElementById('recEditDiaWrap').style.display = freq==='unica' ? 'none' : 'block';
+  document.getElementById('recEditMesWrap').style.display = freq==='anual' ? 'block' : 'none';
+}
 function cadastrarRecorrente(e) {
   e.preventDefault();
   var nome = document.getElementById('recNome').value.trim();
   var tipo = document.getElementById('recTipo').value;
+  var freq = document.getElementById('recFrequencia').value;
   var valor = parseFloat(document.getElementById('recValor').value);
-  var diaVenc = parseInt(document.getElementById('recDiaVenc').value);
+  var diaVenc = freq==='unica' ? 0 : parseInt(document.getElementById('recDiaVenc').value)||0;
+  var mesVenc = freq==='anual' ? parseInt(document.getElementById('recMesVenc').value)||0 : 0;
   var obs = document.getElementById('recObs').value.trim();
-  if (!nome || !valor || !diaVenc) { alert('Preencha todos os campos obrigatorios.'); return; }
+  if (!nome || !valor) { alert('Preencha todos os campos obrigatorios.'); return; }
+  if (freq!=='unica' && !diaVenc) { alert('Informe o dia de vencimento.'); return; }
   var id = 'rec_' + Date.now();
-  recorrentes.push({ id:id, nome:nome, tipo:tipo, valor:valor, diaVenc:diaVenc, obs:obs, status:'ativo', pagamentos:[], criadoEm:new Date().toISOString() });
+  recorrentes.push({ id:id, nome:nome, tipo:tipo, frequencia:freq, valor:valor, diaVenc:diaVenc, mesVenc:mesVenc, obs:obs, status:'ativo', pagamentos:[], criadoEm:new Date().toISOString() });
   saveRecorrentes();
-  document.getElementById('recNome').value=''; document.getElementById('recValor').value=''; document.getElementById('recDiaVenc').value=''; document.getElementById('recObs').value='';
+  document.getElementById('recNome').value=''; document.getElementById('recValor').value='';
+  document.getElementById('recDiaVenc').value=''; document.getElementById('recObs').value='';
+  document.getElementById('recFrequencia').value='mensal'; toggleRecFrequencia();
   alert('Cliente "'+nome+'" cadastrado!');
   setRecTab('painel');
 }
@@ -1774,7 +1882,10 @@ function confirmarRecPago() {
   var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
   if (!r.pagamentos) r.pagamentos=[];
   r.pagamentos.push({id:'pag_'+Date.now(), data:data, forma:forma, banco:banco, valor:r.valor, registradoPor:getCurrentUserName(), registradoEm:new Date().toISOString()});
-  saveRecorrentes(); closeRecPagoModal(); alert('Pagamento registrado!');
+  // Unica: apos pagar, marcar como concluido (inativo)
+  if ((r.frequencia||'mensal') === 'unica') { r.status = 'concluido'; }
+  saveRecorrentes(); closeRecPagoModal();
+  alert('Pagamento registrado!'+(r.status==='concluido'?' Plano unico concluido.':''));
 }
 
 function toggleRecStatus(id) {
@@ -1789,9 +1900,12 @@ function openRecEditModal(id) {
   document.getElementById('recEditId').value=id;
   document.getElementById('recEditNome').value=r.nome;
   document.getElementById('recEditTipo').value=r.tipo;
+  document.getElementById('recEditFrequencia').value=r.frequencia||'mensal';
   document.getElementById('recEditValor').value=r.valor;
-  document.getElementById('recEditDiaVenc').value=r.diaVenc;
+  document.getElementById('recEditDiaVenc').value=r.diaVenc||'';
+  document.getElementById('recEditMesVenc').value=r.mesVenc||1;
   document.getElementById('recEditObs').value=r.obs||'';
+  toggleRecEditFrequencia();
   document.getElementById('recEditModal').classList.add('open');
 }
 function closeRecEditModal() { document.getElementById('recEditModal').classList.remove('open'); }
@@ -1801,8 +1915,10 @@ function salvarEditRecorrente(e) {
   var r=recorrentes.find(function(x){return x.id===id;}); if(!r) return;
   r.nome=document.getElementById('recEditNome').value.trim();
   r.tipo=document.getElementById('recEditTipo').value;
+  r.frequencia=document.getElementById('recEditFrequencia').value;
   r.valor=parseFloat(document.getElementById('recEditValor').value);
-  r.diaVenc=parseInt(document.getElementById('recEditDiaVenc').value);
+  r.diaVenc=r.frequencia==='unica'?0:parseInt(document.getElementById('recEditDiaVenc').value)||0;
+  r.mesVenc=r.frequencia==='anual'?parseInt(document.getElementById('recEditMesVenc').value)||0:0;
   r.obs=document.getElementById('recEditObs').value.trim();
   saveRecorrentes(); closeRecEditModal();
 }
@@ -1839,18 +1955,20 @@ function renderRecPainel() {
 
   filtered.forEach(function(r) {
     var st=getRecStatus(r), lastPag=getLastRecPag(r);
-    var badgeText = st==='emdia'?'Em dia':st==='inativo'?'Inativo':getVencLabel(r);
+    var freq = r.frequencia||'mensal';
+    var isConc = r.status==='concluido';
+    var badgeText = st==='emdia'?'Em dia':st==='inativo'?(isConc?'✅ Concluido':'Inativo'):getVencLabel(r);
 
     var div=document.createElement('div');
     div.className='rec-card '+st;
     div.innerHTML=
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">'+
         '<div><div style="font-size:15px;font-weight:bold;color:#111827">'+r.nome+'</div>'+
-        '<div style="font-size:12px;color:#6b7280;margin-top:1px">'+r.tipo+'</div></div>'+
+        '<div style="font-size:12px;color:#6b7280;margin-top:1px">'+r.tipo+' · '+getFreqLabel(r)+'</div></div>'+
         '<span class="rec-badge '+st+'">'+badgeText+'</span>'+
       '</div>'+
       '<div style="border-top:1px solid var(--border);padding-top:7px;font-size:12px;color:#374151;line-height:1.7">'+
-        '<b>Valor:</b> '+formatMoney(r.valor)+'/mes &nbsp;·&nbsp; <b>Vence:</b> dia '+r.diaVenc+
+        '<b>Valor:</b> '+formatMoney(r.valor)+' &nbsp;·&nbsp; '+getFreqLabel(r)+' &nbsp;·&nbsp; '+getVencInfo(r)+
         (r.obs?'<br><b>Obs:</b> '+r.obs:'')+
         (lastPag?'<br><b>Ultimo pag:</b> '+formatDate(lastPag.data)+' via '+lastPag.forma+' - '+lastPag.banco:'<br><span style="color:#9ca3af">Sem pagamentos registrados</span>')+
       '</div>';
@@ -1908,7 +2026,7 @@ function renderRecExtrato() {
 
   var filtroMes=mSel?mSel.value:'', filtroCliente=cSel?cSel.value:'';
   var allPags=[];
-  recorrentes.forEach(function(r){(r.pagamentos||[]).forEach(function(p){allPags.push(Object.assign({},p,{cNome:r.nome,cTipo:r.tipo,cId:r.id}));});});
+  recorrentes.forEach(function(r){(r.pagamentos||[]).forEach(function(p){allPags.push(Object.assign({},p,{cNome:r.nome,cTipo:r.tipo,cId:r.id,cFreq:r.frequencia}));});});
   var filtered=allPags.filter(function(p){if(filtroMes&&!p.data.startsWith(filtroMes))return false;if(filtroCliente&&p.cId!==filtroCliente)return false;return true;});
 
   var totalPago=filtered.reduce(function(a,p){return a+parseFloat(p.valor);},0);
