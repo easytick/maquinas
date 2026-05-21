@@ -944,6 +944,21 @@ function getTipoLabel(tipo){
   return labels[tipo]||tipo||'';
 }
 function hasDateOverlap(sA,eA,sB,eB){return sA<=eB&&eA>=sB;}
+function machineIsInEvent(m, evFilt) {
+  if (!evFilt) return true;
+  // Check active reservations
+  if (m.reservations.some(function(r){ return r.event===evFilt; })) return true;
+  // Check if currently in use for this event (last saida)
+  var rs = getRealStatus(m);
+  if (rs==='Em uso' || rs==='Em atraso') {
+    for (var i=m.history.length-1; i>=0; i--) {
+      if (m.history[i].type==='saida') {
+        return m.history[i].event===evFilt;
+      }
+    }
+  }
+  return false;
+}
 function scrollToMachines(){setTimeout(function(){var el=document.getElementById('machineList');if(el)el.scrollIntoView({behavior:'smooth'});},300);}
 function daysDiff(d){var today=new Date(getToday()+'T00:00:00');var target=new Date(d+'T00:00:00');return Math.floor((today-target)/(1000*60*60*24));}
 
@@ -1061,6 +1076,37 @@ function renderDayAlerts(){
   }
 }
 
+
+function getReservationsByRange(s,e){
+  var showEmUso=document.getElementById('showEmUsoToggle')&&document.getElementById('showEmUsoToggle').checked;
+  var l=[];
+  machines.forEach(function(m){
+    m.reservations.forEach(function(r){
+      if(hasDateOverlap(r.startDate,r.endDate,s,e)){
+        var st=getRealStatus(m);
+        if(st==='Em uso'&&!showEmUso)return;
+        l.push(Object.assign({},r,{serial:m.serial,brand:m.brand,status:st}));
+      }
+    });
+  });
+  return l;
+}
+function getRetornosByRange(s,e){
+  var l=[];
+  machines.forEach(function(m){
+    var rs=getRealStatus(m);
+    if(rs!=='Em uso'&&rs!=='Em atraso')return;
+    var last=null;
+    for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}
+    if(last&&hasDateOverlap(last.endDate,last.endDate,s,e)){
+      l.push(Object.assign({},last,{serial:m.serial,brand:m.brand,isAtraso:rs==='Em atraso',diasAtraso:rs==='Em atraso'?daysDiff(last.endDate):0}));
+    }
+  });
+  return l;
+}
+function groupByEvent(list){
+  return list.reduce(function(g,r){if(!g[r.event])g[r.event]=[];g[r.event].push(r);return g;},{});
+}
 function renderDayResume(start,end,label){
   _lastDayResume={s:start,e:end,l:label};
   var box=document.getElementById('dayResumeBox'),res=getReservationsByRange(start,end),ret=getRetornosByRange(start,end),today=getToday(),isToday=(start===today&&end===today);
@@ -1556,7 +1602,7 @@ function render(){
   updateDashboard();renderDayAlerts();
   var selEv=document.getElementById('eventFilter').value;refreshEventFilter(selEv);
   var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=currentStatusFilter,evFilt=document.getElementById('eventFilter').value;
-  var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||m.history.some(function(h){return h.event===evFilt;})||m.reservations.some(function(r){return r.event===evFilt;}));});
+  var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||machineIsInEvent(m,evFilt));});
   var rc=document.getElementById('resultsCount');
   if(search||brand||status||evFilt){rc.style.display='block';rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
   else rc.style.display='none';
@@ -1662,7 +1708,7 @@ function renderMachines() {
   var evFilt = document.getElementById('eventFilter').value;
   var filtered = machines.filter(function(m){
     var rs = getRealStatus(m);
-    return m.serial.toLowerCase().indexOf(search)>-1 && (!brand||m.brand===brand) && (!status||rs===status) && (!evFilt||m.history.some(function(h){return h.event===evFilt;})||m.reservations.some(function(r){return r.event===evFilt;}));
+    return m.serial.toLowerCase().indexOf(search)>-1 && (!brand||m.brand===brand) && (!status||rs===status) && (!evFilt||machineIsInEvent(m,evFilt));
   });
   var rc = document.getElementById('resultsCount');
   if(search||brand||status||evFilt){ rc.style.display='block'; rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:''); }
