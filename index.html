@@ -359,9 +359,9 @@
           <input type="text" id="batchResponsible" placeholder="Responsavel" required/>
           <input type="text" id="batchAddress" placeholder="Endereco de entrega (opcional)"/>
           <div class="brand-checkboxes">
-            <label><input type="checkbox" name="batchBrands" value="Sipag" checked/> Sipag</label>
-            <label><input type="checkbox" name="batchBrands" value="PagBank" checked/> PagBank</label>
-            <label><input type="checkbox" name="batchBrands" value="Stone" checked/> Stone</label>
+            <label><input type="checkbox" name="batchBrands" value="Sipag" checked onchange="if(reserveMode==='manual')refreshReserveMachineList()"/> Sipag</label>
+            <label><input type="checkbox" name="batchBrands" value="PagBank" checked onchange="if(reserveMode==='manual')refreshReserveMachineList()"/> PagBank</label>
+            <label><input type="checkbox" name="batchBrands" value="Stone" checked onchange="if(reserveMode==='manual')refreshReserveMachineList()"/> Stone</label>
           </div>
           <label>Data inicial<input type="date" id="batchStartDate" required/></label>
           <label>Data final<input type="date" id="batchEndDate" required/></label>
@@ -394,9 +394,9 @@
           <input type="text" id="batchExitResponsible" placeholder="Responsavel" required/>
           <input type="text" id="batchExitAddress" placeholder="Endereco de entrega (opcional)"/>
           <div class="brand-checkboxes">
-            <label><input type="checkbox" name="batchExitBrands" value="Sipag" checked/> Sipag</label>
-            <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked/> PagBank</label>
-            <label><input type="checkbox" name="batchExitBrands" value="Stone" checked/> Stone</label>
+            <label><input type="checkbox" name="batchExitBrands" value="Sipag" checked onchange="if(exitMode==='manual')refreshExitMachineList()"/> Sipag</label>
+            <label><input type="checkbox" name="batchExitBrands" value="PagBank" checked onchange="if(exitMode==='manual')refreshExitMachineList()"/> PagBank</label>
+            <label><input type="checkbox" name="batchExitBrands" value="Stone" checked onchange="if(exitMode==='manual')refreshExitMachineList()"/> Stone</label>
           </div>
           <label>Data de saida<input type="date" id="batchExitStartDate" required/></label>
           <label>Data de retorno<input type="date" id="batchExitEndDate" required/></label>
@@ -1100,9 +1100,10 @@ function confirmarEntradaLote(eventName){
 // ═══════════════════════════════════════════
 function filterSelectList(listId, query) {
   var items=document.querySelectorAll('#'+listId+' .machine-select-item');
+  var q = query.toLowerCase().trim();
   items.forEach(function(item){
     var text=item.textContent.toLowerCase();
-    item.style.display=text.indexOf(query.toLowerCase())>-1?'flex':'none';
+    item.style.display=(!q||text.indexOf(q)>-1)?'flex':'none';
   });
 }
 function filterEventSelect(selectId, query) {
@@ -1120,6 +1121,10 @@ var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao'];
 function setLoteAba(aba){
   LOTE_ABAS.forEach(function(a){document.getElementById('lote-'+a).classList.toggle('active',a===aba);});
   document.querySelectorAll('.lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',LOTE_ABAS[i]===aba);});
+  if(aba==='reservar'&&reserveMode==='manual') refreshReserveMachineList();
+  if(aba==='saida'&&exitMode==='manual')       refreshExitMachineList();
+  if(aba==='reservar'&&reserveMode==='manual') refreshReserveMachineList();
+  if(aba==='saida'&&exitMode==='manual')       refreshExitMachineList();
   if(aba==='entrada')   refreshEntradaEventos();
   if(aba==='renovar')   refreshRenovarEventos();
   if(aba==='cancelar')  refreshCancelarEventos();
@@ -1145,17 +1150,17 @@ var reserveMode='auto',exitMode='auto',reserveSelected=new Set(),exitSelected=ne
 function setReserveMode(mode){reserveMode=mode;document.getElementById('reserveAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('reserveManualBtn').className=mode==='manual'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('reserveAutoSection').style.display=mode==='auto'?'block':'none';document.getElementById('reserveManualSection').style.display=mode==='manual'?'block':'none';if(mode==='manual')refreshReserveMachineList();}
 function setExitMode(mode){exitMode=mode;document.getElementById('exitAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('exitManualBtn').className=mode==='manual'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('exitAutoSection').style.display=mode==='auto'?'block':'none';document.getElementById('exitManualSection').style.display=mode==='manual'?'block':'none';if(mode==='manual')refreshExitMachineList();}
 
-function getEligibleForReserve(){var brands=getSelectedBrands('batchBrands'),s=document.getElementById('batchStartDate').value,e=document.getElementById('batchEndDate').value;if(!s||!e)return[];return machines.filter(function(m){var rs=getRealStatus(m);return brands.indexOf(m.brand)>-1&&rs!=='Em uso'&&rs!=='Em atraso'&&rs!=='Manutencao'&&!hasReservationConflict(m,s,e);}).sort(function(a,b){return(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length);});}
-function getEligibleForExit(){var brands=getSelectedBrands('batchExitBrands'),s=document.getElementById('batchExitStartDate').value,e=document.getElementById('batchExitEndDate').value;if(!s||!e)return[];return machines.filter(function(m){var rs=getRealStatus(m);return brands.indexOf(m.brand)>-1&&rs!=='Em uso'&&rs!=='Em atraso'&&rs!=='Manutencao'&&!hasReservationConflict(m,s,e);}).sort(function(a,b){return(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length);});}
+function getEligibleForReserve(){var brands=getSelectedBrands('batchBrands'),s=document.getElementById('batchStartDate').value,e=document.getElementById('batchEndDate').value;return machines.filter(function(m){var rs=getRealStatus(m);return brands.indexOf(m.brand)>-1&&rs!=='Em uso'&&rs!=='Em atraso'&&rs!=='Manutencao'&&(!s||!e||!hasReservationConflict(m,s,e));}).sort(function(a,b){return(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length);});}
+function getEligibleForExit(){var brands=getSelectedBrands('batchExitBrands'),s=document.getElementById('batchExitStartDate').value,e=document.getElementById('batchExitEndDate').value;return machines.filter(function(m){var rs=getRealStatus(m);return brands.indexOf(m.brand)>-1&&rs!=='Em uso'&&rs!=='Em atraso'&&rs!=='Manutencao'&&(!s||!e||!hasReservationConflict(m,s,e));}).sort(function(a,b){return(a.history.length-b.history.length)||(a.reservations.length-b.reservations.length);});}
 
 function buildSelectItem(serial, brand, usos, selectedSet, toggleFn) {
   return '<label class="machine-select-item'+(selectedSet.has(serial)?' selected':'')+'" onclick="'+toggleFn+'(\''+serial+'\')"><input type="checkbox"'+(selectedSet.has(serial)?' checked':'')+' onclick="event.stopPropagation();'+toggleFn+'(\''+serial+'\')" /><div style="flex:1"><b>'+serial+'</b> <span style="color:#6b7280;font-size:13px">- '+brand+'</span></div><span style="font-size:12px;color:#6b7280">'+usos+' uso(s)</span></label>';
 }
-function refreshReserveMachineList(){var el=getEligibleForReserve(),list=document.getElementById('reserveMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,reserveSelected,'toggleReserveSel');}).join('');document.getElementById('reserveSelCount').textContent=reserveSelected.size+' selecionadas';}
+function refreshReserveMachineList(){var el=getEligibleForReserve(),list=document.getElementById('reserveMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel para as marcas selecionadas.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,reserveSelected,'toggleReserveSel');}).join('');document.getElementById('reserveSelCount').textContent=reserveSelected.size+' selecionadas';}
 function toggleReserveSel(s){if(reserveSelected.has(s))reserveSelected.delete(s);else reserveSelected.add(s);refreshReserveMachineList();}
 function toggleAllReserve(){var el=getEligibleForReserve();if(reserveSelected.size===el.length)reserveSelected.clear();else el.forEach(function(m){reserveSelected.add(m.serial);});refreshReserveMachineList();}
 
-function refreshExitMachineList(){var el=getEligibleForExit(),list=document.getElementById('exitMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,exitSelected,'toggleExitSel');}).join('');document.getElementById('exitSelCount').textContent=exitSelected.size+' selecionadas';}
+function refreshExitMachineList(){var el=getEligibleForExit(),list=document.getElementById('exitMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel para as marcas selecionadas.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,exitSelected,'toggleExitSel');}).join('');document.getElementById('exitSelCount').textContent=exitSelected.size+' selecionadas';}
 function toggleExitSel(s){if(exitSelected.has(s))exitSelected.delete(s);else exitSelected.add(s);refreshExitMachineList();}
 function toggleAllExit(){var el=getEligibleForExit();if(exitSelected.size===el.length)exitSelected.clear();else el.forEach(function(m){exitSelected.add(m.serial);});refreshExitMachineList();}
 
@@ -1621,6 +1626,16 @@ function closeCadastroModal(){ document.getElementById('cadastroModal').classLis
 // ═══════════════════════════════════════════
 var currentStatusFilter = '';
 function goInicio(){setPage('inicio');showDayResume('today');}
+function setStatusFilter(status) {
+  currentStatusFilter = status;
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.classList.remove('active');
+    var txt = c.textContent.trim();
+    if(status==='' && txt==='Todas') c.classList.add('active');
+    else if(status && txt.toLowerCase().indexOf(status.toLowerCase().substring(0,5))>-1) c.classList.add('active');
+  });
+  renderMachines();
+}
 function setStatusFilter2(status) {
   currentStatusFilter = status;
   document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
