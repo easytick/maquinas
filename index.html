@@ -1439,16 +1439,23 @@ function solicitarPagamento(){
 function refreshFinEventos(){
   var eventos=new Set();
   financeiro.forEach(function(f){if(f.evento)eventos.add(f.evento);});
-  var opts='<option value="">Todos os eventos</option>'+Array.from(eventos).map(function(e){return'<option value="'+e+'">'+e+'</option>';}).join('');
+  var sorted=Array.from(eventos).sort();
+  var opts='<option value="">Todos os eventos</option>'+sorted.map(function(e){return'<option value="'+e+'">'+e+'</option>';}).join('');
   ['finPendentesFiltroEvento','finExtratoFiltroEvento'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.innerHTML=opts;}
+    if(el){
+      var cur=el.value;
+      el.innerHTML=opts;
+      if(cur)el.value=cur;
+    }
   });
 }
 
 function renderPendentes(){
-  refreshFinEventos();
   var evFilt=document.getElementById('finPendentesFiltroEvento').value;
+  refreshFinEventos();
+  var _selP=document.getElementById('finPendentesFiltroEvento');if(_selP&&evFilt)_selP.value=evFilt;
+  evFilt=document.getElementById('finPendentesFiltroEvento').value;
   var pendentes=financeiro.filter(function(f){return f.status==='Pendente'&&(!evFilt||f.evento===evFilt);});
   var list=document.getElementById('finPendentesList');
   list.innerHTML='';
@@ -1496,8 +1503,11 @@ function closePagarModal(){document.getElementById('pagarModal').classList.remov
 function confirmarPagamento(){var id=document.getElementById('pagarId').value,banco=document.getElementById('pagarBanco').value;if(!banco){alert('Selecione o banco utilizado.');return;}var f=financeiro.find(function(f){return f.id===id;});if(!f)return;var un=getCurrentUserName();f.status='Pago';f.banco=banco;f.dataPagamento=new Date().toISOString();f.pagoPor=un;saveFinanceiro();closePagarModal();renderPendentes();alert('Pagamento confirmado!');}
 
 function renderExtrato(){
+  var evFilt=document.getElementById('finExtratoFiltroEvento').value;
   refreshFinEventos();
-  var evFilt=document.getElementById('finExtratoFiltroEvento').value,statusFilt=document.getElementById('finExtratoFiltroStatus').value,bancoFilt=document.getElementById('finExtratoFiltroBanco').value,dataInicio=document.getElementById('finExtratoDataInicio').value,dataFim=document.getElementById('finExtratoDataFim').value;
+  // Restore selection after refresh
+  var _sel=document.getElementById('finExtratoFiltroEvento');if(_sel&&evFilt)_sel.value=evFilt;
+  evFilt=document.getElementById('finExtratoFiltroEvento').value,statusFilt=document.getElementById('finExtratoFiltroStatus').value,bancoFilt=document.getElementById('finExtratoFiltroBanco').value,dataInicio=document.getElementById('finExtratoDataInicio').value,dataFim=document.getElementById('finExtratoDataFim').value;
   var filtered=financeiro.filter(function(f){
     if(evFilt&&f.evento!==evFilt)return false;
     if(statusFilt&&f.status!==statusFilt)return false;
@@ -1591,7 +1601,13 @@ function toggleHistory(serial){var m=machines.find(function(m){return m.serial==
 // FILTROS
 // ═══════════════════════════════════════════
 function getEvents(){var ev=new Set();machines.forEach(function(m){m.history.forEach(function(h){if(h.event)ev.add(h.event);});m.reservations.forEach(function(r){if(r.event)ev.add(r.event);});});return Array.from(ev);}
-function refreshEventFilter(sel){sel=sel||'';var ef=document.getElementById('eventFilter');ef.innerHTML='<option value="">Todos os eventos</option>'+getEvents().map(function(e){return'<option value="'+e+'"'+(e===sel?' selected':'')+'>'+e+'</option>';}).join('');}
+function refreshEventFilter(sel){
+  sel=sel||'';
+  var ef=document.getElementById('eventFilter');
+  if(!ef)return;
+  var evs=getEvents().slice().sort();
+  ef.innerHTML='<option value="">Todos os eventos</option>'+evs.map(function(e){return'<option value="'+e+'"'+(e===sel?' selected':'')+'>'+e+'</option>';}).join('');
+}
 function getCurrentEvent(m){var s=getRealStatus(m);if(s==='Em uso'||s==='Em atraso'){var last=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}return last?last.event:'-';}if(s==='Manutencao')return 'Em manutencao';if(s==='Reservada hoje'){var t=getToday(),a=m.reservations.find(function(r){return hasDateOverlap(r.startDate,r.endDate,t,t);});return a?a.event:'-';}return '-';}
 function getNextReservation(m){var today=getToday();return m.reservations.filter(function(r){return r.endDate>=today;}).sort(function(a,b){return a.startDate.localeCompare(b.startDate);})[0]||null;}
 
