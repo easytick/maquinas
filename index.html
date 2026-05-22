@@ -2344,10 +2344,10 @@ function confirmarRenomear() {
 }
 function apagarEventoDoHistorico(evName) {
   var count = getMachineCountForEvent(evName);
-  if (!confirm('Apagar "' + evName + '" do historico de ' + count + ' maquina(s)?
+  if (!confirm('Apagar "' + evName + '" do historico de ' + count + ' maquina(s)?\n\nNao afeta maquinas atualmente em uso.\nISTO NAO PODE SER DESFEITO.')) return;
 
-Nao afeta maquinas atualmente em uso.
-ISTO NAO PODE SER DESFEITO.')) return;
+
+
   machines.forEach(function(m) {
     var rs = getRealStatus(m);
     if (rs==='Em uso'||rs==='Em atraso') {
@@ -2378,9 +2378,9 @@ function apagarFinanceiroEvento() {
   if(!evName){alert('Selecione um evento.');return;}
   var count = financeiro.filter(function(f){return f.evento===evName;}).length;
   if(!count){alert('Nenhum lancamento encontrado.');return;}
-  if(!confirm('Apagar '+count+' lancamento(s) de "'+evName+'"?
+  if(!confirm('Apagar '+count+' lancamento(s) de "'+evName+'"?\n\nISTO NAO PODE SER DESFEITO.')) return;
 
-ISTO NAO PODE SER DESFEITO.')) return;
+
   financeiro = financeiro.filter(function(f){return f.evento!==evName;});
   saveFinanceiro(); populateAdminSelects();
   alert(count+' lancamento(s) apagado(s)!');
