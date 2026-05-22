@@ -232,6 +232,12 @@
     .fab{position:fixed;bottom:80px;right:16px;width:50px;height:50px;border-radius:999px;background:var(--blue);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,74,173,.4);cursor:pointer;border:none;z-index:150}
 
     #loadingBar{position:fixed;top:0;left:0;height:3px;width:0;background:#60a5fa;transition:width .3s;z-index:9999}
+    .autocomplete-wrap{position:relative}
+    .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-top:none;border-radius:0 0 9px 9px;max-height:200px;overflow-y:auto;z-index:500;box-shadow:0 4px 12px rgba(0,74,173,.15);display:none}
+    .autocomplete-list.open{display:block}
+    .autocomplete-item{padding:10px 13px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);color:#1f2937}
+    .autocomplete-item:last-child{border-bottom:none}
+    .autocomplete-item:hover,.autocomplete-item.selected{background:#eef6ff;color:var(--blue)}
 
     @media(min-width:700px){
       .dash-grid{grid-template-columns:repeat(5,1fr)}
@@ -268,6 +274,7 @@
     </div>
     <div class="header-right">
       <span class="user-name" id="headerUserName"></span>
+      <button class="logout-btn" onclick="openAdminPanel()" style="background:rgba(255,255,255,.15);font-size:16px;padding:5px 8px" title="Administracao">⚙️</button>
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
@@ -354,7 +361,13 @@
       <div id="lote-reservar" class="lote-tab-content active">
         <p class="helper-text">Reserve varias maquinas para um evento.</p>
         <form onsubmit="submitReservaLote(event)">
-          <input type="text" id="batchEvent" placeholder="Nome do evento" required/>
+          <div class="autocomplete-wrap">
+            <input type="text" id="batchEvent" placeholder="Nome do evento" required autocomplete="off"
+              oninput="showAutocomplete(this,'batchEvent-list')"
+              onkeydown="handleAutocompleteKey(event,'batchEvent-list')"
+              onblur="setTimeout(function(){hideAutocomplete('batchEvent-list')},200)"/>
+            <div id="batchEvent-list" class="autocomplete-list"></div>
+          </div>
           <input type="text" id="batchCity" placeholder="Cidade" required/>
           <input type="text" id="batchResponsible" placeholder="Responsavel" required/>
           <input type="text" id="batchAddress" placeholder="Endereco de entrega (opcional)"/>
@@ -389,7 +402,13 @@
       <div id="lote-saida" class="lote-tab-content">
         <p class="helper-text">De saida em varias maquinas de uma vez.</p>
         <form onsubmit="submitSaidaLote(event)">
-          <input type="text" id="batchExitEvent" placeholder="Nome do evento" required/>
+          <div class="autocomplete-wrap">
+            <input type="text" id="batchExitEvent" placeholder="Nome do evento" required autocomplete="off"
+              oninput="showAutocomplete(this,'batchExitEvent-list')"
+              onkeydown="handleAutocompleteKey(event,'batchExitEvent-list')"
+              onblur="setTimeout(function(){hideAutocomplete('batchExitEvent-list')},200)"/>
+            <div id="batchExitEvent-list" class="autocomplete-list"></div>
+          </div>
           <input type="text" id="batchExitCity" placeholder="Cidade" required/>
           <input type="text" id="batchExitResponsible" placeholder="Responsavel" required/>
           <input type="text" id="batchExitAddress" placeholder="Endereco de entrega (opcional)"/>
@@ -722,6 +741,67 @@
 
 </div>
 
+<!-- ADMIN PANEL -->
+<div id="adminModal" class="modal">
+  <div class="modal-content" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="margin:0">⚙️ Administracao</h2>
+      <button onclick="closeAdminPanel()" style="width:auto;padding:5px 10px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">Fechar</button>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+      <button id="adminTab-eventos" onclick="setAdminTab('eventos')" style="padding:9px;font-size:12px;border-radius:8px;border:1.5px solid var(--blue);background:#eef6ff;color:var(--blue);font-weight:bold;font-family:Arial,sans-serif;cursor:pointer">📋 Eventos</button>
+      <button id="adminTab-historico" onclick="setAdminTab('historico')" style="padding:9px;font-size:12px;border-radius:8px;border:1.5px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">🗑️ Limpar historico</button>
+    </div>
+
+    <!-- EVENTOS TAB -->
+    <div id="adminContent-eventos">
+      <p style="font-size:12px;color:#6b7280;margin-bottom:10px">Renomeie ou apague eventos do historico de todas as maquinas.</p>
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="adminEventSearch" placeholder="🔍 Buscar evento..." oninput="renderAdminEventos()" style="padding:9px 12px;font-size:13px"/>
+      </div>
+      <div id="adminEventosList" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+
+    <!-- HISTORICO TAB -->
+    <div id="adminContent-historico" style="display:none">
+      <p style="font-size:12px;color:#6b7280;margin-bottom:12px">Apague registros especificos do historico das maquinas.</p>
+      <div style="display:grid;gap:10px">
+        <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px">
+          <b style="font-size:13px;color:#92400e">⚠️ Apagar historico de evento</b>
+          <p style="font-size:12px;color:#374151;margin:6px 0">Remove todos os registros de historico de um evento especifico (nao afeta maquinas em uso).</p>
+          <select id="adminHistEvento" style="margin-top:6px;font-size:13px"></select>
+          <button onclick="apagarHistoricoEvento()" style="margin-top:8px;background:#dc2626;font-size:13px;padding:9px">🗑️ Apagar historico deste evento</button>
+        </div>
+        <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px">
+          <b style="font-size:13px;color:#92400e">⚠️ Apagar financeiro de evento</b>
+          <p style="font-size:12px;color:#374151;margin:6px 0">Remove todos os lancamentos financeiros de um evento.</p>
+          <select id="adminFinEvento" style="margin-top:6px;font-size:13px"></select>
+          <button onclick="apagarFinanceiroEvento()" style="margin-top:8px;background:#dc2626;font-size:13px;padding:9px">🗑️ Apagar financeiro deste evento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RENOMEAR EVENTO -->
+<div id="renomearModal" class="modal">
+  <div class="modal-content" style="max-width:380px">
+    <h2>✏️ Renomear Evento</h2>
+    <input type="hidden" id="renomearOldName"/>
+    <div style="font-size:13px;color:#374151;margin-bottom:10px">
+      Nome atual: <b id="renomearOldNameLabel"></b>
+    </div>
+    <label>Novo nome<input type="text" id="renomearNewName" placeholder="Digite o novo nome"/></label>
+    <div style="font-size:12px;color:#6b7280;margin-top:6px" id="renomearInfo"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button onclick="confirmarRenomear()" style="background:var(--blue)">✅ Renomear em todas as maquinas</button>
+      <button class="btn-secundario" onclick="closeRenomearModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAIS -->
 <div id="recPagoModal" class="modal">
   <div class="modal-content">
@@ -780,7 +860,15 @@
     <h2>Registrar Saida</h2>
     <form onsubmit="submitSaidaIndividual(event)">
       <input type="hidden" id="exitSerial"/>
-      <label>Evento<input type="text" id="exitEvent" placeholder="Ex: Festa do Cafe" required/></label>
+      <label>Evento
+        <div class="autocomplete-wrap">
+          <input type="text" id="exitEvent" placeholder="Ex: Festa do Cafe" required autocomplete="off"
+            oninput="showAutocomplete(this,'exitEvent-list')"
+            onkeydown="handleAutocompleteKey(event,'exitEvent-list')"
+            onblur="setTimeout(function(){hideAutocomplete('exitEvent-list')},200)"/>
+          <div id="exitEvent-list" class="autocomplete-list"></div>
+        </div>
+      </label>
       <label>Cidade<input type="text" id="exitCity" placeholder="Ex: Nepomuceno" required/></label>
       <label>Responsavel<input type="text" id="exitResponsible" placeholder="Nome" required/></label>
       <label>Endereco de entrega (opcional)<input type="text" id="exitAddress" placeholder="Ex: Rua das Flores, 123"/></label>
@@ -800,7 +888,15 @@
     <h2>Reservar Maquina</h2>
     <form onsubmit="submitReservaIndividual(event)">
       <input type="hidden" id="reserveSerial"/>
-      <label>Evento<input type="text" id="reserveEvent" placeholder="Ex: Rodeio Ijaci" required/></label>
+      <label>Evento
+        <div class="autocomplete-wrap">
+          <input type="text" id="reserveEvent" placeholder="Ex: Rodeio Ijaci" required autocomplete="off"
+            oninput="showAutocomplete(this,'reserveEvent-list')"
+            onkeydown="handleAutocompleteKey(event,'reserveEvent-list')"
+            onblur="setTimeout(function(){hideAutocomplete('reserveEvent-list')},200)"/>
+          <div id="reserveEvent-list" class="autocomplete-list"></div>
+        </div>
+      </label>
       <label>Data inicial<input type="date" id="reserveStartDate" onchange="document.getElementById('reserveEndDate').min=this.value" required/></label>
       <label>Data final<input type="date" id="reserveEndDate" required/></label>
       <label>Endereco de entrega (opcional)<input type="text" id="reserveAddress" placeholder="Ex: Rua das Flores, 123"/></label>
@@ -2154,6 +2250,257 @@ startFirebaseListener = function() {
   _origSFL();
   startRecorrentesListener();
 };
+
+// ═══════════════════════════════════════════
+// PAINEL DE ADMINISTRACAO
+// ═══════════════════════════════════════════
+
+function openAdminPanel() {
+  renderAdminEventos();
+  populateAdminSelects();
+  document.getElementById('adminModal').classList.add('open');
+}
+function closeAdminPanel() {
+  document.getElementById('adminModal').classList.remove('open');
+}
+function setAdminTab(tab) {
+  ['eventos','historico'].forEach(function(t) {
+    document.getElementById('adminContent-'+t).style.display = t===tab ? 'block' : 'none';
+    var btn = document.getElementById('adminTab-'+t);
+    btn.style.background = t===tab ? '#eef6ff' : '#f9fafb';
+    btn.style.color = t===tab ? 'var(--blue)' : '#6b7280';
+    btn.style.fontWeight = t===tab ? 'bold' : 'normal';
+    btn.style.borderColor = t===tab ? 'var(--blue)' : 'var(--border)';
+  });
+  if(tab==='historico') populateAdminSelects();
+}
+function getAllEvents() {
+  var ev = new Set();
+  machines.forEach(function(m) {
+    (m.history||[]).forEach(function(h) { if(h.event) ev.add(h.event); });
+    (m.reservations||[]).forEach(function(r) { if(r.event) ev.add(r.event); });
+  });
+  financeiro.forEach(function(f) { if(f.evento) ev.add(f.evento); });
+  return Array.from(ev).sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
+}
+function getMachineCountForEvent(evName) {
+  return machines.filter(function(m) {
+    return (m.history||[]).some(function(h){ return h.event===evName; }) ||
+           (m.reservations||[]).some(function(r){ return r.event===evName; });
+  }).length;
+}
+function renderAdminEventos() {
+  var query = (document.getElementById('adminEventSearch').value||'').toLowerCase().trim();
+  var events = getAllEvents().filter(function(e) { return !query || e.toLowerCase().indexOf(query) > -1; });
+  var list = document.getElementById('adminEventosList');
+  if (!events.length) { list.innerHTML = '<p style="color:#9ca3af;font-size:13px;padding:8px">Nenhum evento encontrado.</p>'; return; }
+  list.innerHTML = '';
+  events.forEach(function(ev) {
+    var count = getMachineCountForEvent(ev);
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)';
+    var info = document.createElement('div');
+    info.style.flex = '1';
+    info.innerHTML = '<b style="font-size:13px">' + ev + '</b><span style="font-size:11px;color:#6b7280;margin-left:6px">' + count + ' maquina' + (count!==1?'s':'') + '</span>';
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+    var btnRen = document.createElement('button');
+    btnRen.textContent = 'Renomear';
+    btnRen.style.cssText = 'font-size:11px;padding:5px 9px;width:auto;background:#dbeafe;color:#1e40af;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif';
+    btnRen.onclick = (function(e){ return function(){ openRenomearModal(e); }; })(ev);
+    var btnDel = document.createElement('button');
+    btnDel.textContent = 'Apagar';
+    btnDel.style.cssText = 'font-size:11px;padding:5px 9px;width:auto;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif';
+    btnDel.onclick = (function(e){ return function(){ apagarEventoDoHistorico(e); }; })(ev);
+    btnRow.appendChild(btnRen); btnRow.appendChild(btnDel);
+    div.appendChild(info); div.appendChild(btnRow);
+    list.appendChild(div);
+  });
+}
+function openRenomearModal(evName) {
+  document.getElementById('renomearOldName').value = evName;
+  document.getElementById('renomearOldNameLabel').textContent = evName;
+  document.getElementById('renomearNewName').value = evName;
+  var count = getMachineCountForEvent(evName);
+  document.getElementById('renomearInfo').textContent = 'Sera renomeado em ' + count + ' maquina' + (count!==1?'s':'') + ' (historico e reservas).';
+  document.getElementById('renomearModal').classList.add('open');
+}
+function closeRenomearModal() { document.getElementById('renomearModal').classList.remove('open'); }
+function confirmarRenomear() {
+  var oldName = document.getElementById('renomearOldName').value;
+  var newName = document.getElementById('renomearNewName').value.trim();
+  if (!newName) { alert('Digite o novo nome.'); return; }
+  if (newName === oldName) { alert('O nome e igual ao atual.'); return; }
+  if (!confirm('Renomear "' + oldName + '" para "' + newName + '" em todas as maquinas e financeiro?')) return;
+  var count = 0;
+  machines.forEach(function(m) {
+    (m.history||[]).forEach(function(h) { if(h.event===oldName){h.event=newName;count++;} });
+    (m.reservations||[]).forEach(function(r) { if(r.event===oldName){r.event=newName;count++;} });
+  });
+  financeiro.forEach(function(f) { if(f.evento===oldName) f.evento=newName; });
+  save(); saveFinanceiro();
+  closeRenomearModal(); renderAdminEventos();
+  alert('Renomeado em ' + count + ' registro(s)!');
+}
+function apagarEventoDoHistorico(evName) {
+  var count = getMachineCountForEvent(evName);
+  if (!confirm('Apagar "' + evName + '" do historico de ' + count + ' maquina(s)?
+
+Nao afeta maquinas atualmente em uso.
+ISTO NAO PODE SER DESFEITO.')) return;
+  machines.forEach(function(m) {
+    var rs = getRealStatus(m);
+    if (rs==='Em uso'||rs==='Em atraso') {
+      var last = null;
+      for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}
+      if(last&&last.event===evName) return;
+    }
+    m.history = (m.history||[]).filter(function(h){return h.event!==evName;});
+    m.reservations = (m.reservations||[]).filter(function(r){return r.event!==evName;});
+  });
+  save(); renderAdminEventos();
+  alert('Historico de "' + evName + '" apagado!');
+}
+function populateAdminSelects() {
+  var events = getAllEvents();
+  var opts = '<option value="">Selecione o evento</option>' + events.map(function(e){return'<option value="'+e+'">'+e+'</option>';}).join('');
+  var s1=document.getElementById('adminHistEvento'), s2=document.getElementById('adminFinEvento');
+  if(s1) s1.innerHTML=opts;
+  if(s2) s2.innerHTML=opts;
+}
+function apagarHistoricoEvento() {
+  var evName = document.getElementById('adminHistEvento').value;
+  if(!evName){alert('Selecione um evento.');return;}
+  apagarEventoDoHistorico(evName); populateAdminSelects();
+}
+function apagarFinanceiroEvento() {
+  var evName = document.getElementById('adminFinEvento').value;
+  if(!evName){alert('Selecione um evento.');return;}
+  var count = financeiro.filter(function(f){return f.evento===evName;}).length;
+  if(!count){alert('Nenhum lancamento encontrado.');return;}
+  if(!confirm('Apagar '+count+' lancamento(s) de "'+evName+'"?
+
+ISTO NAO PODE SER DESFEITO.')) return;
+  financeiro = financeiro.filter(function(f){return f.evento!==evName;});
+  saveFinanceiro(); populateAdminSelects();
+  alert(count+' lancamento(s) apagado(s)!');
+}
+
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE DE EVENTOS
+// ═══════════════════════════════════════════
+function getEventSuggestions(query) {
+  var all = getAllEvents ? getAllEvents() : getEvents();
+  if (!all || !all.length) return [];
+  query = (query||'').toLowerCase().trim();
+  if (!query) return all.slice(0,8);
+  return all.filter(function(e){ return e.toLowerCase().indexOf(query) > -1; }).slice(0,10);
+}
+
+function showAutocomplete(input, listId) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  var suggestions = getEventSuggestions(input.value);
+  if (!suggestions.length) { list.classList.remove('open'); return; }
+
+  list.innerHTML = suggestions.map(function(ev, i) {
+    return '<div class="autocomplete-item" data-value="' + ev.replace(/"/g,'&quot;') + '" onmousedown="selectAutocomplete(\'' + listId + '\',\'' + ev.replace(/'/g,"\\'") + '\')">' + ev + '</div>';
+  }).join('');
+  list.classList.add('open');
+}
+
+function selectAutocomplete(listId, value) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  // Find the input - it's the previous sibling
+  var input = list.previousElementSibling;
+  if (input) {
+    input.value = value;
+    input.dispatchEvent(new Event('change'));
+    // Auto-fill city/responsible if available
+    autoFillFromEventHistory(input.id, value);
+  }
+  list.classList.remove('open');
+}
+
+function hideAutocomplete(listId) {
+  var list = document.getElementById(listId);
+  if (list) list.classList.remove('open');
+}
+
+function handleAutocompleteKey(event, listId) {
+  var list = document.getElementById(listId);
+  if (!list || !list.classList.contains('open')) return;
+  var items = list.querySelectorAll('.autocomplete-item');
+  var selected = list.querySelector('.autocomplete-item.selected');
+  var idx = -1;
+  items.forEach(function(item, i){ if(item===selected) idx=i; });
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (selected) selected.classList.remove('selected');
+    var next = items[idx+1] || items[0];
+    if (next) next.classList.add('selected');
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (selected) selected.classList.remove('selected');
+    var prev = items[idx-1] || items[items.length-1];
+    if (prev) prev.classList.add('selected');
+  } else if (event.key === 'Enter') {
+    if (selected) {
+      event.preventDefault();
+      selectAutocomplete(listId, selected.getAttribute('data-value'));
+    }
+  } else if (event.key === 'Escape') {
+    hideAutocomplete(listId);
+  }
+}
+
+function autoFillFromEventHistory(fieldId, eventName) {
+  // Find city and responsible from last history entry with this event
+  var cityMap = {
+    'batchEvent':    { city:'batchCity',        resp:'batchResponsible' },
+    'batchExitEvent':{ city:'batchExitCity',     resp:'batchExitResponsible' },
+    'exitEvent':     { city:'exitCity',          resp:'exitResponsible' },
+  };
+  var map = cityMap[fieldId];
+  if (!map) return;
+  // Search history for last entry with this event name
+  var cityEl = document.getElementById(map.city);
+  var respEl = document.getElementById(map.resp);
+  if ((!cityEl || cityEl.value) && (!respEl || respEl.value)) return; // already filled
+  for (var i = 0; i < machines.length; i++) {
+    var m = machines[i];
+    for (var j = (m.history||[]).length-1; j >= 0; j--) {
+      var h = m.history[j];
+      if (h.event === eventName) {
+        if (cityEl && !cityEl.value && h.city) cityEl.value = h.city;
+        if (respEl && !respEl.value && h.responsible) respEl.value = h.responsible;
+        return;
+      }
+    }
+    for (var k = (m.reservations||[]).length-1; k >= 0; k--) {
+      var r = m.reservations[k];
+      if (r.event === eventName) {
+        if (cityEl && !cityEl.value && r.city) cityEl.value = r.city;
+        if (respEl && !respEl.value && r.responsible) respEl.value = r.responsible;
+        return;
+      }
+    }
+  }
+}
+
+// Show suggestions on focus (click) even when empty
+document.addEventListener('click', function(e) {
+  var input = e.target;
+  if (!input || input.tagName !== 'INPUT') return;
+  var listId = null;
+  if (input.id === 'batchEvent') listId = 'batchEvent-list';
+  else if (input.id === 'batchExitEvent') listId = 'batchExitEvent-list';
+  else if (input.id === 'exitEvent') listId = 'exitEvent-list';
+  else if (input.id === 'reserveEvent') listId = 'reserveEvent-list';
+  if (listId) showAutocomplete(input, listId);
+});
 
 </script>
 </body>
