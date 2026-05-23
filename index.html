@@ -2739,10 +2739,10 @@ function buscarSaquesParaFechamento() {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fff;border-radius:8px;border:1px solid var(--border);margin-bottom:4px;font-size:12px;cursor:pointer';
     row.innerHTML =
-      '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDate(s.dataPagamento||s.dataSolicitacao) + '</span></div>' +
+      '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDateTime(s.dataPagamento||s.dataSolicitacao) + '</span></div>' +
       '<div style="display:flex;align-items:center;gap:8px">' +
         '<b style="color:var(--red)">- ' + formatMoney(s.valor) + '</b>' +
-        '<button type="button" onclick="adicionarSaqueManual(\"' + s.id + '\")" style="font-size:11px;padding:3px 8px;width:auto;background:#1a56db;color:#fff;border:none;border-radius:6px">+ Incluir</button>' +
+        '<button type="button" data-sid="' + s.id + '" onclick="adicionarSaqueManual(this.getAttribute(\'data-sid\'))" style="font-size:11px;padding:3px 8px;width:auto;background:#1a56db;color:#fff;border:none;border-radius:6px">+ Incluir</button>' +
       '</div>';
     res.appendChild(row);
   });
@@ -2769,7 +2769,7 @@ function renderSaqueLinha(container, s, autoIncluir) {
   div.id = 'saque-linha-' + s.id;
   div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fff;border-radius:8px;border:1px solid var(--border);margin-bottom:4px;font-size:12px';
 
-  var info = '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDate(s.dataPagamento||s.dataSolicitacao) + '</span></div>';
+  var info = '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDateTime(s.dataPagamento||s.dataSolicitacao) + '</span></div>';
 
   var actions = '<div style="display:flex;align-items:center;gap:8px">' +
     '<b style="color:var(--red)">- ' + formatMoney(s.valor) + '</b>';
@@ -2777,12 +2777,12 @@ function renderSaqueLinha(container, s, autoIncluir) {
   if (autoIncluir) {
     // Botão incluir/excluir para saques automáticos
     if (jaIncluido) {
-      actions += '<button type="button" onclick="toggleSaqueAuto(\"' + s.id + '\",this)" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✓ Incluido</button>';
+      actions += '<button type="button" data-sid="' + s.id + '" onclick="toggleSaqueAuto(this.getAttribute(\'data-sid\'),this)" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✓ Incluido</button>';
     } else {
-      actions += '<button type="button" onclick="toggleSaqueAuto(\"' + s.id + '\",this)" style="font-size:11px;padding:3px 8px;width:auto;background:#f3f4f6;color:#6b7280;border:1px solid var(--border);border-radius:6px">Incluir</button>';
+      actions += '<button type="button" data-sid="' + s.id + '" onclick="toggleSaqueAuto(this.getAttribute(\'data-sid\'),this)" style="font-size:11px;padding:3px 8px;width:auto;background:#f3f4f6;color:#6b7280;border:1px solid var(--border);border-radius:6px">Incluir</button>';
     }
   } else {
-    actions += '<button type="button" onclick="removerSaqueManual(\"' + s.id + '\")" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✕ Remover</button>';
+    actions += '<button type="button" data-sid="' + s.id + '" onclick="removerSaqueManual(this.getAttribute(\'data-sid\'))" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✕ Remover</button>';
   }
 
   actions += '</div>';
