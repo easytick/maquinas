@@ -2230,6 +2230,16 @@ function parsearRelatorio() {
     erro.style.display = 'block'; return;
   }
 
+  // Garante total bruto correto:
+  // 1) Se totalGeral < soma dos PDVs, usa soma dos PDVs (mais confiável)
+  // 2) Se totalGeral < soma das formas, usa soma das formas
+  var somaPdvs = 0;
+  Object.keys(pdvs).forEach(function(p){ somaPdvs += pdvs[p].valor; });
+  var somaFormas = 0;
+  Object.keys(formas).forEach(function(f){ somaFormas += formas[f].valor; });
+  if (somaPdvs > totalGeral) totalGeral = somaPdvs;
+  if (somaFormas > totalGeral) totalGeral = somaFormas;
+
   // Calcula dinheiro antes de salvar
   var dinheiro = 0;
   Object.keys(formas).forEach(function(f){ if(/dinheiro/i.test(f)) dinheiro = formas[f].valor; });
