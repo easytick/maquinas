@@ -699,18 +699,62 @@
       <!-- NOVO FECHAMENTO -->
       <div id="fech-novo" class="lote-tab-content active">
 
-        <!-- PASSO 1: RELATORIO -->
+        <!-- PASSO 1: ENTRADA DE DADOS -->
         <div id="fech-passo1">
-          <p class="helper-text">Passo 1 — Cole o relatorio de vendas do sistema Easytick.</p>
-          <textarea id="fechRelatorioTexto" rows="7" placeholder="Cole aqui o texto do relatorio de vendas..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:Arial,sans-serif;background:#fafafa;resize:vertical;line-height:1.6"></textarea>
-          <button type="button" onclick="parsearRelatorio()" style="margin-top:6px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">🔍 Ler relatorio</button>
+
+          <!-- Seletor de modo -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <button type="button" id="btn-modo-relatorio" onclick="setFechModo('relatorio')"
+              style="padding:10px 6px;font-size:12px;border-radius:9px;border:2px solid var(--blue);background:#eef6ff;color:var(--blue);font-weight:bold;font-family:Arial,sans-serif;cursor:pointer">
+              📋 Colar relatorio
+            </button>
+            <button type="button" id="btn-modo-manual" onclick="setFechModo('manual')"
+              style="padding:10px 6px;font-size:12px;border-radius:9px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">
+              ✏️ Inserir manual
+            </button>
+          </div>
+
+          <!-- MODO RELATORIO -->
+          <div id="fech-modo-relatorio">
+            <p class="helper-text">Cole o relatorio de vendas do sistema Easytick.</p>
+            <textarea id="fechRelatorioTexto" rows="7" placeholder="Cole aqui o texto do relatorio de vendas..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:Arial,sans-serif;background:#fafafa;resize:vertical;line-height:1.6"></textarea>
+            <button type="button" onclick="parsearRelatorio()" style="margin-top:6px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">🔍 Ler relatorio</button>
+          </div>
+
+          <!-- MODO MANUAL -->
+          <div id="fech-modo-manual" style="display:none">
+            <p class="helper-text">Selecione o tipo e preencha os valores de vendas.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <button type="button" id="btn-tipo-ficha" onclick="setFechTipoManual('ficha')"
+                style="padding:10px 6px;font-size:13px;border-radius:9px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">
+                🍺 Ficha
+              </button>
+              <button type="button" id="btn-tipo-ingresso" onclick="setFechTipoManual('ingresso')"
+                style="padding:10px 6px;font-size:13px;border-radius:9px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">
+                🎟️ Ingresso
+              </button>
+            </div>
+            <div id="fech-manual-form" style="display:none">
+              <div style="background:#f9fafb;border-radius:10px;padding:12px;border:1.5px solid var(--border);margin-bottom:10px">
+                <div style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">💰 Vendas por forma de pagamento</div>
+                <div id="fech-manual-formas"></div>
+                <div style="margin-top:10px">
+                  <div style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px" id="fech-manual-pdv-label">PDVs</div>
+                  <div id="fech-manual-pdvs"></div>
+                  <button type="button" onclick="fechAddPdv()" style="margin-top:6px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:12px;padding:6px 10px">+ Adicionar PDV</button>
+                </div>
+              </div>
+              <button type="button" onclick="confirmarManual()" style="background:var(--blue);font-size:13px">▶️ Continuar para cobranças</button>
+            </div>
+          </div>
+
           <div id="fechErro" style="display:none;background:#fee2e2;border-radius:10px;padding:10px;font-size:13px;color:#991b1b;margin-top:8px"></div>
         </div>
 
-        <!-- PASSO 2: DADOS LIDOS + ORCAMENTO -->
+        <!-- PASSO 2: DADOS LIDOS + ORCAMENTO + COBRANÇAS -->
         <div id="fech-passo2" style="display:none">
 
-          <!-- Badge tipo + evento -->
+          <!-- Badge tipo + evento + voltar -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
             <div id="fechTipoBadge"></div>
             <button type="button" onclick="fechVoltarPasso1()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:11px;padding:4px 10px;width:auto">← Voltar</button>
@@ -749,15 +793,19 @@
             </div>
           </div>
 
-          <!-- ORCAMENTO -->
-          <div style="background:#f0fdf4;border-radius:12px;padding:12px;border:1.5px solid #86efac;margin-bottom:10px">
-            <div style="font-size:12px;font-weight:bold;color:#166534;margin-bottom:8px">💼 Passo 2 — Cole o orcamento do cliente</div>
-            <textarea id="fechOrcamentoTexto" rows="6" placeholder="Cole aqui o texto do orcamento enviado ao cliente..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #86efac;font-size:13px;font-family:Arial,sans-serif;background:#fff;resize:vertical;line-height:1.6"></textarea>
-            <button type="button" onclick="parsearOrcamento()" style="margin-top:6px;background:#16a34a;font-size:13px">📥 Importar orcamento</button>
-          </div>
+          <!-- ORCAMENTO (opcional) -->
+          <details style="margin-bottom:10px">
+            <summary style="font-size:12px;font-weight:bold;color:#166534;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px;cursor:pointer;list-style:none">
+              💼 Importar orcamento (opcional) — clique para expandir
+            </summary>
+            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-top:none;border-radius:0 0 10px 10px;padding:10px">
+              <textarea id="fechOrcamentoTexto" rows="5" placeholder="Cole aqui o texto do orcamento enviado ao cliente..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #86efac;font-size:13px;font-family:Arial,sans-serif;background:#fff;resize:vertical;line-height:1.6"></textarea>
+              <button type="button" onclick="parsearOrcamento()" style="margin-top:6px;background:#16a34a;font-size:13px">📥 Importar e preencher cobranças</button>
+            </div>
+          </details>
 
-          <!-- COBRANÇAS -->
-          <div id="fech-cobranças" style="display:none">
+          <!-- COBRANÇAS — sempre visível -->
+          <div id="fech-cobranças">
             <div style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">⚙️ Cobranças — ajuste os valores e quantidades</div>
             <div id="fechCobrancasList"></div>
 
@@ -1962,6 +2010,136 @@ function fechVoltarPasso2() {
   document.getElementById('fech-passo3').style.display = 'none';
 }
 
+// ── MODO: RELATORIO vs MANUAL ──
+function setFechModo(modo) {
+  var isRel = modo === 'relatorio';
+  document.getElementById('fech-modo-relatorio').style.display = isRel ? 'block' : 'none';
+  document.getElementById('fech-modo-manual').style.display = isRel ? 'none' : 'block';
+  document.getElementById('btn-modo-relatorio').style.borderColor = isRel ? 'var(--blue)' : 'var(--border)';
+  document.getElementById('btn-modo-relatorio').style.background  = isRel ? '#eef6ff' : '#f9fafb';
+  document.getElementById('btn-modo-relatorio').style.color       = isRel ? 'var(--blue)' : '#6b7280';
+  document.getElementById('btn-modo-manual').style.borderColor    = isRel ? 'var(--border)' : 'var(--blue)';
+  document.getElementById('btn-modo-manual').style.background     = isRel ? '#f9fafb' : '#eef6ff';
+  document.getElementById('btn-modo-manual').style.color          = isRel ? '#6b7280' : 'var(--blue)';
+}
+
+var _fechTipoManual = 'ficha';
+var _fechPdvCounter = 0;
+
+function setFechTipoManual(tipo) {
+  _fechTipoManual = tipo;
+  ['ficha','ingresso'].forEach(function(t) {
+    var btn = document.getElementById('btn-tipo-' + t);
+    var active = t === tipo;
+    btn.style.borderColor = active ? 'var(--blue)' : 'var(--border)';
+    btn.style.background  = active ? '#eef6ff' : '#f9fafb';
+    btn.style.color       = active ? 'var(--blue)' : '#6b7280';
+    btn.style.fontWeight  = active ? 'bold' : 'normal';
+  });
+  renderManualForm();
+  document.getElementById('fech-manual-form').style.display = 'block';
+}
+
+function renderManualForm() {
+  var tipo = _fechTipoManual;
+  var formasDiv = document.getElementById('fech-manual-formas');
+  var pdvDiv = document.getElementById('fech-manual-pdvs');
+  var pdvLabel = document.getElementById('fech-manual-pdv-label');
+
+  var formas = ['Debito','Credito','Pix','Dinheiro'];
+  formasDiv.innerHTML = formas.map(function(f) {
+    var isDin = f === 'Dinheiro';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">' +
+      '<span style="flex:1;font-size:13px;color:#374151">' + f + (isDin ? ' 💵' : '') + '</span>' +
+      '<span style="font-size:12px;color:#6b7280">R$</span>' +
+      '<input type="number" id="manual-forma-'+f.toLowerCase()+'" value="0" min="0" step="0.01" ' +
+      'onchange="recalcManualTotal()" ' +
+      'style="width:110px;font-size:13px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;text-align:right">' +
+    '</div>';
+  }).join('');
+
+  pdvLabel.textContent = tipo === 'ingresso' ? 'Revendedores / Loja Virtual' : 'PDVs';
+  _fechPdvCounter = 0;
+  pdvDiv.innerHTML = '';
+  fechAddPdv(); // começa com 1 PDV
+
+  document.getElementById('fech-manual-total') && (document.getElementById('fech-manual-total').textContent = 'R$ 0,00');
+}
+
+function fechAddPdv() {
+  _fechPdvCounter++;
+  var div = document.getElementById('fech-manual-pdvs');
+  var id = 'manual-pdv-' + _fechPdvCounter;
+  var row = document.createElement('div');
+  row.id = 'row-' + id;  // row-manual-pdv-N
+  row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;margin-bottom:6px';
+  row.innerHTML =
+    '<input type="text" id="nome-'+id+'" placeholder="Nome do PDV" style="font-size:13px;padding:6px 8px">' +
+    '<input type="number" id="val-'+id+'" value="0" min="0" step="0.01" onchange="recalcManualTotal()" style="width:100px;font-size:13px;padding:6px 8px;text-align:right">' +
+    '<button type="button" onclick="document.getElementById('row-'+id+'').remove();recalcManualTotal()" ' +
+    'style="width:auto;padding:6px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:7px;font-size:12px;cursor:pointer">✕</button>';
+  div.appendChild(row);
+}
+
+function recalcManualTotal() {
+  // só atualiza display, o total real é calculado no confirmarManual
+}
+
+function confirmarManual() {
+  var formasNomes = ['Debito','Credito','Pix','Dinheiro'];
+  var formas = {};
+  var totalGeral = 0;
+  formasNomes.forEach(function(f) {
+    var el = document.getElementById('manual-forma-' + f.toLowerCase());
+    var v = el ? (parseFloat(el.value)||0) : 0;
+    formas[f] = { qtd: 0, valor: v };
+    totalGeral += v;
+  });
+
+  var pdvs = {};
+  var counter = _fechPdvCounter;
+  for (var i = 1; i <= counter + 5; i++) {
+    var nEl = document.getElementById('nome-manual-pdv-' + i);
+    var vEl = document.getElementById('val-manual-pdv-' + i);
+    if (!nEl || !vEl) continue;
+    var nome = nEl.value.trim() || ('PDV ' + i);
+    var val = parseFloat(vEl.value)||0;
+    pdvs[nome] = { qtd: 0, valor: val };
+  }
+  // Busca PDVs pelo container
+  var pdvDiv2 = document.getElementById('fech-manual-pdvs');
+  pdvs = {};
+  pdvDiv2.querySelectorAll('div[id^="row-manual-pdv-"]').forEach(function(row) {
+    var nEl = row.querySelector('input[type="text"]');
+    var vEl = row.querySelector('input[type="number"]');
+    if (!nEl || !vEl) return;
+    var nome = nEl.value.trim() || 'PDV';
+    var val = parseFloat(vEl.value)||0;
+    if (nome || val) pdvs[nome] = { qtd: 0, valor: val };
+  });
+
+  var dinheiro = formas['Dinheiro'] ? formas['Dinheiro'].valor : 0;
+
+  window._fechDados = {
+    tipo: _fechTipoManual,
+    formas: formas,
+    pdvs: pdvs,
+    totalGeral: totalGeral,
+    totalQtd: 0,
+    dinheiro: dinheiro
+  };
+  window._fechFormasMap = {};
+  formasNomes.forEach(function(f){
+    window._fechFormasMap[f] = 'manual-forma-' + f.toLowerCase();
+  });
+
+  renderDadosLidos();
+  window._fechParams = {};
+  renderCobrancas();
+  document.getElementById('fech-passo1').style.display = 'none';
+  document.getElementById('fech-passo2').style.display = 'block';
+}
+
 function parseMoney(str) {
   if (!str) return 0;
   return parseFloat(str.replace(/\./g,'').replace(',','.')) || 0;
@@ -2052,55 +2230,19 @@ function parsearRelatorio() {
     erro.style.display = 'block'; return;
   }
 
-  // ── RENDERIZAR RESUMO ──
-  document.getElementById('fechTipoBadge').innerHTML = tipo === 'ficha'
-    ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
-    : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
-
-  // Total bruto editável
-  var tbEl = document.getElementById('fechTotalBruto');
-  tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:120px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
-
-  var dinheiro = 0;
-  var formasList = document.getElementById('fechFormasList');
-  formasList.innerHTML = '';
-  Object.keys(formas).forEach(function(f) {
-    var v = formas[f], isDin = /dinheiro/i.test(f);
-    if (isDin) dinheiro = v.valor;
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px';
-    var fId = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
-    row.innerHTML = '<span style="color:#374151;flex:1">' + f + ' <span style="color:#9ca3af">(' + v.qtd + ')</span></span>' +
-      '<input type="number" id="'+fId+'" value="'+v.valor.toFixed(2)+'" min="0" step="0.01" onchange="fechRecalcFormas()" style="width:100px;font-size:12px;font-weight:bold;color:'+(isDin?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
-      (isDin ? '<span style="font-size:14px">💵</span>' : '');
-    row.setAttribute('data-forma', f);
-    row.setAttribute('data-din', isDin ? '1' : '0');
-    formasList.appendChild(row);
-  });
-  // Salva mapa forma->inputId para recalc
+  // Salva mapa forma->inputId para recalc (usado por renderDadosLidos)
   window._fechFormasMap = {};
   Object.keys(formas).forEach(function(f){
     window._fechFormasMap[f] = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
   });
 
-  fechRecalcFormas(dinheiro);
-
-  var pdvList = document.getElementById('fechPdvList');
-  pdvList.innerHTML = '';
-  document.getElementById('fechPdvLabel').textContent = tipo === 'ingresso' ? 'Por Revendedor / Loja Virtual' : 'Por PDV';
-  Object.keys(pdvs).forEach(function(p) {
-    var v = pdvs[p], isLoja = /loja virtual/i.test(p);
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
-    row.innerHTML = '<span>' + (isLoja?'🌐 ':'📍 ') + p + '</span><b>' + formatMoney(v.valor) + ' <span style="color:#9ca3af;font-size:11px">(' + v.qtd + ')</span></b>';
-    pdvList.appendChild(row);
-  });
-
   window._fechDados = { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalQtd:totalQtd, dinheiro:dinheiro };
 
+  renderDadosLidos();
+  window._fechParams = {};
+  renderCobrancas();
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
-  document.getElementById('fech-cobranças').style.display = 'none';
 }
 
 // Atualiza _fechDados quando usuário edita os campos de vendas
@@ -2132,6 +2274,55 @@ function fechRecalcFormas(dinheiroOverride) {
 
 function fechAtualizarTotal() {
   fechRecalcFormas();
+}
+
+// ── RENDER DADOS LIDOS (usado por relatorio e manual) ──
+function renderDadosLidos() {
+  var d = window._fechDados;
+  if (!d) return;
+
+  document.getElementById('fechTipoBadge').innerHTML = d.tipo === 'ficha'
+    ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
+    : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
+
+  // Total bruto editável
+  var tbEl = document.getElementById('fechTotalBruto');
+  tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
+
+  // Formas editáveis
+  var formasList = document.getElementById('fechFormasList');
+  formasList.innerHTML = '';
+  window._fechFormasMap = {};
+  var dinheiro = 0;
+  Object.keys(d.formas).forEach(function(f) {
+    var v = d.formas[f], isDin = /dinheiro/i.test(f);
+    if (isDin) dinheiro = v.valor;
+    var fId = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    window._fechFormasMap[f] = fId;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px';
+    row.innerHTML = '<span style="color:#374151;flex:1">' + f + (v.qtd ? ' <span style="color:#9ca3af">('+v.qtd+')</span>' : '') + '</span>' +
+      '<input type="number" id="'+fId+'" value="'+v.valor.toFixed(2)+'" min="0" step="0.01" onchange="fechRecalcFormas()" ' +
+      'style="width:110px;font-size:12px;font-weight:bold;color:'+(isDin?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
+      (isDin ? '<span style="font-size:14px">💵</span>' : '');
+    formasList.appendChild(row);
+  });
+
+  // PDVs
+  var pdvList = document.getElementById('fechPdvList');
+  pdvList.innerHTML = '';
+  document.getElementById('fechPdvLabel').textContent = d.tipo === 'ingresso' ? 'Por Revendedor / Loja Virtual' : 'Por PDV';
+  Object.keys(d.pdvs).forEach(function(p) {
+    var v = d.pdvs[p], isLoja = /loja virtual/i.test(p);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
+    row.innerHTML = '<span>' + (isLoja?'🌐 ':'📍 ') + p + '</span><b>' + formatMoney(v.valor) + (v.qtd ? ' <span style="color:#9ca3af;font-size:11px">('+v.qtd+')</span>' : '') + '</b>';
+    pdvList.appendChild(row);
+  });
+
+  // Aviso dinheiro
+  document.getElementById('fechValorDinheiro').textContent = dinheiro.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  d.dinheiro = dinheiro;
 }
 
 // ── PARSER ORÇAMENTO ──
