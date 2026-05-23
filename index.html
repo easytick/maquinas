@@ -2001,6 +2001,7 @@ function setFechTab(tab) {
 }
 
 function fechVoltarPasso1() {
+  limparEstadoFechamento();
   document.getElementById('fech-passo1').style.display = 'block';
   document.getElementById('fech-passo2').style.display = 'none';
   document.getElementById('fech-passo3').style.display = 'none';
@@ -2147,6 +2148,21 @@ function parseMoney(str) {
 
 // ── PARSER RELATORIO ──
 // regex que aceita linha de total com ou sem colunas extras (ingresso tem: qtd  R$ val  qtd2  R$ val2)
+function limparEstadoFechamento() {
+  window._fechDados   = null;
+  window._fechParams  = null;
+  window._fechLinhas  = null;
+  window._fechFormasMap = {};
+  window._fechValorFinal = 0;
+  window._fechTotalCobranças = 0;
+  // Limpa listas visuais
+  ['fechFormasList','fechPdvList','fechCobrancasList','fechResumoLinhas'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.innerHTML = '';
+  });
+  var tb = document.getElementById('fechTotalBruto'); if(tb) tb.innerHTML = 'R$ 0,00';
+  var vf = document.getElementById('fechValorFinal'); if(vf) vf.textContent = 'R$ 0,00';
+}
+
 function matchTotalLinha(linha) {
   // formato ficha:    "84\tR$ 1.275,00"
   // formato ingresso: "25\tR$ 1.000,00\t0\tR$ 0,00"
@@ -2155,6 +2171,7 @@ function matchTotalLinha(linha) {
 }
 
 function parsearRelatorio() {
+  limparEstadoFechamento();
   var texto = document.getElementById('fechRelatorioTexto').value.trim();
   var erro = document.getElementById('fechErro');
   erro.style.display = 'none';
