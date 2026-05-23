@@ -809,6 +809,30 @@
             <div style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">⚙️ Cobranças — ajuste os valores e quantidades</div>
             <div id="fechCobrancasList"></div>
 
+            <!-- SAQUES ANTECIPADOS -->
+            <div style="margin-top:14px;margin-bottom:4px">
+              <div style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:8px">💸 Saques antecipados — conciliacao</div>
+
+              <!-- Saques automáticos pelo nome do evento -->
+              <div id="fechSaquesAuto" style="margin-bottom:8px"></div>
+
+              <!-- Busca ampla -->
+              <details id="fechSaquesBuscaDetails" style="margin-bottom:8px">
+                <summary style="font-size:12px;font-weight:bold;color:var(--blue);background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:8px 12px;cursor:pointer;list-style:none">
+                  🔍 Buscar outros saques para incluir
+                </summary>
+                <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-top:none;border-radius:0 0 10px 10px;padding:10px">
+                  <input type="text" id="fechSaqueBusca" placeholder="Evento, nome, chave pix, valor..." autocomplete="off"
+                    oninput="buscarSaquesParaFechamento()"
+                    style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid #bfdbfe;font-size:13px;background:#fff">
+                  <div id="fechSaqueBuscaResultados" style="margin-top:8px"></div>
+                </div>
+              </details>
+
+              <!-- Saques selecionados manualmente -->
+              <div id="fechSaquesSelecionados"></div>
+            </div>
+
             <!-- TOTALIZADOR -->
             <div style="background:var(--blue);color:#fff;border-radius:12px;padding:14px;margin-top:12px">
               <div style="font-size:11px;opacity:.8;margin-bottom:6px;text-transform:uppercase">Resumo do fechamento</div>
@@ -2140,6 +2164,11 @@ function confirmarManual() {
   renderDadosLidos();
   window._fechParams = {};
   renderCobrancas();
+  // Busca automática de saques pelo nome do evento
+  setTimeout(function(){
+    var ev = document.getElementById('fechEvento');
+    if (ev && ev.value) inicializarSaquesAuto(ev.value);
+  }, 100);
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
 }
@@ -2158,6 +2187,8 @@ function limparEstadoFechamento() {
   window._fechFormasMap = {};
   window._fechValorFinal = 0;
   window._fechTotalCobranças = 0;
+  window._fechTotalSaques = 0;
+  window._fechSaquesSelecionados = [];
   // Limpa listas visuais
   ['fechFormasList','fechPdvList','fechCobrancasList','fechResumoLinhas'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.innerHTML = '';
@@ -2269,6 +2300,11 @@ function parsearRelatorio() {
   renderDadosLidos();
   window._fechParams = {};
   renderCobrancas();
+  // Busca automática de saques pelo nome do evento
+  setTimeout(function(){
+    var ev = document.getElementById('fechEvento');
+    if (ev && ev.value) inicializarSaquesAuto(ev.value);
+  }, 100);
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
 }
@@ -2620,23 +2656,166 @@ function recalcFech() {
     }
   });
 
+  // Soma saques antecipados
+  var totalSaques = 0;
+  (window._fechSaquesSelecionados || []).forEach(function(s){ totalSaques += s.valor; });
+
   var baseRepasse = d.totalGeral - d.dinheiro;
-  var valorFinal = baseRepasse - totalCobranças;
+  var valorFinal = baseRepasse - totalCobranças - totalSaques;
 
   var resumoEl = document.getElementById('fechResumoLinhas');
   if (resumoEl) {
-    resumoEl.innerHTML =
+    var html =
       '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
       '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Dinheiro produtor</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' +
       '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cobranças / despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>';
+    if (totalSaques > 0) {
+      html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Saques antecipados</span><span>- '+formatMoney(totalSaques)+'</span></div>';
+    }
+    resumoEl.innerHTML = html;
   }
   var vfEl = document.getElementById('fechValorFinal');
   if (vfEl) vfEl.textContent = formatMoney(valorFinal);
   window._fechValorFinal = valorFinal;
   window._fechTotalCobranças = totalCobranças;
+  window._fechTotalSaques = totalSaques;
 }
 
 
+
+// ── CONCILIAÇÃO DE SAQUES ──
+function semAcentoLower(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+function inicializarSaquesAuto(eventoNome) {
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados || [];
+  var container = document.getElementById('fechSaquesAuto');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // Busca saques pagos para este evento
+  var saques = (financeiro||[]).filter(function(f){
+    return !f.isEntrada &&
+           f.status === 'Pago' &&
+           semAcentoLower(f.evento).indexOf(semAcentoLower(eventoNome)) >= 0;
+  });
+
+  if (saques.length === 0) {
+    container.innerHTML = '<p style="font-size:12px;color:#9ca3af;margin:0">Nenhum saque encontrado para este evento.</p>';
+    return;
+  }
+
+  var label = document.createElement('div');
+  label.style.cssText = 'font-size:11px;font-weight:bold;color:#9ca3af;text-transform:uppercase;margin-bottom:6px';
+  label.textContent = 'Saques encontrados para este evento:';
+  container.appendChild(label);
+
+  saques.forEach(function(s) {
+    renderSaqueLinha(container, s, true);
+  });
+}
+
+function buscarSaquesParaFechamento() {
+  var q = semAcentoLower(document.getElementById('fechSaqueBusca').value.trim());
+  var res = document.getElementById('fechSaqueBuscaResultados');
+  res.innerHTML = '';
+  if (!q || q.length < 2) return;
+
+  var selecionadosIds = (window._fechSaquesSelecionados||[]).map(function(s){ return s.id; });
+
+  var encontrados = (financeiro||[]).filter(function(f){
+    if (f.isEntrada || selecionadosIds.indexOf(f.id) >= 0) return false;
+    var campos = [f.evento, f.nome, f.chave, String(f.valor||'')].join(' ');
+    return semAcentoLower(campos).indexOf(q) >= 0;
+  }).slice(0,10);
+
+  if (encontrados.length === 0) {
+    res.innerHTML = '<p style="font-size:12px;color:#9ca3af;margin:4px 0">Nenhum resultado.</p>';
+    return;
+  }
+
+  encontrados.forEach(function(s) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fff;border-radius:8px;border:1px solid var(--border);margin-bottom:4px;font-size:12px;cursor:pointer';
+    row.innerHTML =
+      '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDate(s.dataPagamento||s.dataSolicitacao) + '</span></div>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<b style="color:var(--red)">- ' + formatMoney(s.valor) + '</b>' +
+        '<button type="button" onclick="adicionarSaqueManual('' + s.id + '')" style="font-size:11px;padding:3px 8px;width:auto;background:#1a56db;color:#fff;border:none;border-radius:6px">+ Incluir</button>' +
+      '</div>';
+    res.appendChild(row);
+  });
+}
+
+function adicionarSaqueManual(id) {
+  var s = (financeiro||[]).find(function(f){ return f.id === id; });
+  if (!s) return;
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados || [];
+  if (window._fechSaquesSelecionados.find(function(x){ return x.id === id; })) return;
+  window._fechSaquesSelecionados.push({ id:s.id, evento:s.evento, nome:s.nome, chave:s.chave, valor:s.valor, data:s.dataPagamento||s.dataSolicitacao });
+  var container = document.getElementById('fechSaquesSelecionados');
+  renderSaqueLinha(container, s, false);
+  recalcFech();
+  // Atualiza resultados da busca
+  buscarSaquesParaFechamento();
+}
+
+function renderSaqueLinha(container, s, autoIncluir) {
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados || [];
+  var jaIncluido = window._fechSaquesSelecionados.find(function(x){ return x.id === s.id; });
+
+  var div = document.createElement('div');
+  div.id = 'saque-linha-' + s.id;
+  div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#fff;border-radius:8px;border:1px solid var(--border);margin-bottom:4px;font-size:12px';
+
+  var info = '<div><b>' + (s.evento||'-') + '</b> — ' + (s.nome||'-') + '<br><span style="color:#9ca3af">' + (s.chave||'-') + ' · ' + formatDate(s.dataPagamento||s.dataSolicitacao) + '</span></div>';
+
+  var actions = '<div style="display:flex;align-items:center;gap:8px">' +
+    '<b style="color:var(--red)">- ' + formatMoney(s.valor) + '</b>';
+
+  if (autoIncluir) {
+    // Botão incluir/excluir para saques automáticos
+    if (jaIncluido) {
+      actions += '<button type="button" onclick="toggleSaqueAuto('' + s.id + '',this)" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✓ Incluido</button>';
+    } else {
+      actions += '<button type="button" onclick="toggleSaqueAuto('' + s.id + '',this)" style="font-size:11px;padding:3px 8px;width:auto;background:#f3f4f6;color:#6b7280;border:1px solid var(--border);border-radius:6px">Incluir</button>';
+    }
+  } else {
+    actions += '<button type="button" onclick="removerSaqueManual('' + s.id + '')" style="font-size:11px;padding:3px 8px;width:auto;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px">✕ Remover</button>';
+  }
+
+  actions += '</div>';
+  div.innerHTML = info + actions;
+  container.appendChild(div);
+}
+
+function toggleSaqueAuto(id, btn) {
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados || [];
+  var idx = window._fechSaquesSelecionados.findIndex(function(x){ return x.id === id; });
+  if (idx >= 0) {
+    // Remove
+    window._fechSaquesSelecionados.splice(idx, 1);
+    btn.textContent = 'Incluir';
+    btn.style.background = '#f3f4f6'; btn.style.color = '#6b7280'; btn.style.borderColor = 'var(--border)';
+  } else {
+    // Adiciona
+    var s = (financeiro||[]).find(function(f){ return f.id === id; });
+    if (!s) return;
+    window._fechSaquesSelecionados.push({ id:s.id, evento:s.evento, nome:s.nome, chave:s.chave, valor:s.valor, data:s.dataPagamento||s.dataSolicitacao });
+    btn.textContent = '✓ Incluido';
+    btn.style.background = '#fee2e2'; btn.style.color = '#991b1b'; btn.style.borderColor = '#fca5a5';
+  }
+  recalcFech();
+}
+
+function removerSaqueManual(id) {
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados || [];
+  window._fechSaquesSelecionados = window._fechSaquesSelecionados.filter(function(x){ return x.id !== id; });
+  var el = document.getElementById('saque-linha-' + id);
+  if (el) el.remove();
+  recalcFech();
+}
 
 // ── GERAR FECHAMENTO FINAL ──
 function gerarFechamento() {
@@ -2679,10 +2858,22 @@ function gerarFechamento() {
   });
   txt += '\n';
 
+  var saques = window._fechSaquesSelecionados || [];
+  if (saques.length > 0) {
+    txt += '💸 SAQUES ANTECIPADOS\n';
+    saques.forEach(function(s){
+      txt += '  ' + (s.evento||'-') + ' — ' + (s.nome||'-') + ': - ' + formatMoney(s.valor) + '\n';
+    });
+    txt += '\n';
+  }
+
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   txt += '  Total bruto:          ' + formatMoney(d.totalGeral) + '\n';
   txt += '  (-) Dinheiro produtor: ' + formatMoney(d.dinheiro) + '\n';
   txt += '  (-) Cobranças:         ' + formatMoney(window._fechTotalCobranças) + '\n';
+  if ((window._fechTotalSaques||0) > 0) {
+    txt += '  (-) Saques antecip.:   ' + formatMoney(window._fechTotalSaques) + '\n';
+  }
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   txt += '  REPASSE AO PRODUTOR: ' + formatMoney(window._fechValorFinal) + '\n';
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
