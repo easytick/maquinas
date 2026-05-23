@@ -2136,10 +2136,11 @@ function fechAtualizarTotal() {
 
 // ── PARSER ORÇAMENTO ──
 function parsearOrcamento() {
+  try {
   var texto = document.getElementById('fechOrcamentoTexto').value.trim();
   if (!texto) { alert('Cole o texto do orcamento antes de importar.'); return; }
   var d = window._fechDados;
-  if (!d) return;
+  if (!d) { alert('Leia o relatorio antes de importar o orcamento.'); return; }
 
   // Extrair valores do orçamento com regex flexível
   function extrairValor(regex) {
@@ -2162,7 +2163,8 @@ function parsearOrcamento() {
     params.pctPix      = extrairPct(/([\d.,]+)\s*%[^\n]*pix|pix[^\n]*([\d.,]+)\s*%/i) || extrairPct(/([\d,]+)%\s*no\s*pix/i);
     params.tecnicoVal  = extrairValor(/[Tt][eé]cnico[^\n]*R?\$\s*([\d.,]+)|R?\$\s*([\d.,]+)[^\n]*[Tt][eé]cnico/i);
     params.operadorVal = extrairValor(/[Oo]perador[^\n]*R?\$\s*([\d.,]+)|R?\$\s*([\d.,]+)[^\n]*[Oo]perador/i);
-    params.desl        = /calcular|combinar|definir/i.test(texto.match(/[Dd]esloc[^\n]*/)||[''])[0] ? 0 : extrairValor(/[Dd]esloc[^\n]*R?\$\s*([\d.,]+)/i);
+    var deslMatch = texto.match(/[Dd]esloc[^\n]*/); var deslTxt = deslMatch ? deslMatch[0] : '';
+    params.desl = /calcular|combinar|definir/i.test(deslTxt) ? 0 : extrairValor(/[Dd]esloc[^\n]*R?\$\s*([\d.,]+)/i);
   } else {
     params.ativacao    = extrairValor(/[Aa]tiva[çc][aã]o[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Aa]tiva[çc][aã]o/i);
     params.terminalVal = extrairValor(/[Tt]erminal[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Tt]erminal/i);
@@ -2185,6 +2187,7 @@ function parsearOrcamento() {
   window._fechParams = params;
   renderCobrancas();
   document.getElementById('fech-cobranças').style.display = 'block';
+  } catch(e) { alert('Erro ao importar orcamento: ' + e.message); console.error(e); }
 }
 
 // ── RENDER COBRANÇAS ──
