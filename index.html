@@ -2230,11 +2230,9 @@ function parsearRelatorio() {
     erro.style.display = 'block'; return;
   }
 
-  // Salva mapa forma->inputId para recalc (usado por renderDadosLidos)
-  window._fechFormasMap = {};
-  Object.keys(formas).forEach(function(f){
-    window._fechFormasMap[f] = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
-  });
+  // Calcula dinheiro antes de salvar
+  var dinheiro = 0;
+  Object.keys(formas).forEach(function(f){ if(/dinheiro/i.test(f)) dinheiro = formas[f].valor; });
 
   window._fechDados = { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalQtd:totalQtd, dinheiro:dinheiro };
 
