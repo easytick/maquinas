@@ -2135,167 +2135,169 @@ function fechAtualizarTotal() {
 }
 
 // ── PARSER ORÇAMENTO ──
+// Extrai primeiro número válido de uma linha que casa com regex
+function extrairValorTexto(texto, regex) {
+  var m = texto.match(regex);
+  if (!m) return 0;
+  // Pega o primeiro grupo que não seja undefined
+  for (var i = 1; i < m.length; i++) {
+    if (m[i] !== undefined) return parseMoney(m[i]);
+  }
+  return 0;
+}
+function extrairPctTexto(texto, regex) {
+  var m = texto.match(regex);
+  if (!m) return 0;
+  for (var i = 1; i < m.length; i++) {
+    if (m[i] !== undefined) return parseFloat(m[i].replace(',','.')) || 0;
+  }
+  return 0;
+}
+
 function parsearOrcamento() {
   try {
-  var texto = document.getElementById('fechOrcamentoTexto').value.trim();
-  if (!texto) { alert('Cole o texto do orcamento antes de importar.'); return; }
-  var d = window._fechDados;
-  if (!d) { alert('Leia o relatorio antes de importar o orcamento.'); return; }
+    var texto = document.getElementById('fechOrcamentoTexto').value.trim();
+    if (!texto) { alert('Cole o texto do orcamento antes de importar.'); return; }
+    var d = window._fechDados;
+    if (!d) { alert('Leia o relatorio antes de importar o orcamento.'); return; }
 
-  // Extrair valores do orçamento com regex flexível
-  function extrairValor(regex) {
-    var m = texto.match(regex);
-    return m ? parseMoney(m[1]) : 0;
-  }
-  function extrairPct(regex) {
-    var m = texto.match(regex);
-    return m ? parseFloat(m[1].replace(',','.')) : 0;
-  }
+    var p = {};
 
-  var params = {};
+    if (d.tipo === 'ficha') {
+      // PDV: "R$89,90/ por terminal" ou "89,90 por terminal"
+      p.pdvValor   = extrairValorTexto(texto, /R?\$\s*([\d.,]+)[^\n]*terminal/i) || extrairValorTexto(texto, /terminal[^\n]*R?\$\s*([\d.,]+)/i) || 89.90;
+      // Taxas: "2,0% no débito" ou "débito: 2%" etc
+      p.pctDebito  = extrairPctTexto(texto, /d[eé]b[^\n]*([\d,]+)\s*%/i) || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*d[eé]b/i) || 2.0;
+      p.pctCredito = extrairPctTexto(texto, /cr[eé]d[^\n]*([\d,]+)\s*%/i) || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*cr[eé]d/i) || 4.0;
+      p.pctPix     = extrairPctTexto(texto, /pix[^\n]*([\d,]+)\s*%/i)     || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*pix/i)     || 1.5;
+      // Despesas
+      p.tecnicoVal  = extrairValorTexto(texto, /t[eé]cnico[^\n]*R?\$\s*([\d.,]+)/i)  || extrairValorTexto(texto, /R?\$\s*([\d.,]+)[^\n]*t[eé]cnico/i)  || 200;
+      p.operadorVal = extrairValorTexto(texto, /operador[^\n]*R?\$\s*([\d.,]+)/i)     || extrairValorTexto(texto, /R?\$\s*([\d.,]+)[^\n]*operador/i)     || 180;
+      var deslTxt = (texto.match(/desloc[^\n]*/i)||[''])[0];
+      p.desl = /calcular|combinar|definir|a calcular/i.test(deslTxt) ? 0 : (extrairValorTexto(texto, /desloc[^\n]*R?\$\s*([\d.,]+)/i) || 0);
 
-  if (d.tipo === 'ficha') {
-    params.pdvValor    = extrairValor(/R?\$?\s*([\d.,]+)[^\n]*por terminal|terminal[^\n]*R?\$?\s*([\d.,]+)/i) ||
-                         extrairValor(/R?\$\s*([\d.,]+)\s*\/?\s*por terminal/i) ||
-                         extrairValor(/([\d.,]+)[^\n]*terminal/i);
-    params.pctDebito   = extrairPct(/([\d.,]+)\s*%[^\n]*déb|déb[^\n]*([\d.,]+)\s*%/i) || extrairPct(/([\d,]+)%\s*no\s*déb/i);
-    params.pctCredito  = extrairPct(/([\d.,]+)\s*%[^\n]*créd|créd[^\n]*([\d.,]+)\s*%/i) || extrairPct(/([\d,]+)%\s*no\s*créd/i);
-    params.pctPix      = extrairPct(/([\d.,]+)\s*%[^\n]*pix|pix[^\n]*([\d.,]+)\s*%/i) || extrairPct(/([\d,]+)%\s*no\s*pix/i);
-    params.tecnicoVal  = extrairValor(/[Tt][eé]cnico[^\n]*R?\$\s*([\d.,]+)|R?\$\s*([\d.,]+)[^\n]*[Tt][eé]cnico/i);
-    params.operadorVal = extrairValor(/[Oo]perador[^\n]*R?\$\s*([\d.,]+)|R?\$\s*([\d.,]+)[^\n]*[Oo]perador/i);
-    var deslMatch = texto.match(/[Dd]esloc[^\n]*/); var deslTxt = deslMatch ? deslMatch[0] : '';
-    params.desl = /calcular|combinar|definir/i.test(deslTxt) ? 0 : extrairValor(/[Dd]esloc[^\n]*R?\$\s*([\d.,]+)/i);
-  } else {
-    params.ativacao    = extrairValor(/[Aa]tiva[çc][aã]o[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Aa]tiva[çc][aã]o/i);
-    params.terminalVal = extrairValor(/[Tt]erminal[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Tt]erminal/i);
-    params.ingrFisico  = extrairValor(/[Ff][ií]sico[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Ff][ií]sico/i);
-    params.ingrDigital = extrairValor(/[Dd]igital[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Dd]igital/i);
-    params.cortesia    = extrairValor(/[Cc]ortesia[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Cc]ortesia/i);
-    params.leitor      = extrairValor(/[Ll]eitor[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Ll]eitor/i);
-    params.pctDebito   = extrairPct(/[Dd][eé]b[^\n]*([\d.,]+)\s*%|([\d.,]+)\s*%[^\n]*[Dd][eé]b/i);
-    params.pctCredito  = extrairPct(/[Cc]r[eé]d[^\n]*([\d.,]+)\s*%|([\d.,]+)\s*%[^\n]*[Cc]r[eé]d/i);
-    params.pctPix      = extrairPct(/[Pp]ix[^\n]*([\d.,]+)\s*%|([\d.,]+)\s*%[^\n]*[Pp]ix/i);
-    params.pctCredOnline  = extrairPct(/[Cc]r[eé]d[^\n]*([\d.,]+)\s*%[^\n]*site|site[^\n]*([\d.,]+)\s*%[^\n]*[Cc]r[eé]d|8\s*%[^\n]*créd/i) || 8;
-    params.pctPixOnline   = extrairPct(/[Pp]ix[^\n]*([\d.,]+)\s*%[^\n]*site|3\s*%[^\n]*pix|pix[^\n]*3\s*%/i) || 3;
-    params.boleto         = extrairValor(/[Bb]oleto[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Bb]oleto/i) || 5;
-    params.kmVal       = extrairValor(/([\d.,]+)\s*\/?\s*[Kk]m/i) || extrairValor(/[Dd]esloc[^\n]*([\d.,]+)/i);
-    params.alimentVal  = extrairValor(/[Aa]limenta[çc][aã]o[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Aa]limenta/i);
-    params.operadorVal = extrairValor(/[Oo]perador[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Oo]perador/i);
-    params.tecnicoVal  = extrairValor(/[Tt][eé]cnico[^\n]*R?\$?\s*([\d.,]+)|R?\$?\s*([\d.,]+)[^\n]*[Tt][eé]cnico/i);
-  }
+    } else {
+      // INGRESSO
+      p.ativacao   = extrairValorTexto(texto, /ativa[çc][aã]o[^\n]*?(\d[\d.,]*)/i) || extrairValorTexto(texto, /(\d[\d.,]*)[^\n]*ativa[çc][aã]o/i) || 89.90;
+      p.terminalVal= extrairValorTexto(texto, /terminal[^\n]*?R?\$?\s*([\d.,]+)/i)  || 89.90;
+      p.ingrFisico = extrairValorTexto(texto, /f[ií]sico[^\n]*?R?\$?\s*([\d.,]+)/i) || extrairValorTexto(texto, /impresso[^\n]*?R?\$?\s*([\d.,]+)/i)  || 0.80;
+      p.ingrDigital= extrairValorTexto(texto, /digital[^\n]*?R?\$?\s*([\d.,]+)/i)   || 0.50;
+      p.cortesia   = extrairValorTexto(texto, /cortesia[^\n]*?R?\$?\s*([\d.,]+)/i)  || extrairValorTexto(texto, /cancelamento[^\n]*?R?\$?\s*([\d.,]+)/i) || 0.30;
+      p.leitor     = extrairValorTexto(texto, /leitor[^\n]*?R?\$?\s*([\d.,]+)/i)    || 59.90;
+      // Taxas maquininha PDV
+      p.pctDebito  = extrairPctTexto(texto, /d[eé]b[^\n]*([\d,]+)\s*%/i)  || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*d[eé]b/i)  || 2.8;
+      p.pctCredito = extrairPctTexto(texto, /cr[eé]d[^\n]*([\d,]+)\s*%/i) || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*cr[eé]d/i) || 4.9;
+      p.pctPix     = extrairPctTexto(texto, /pix[^\n]*([\d,]+)\s*%/i)     || extrairPctTexto(texto, /([\d,]+)\s*%[^\n]*pix/i)     || 1.6;
+      // Despesas
+      p.kmVal      = extrairValorTexto(texto, /([\d.,]+)\s*\/\s*[Kk]m/i)  || extrairValorTexto(texto, /[Kk]m[^\n]*?([\d.,]+)/i)   || 1.20;
+      p.alimentVal = extrairValorTexto(texto, /alimenta[çc][aã]o[^\n]*?R?\$?\s*([\d.,]+)/i) || extrairValorTexto(texto, /R?\$?\s*([\d.,]+)[^\n]*alimenta/i) || 30;
+      p.operadorVal= extrairValorTexto(texto, /operador[^\n]*?R?\$?\s*([\d.,]+)/i)  || extrairValorTexto(texto, /R?\$?\s*([\d.,]+)[^\n]*operador/i)  || 180;
+      p.tecnicoVal = extrairValorTexto(texto, /t[eé]cnico[^\n]*?R?\$?\s*([\d.,]+)/i)|| extrairValorTexto(texto, /R?\$?\s*([\d.,]+)[^\n]*t[eé]cnico/i) || 220;
+    }
 
-  window._fechParams = params;
-  renderCobrancas();
-  document.getElementById('fech-cobranças').style.display = 'block';
+    window._fechParams = p;
+    renderCobrancas();
+    document.getElementById('fech-cobranças').style.display = 'block';
   } catch(e) { alert('Erro ao importar orcamento: ' + e.message); console.error(e); }
 }
 
 // ── RENDER COBRANÇAS ──
 function renderCobrancas() {
   var d = window._fechDados;
-  var p = window._fechParams;
-  var numPdvs = Object.keys(d.pdvs).filter(function(x){ return !/loja virtual/i.test(x); }).length;
-  var numPdvsLoja = Object.keys(d.pdvs).filter(function(x){ return /loja virtual/i.test(x); }).length;
-
-  var container = document.getElementById('fechCobrancasList');
-  container.innerHTML = '';
+  var p = window._fechParams || {};
+  var numPdvsFisicos = Object.keys(d.pdvs).filter(function(x){ return !/loja virtual/i.test(x); }).length;
 
   var linhas = [];
 
   if (d.tipo === 'ficha') {
     linhas = [
-      { id:'pdv',      label:'PDV (por terminal)',     tipo:'qtd_unit', qtd: numPdvs, unit: p.pdvValor||89.90,   obs:'terminals detectados: '+numPdvs },
-      { id:'debito',   label:'Taxa Debito',             tipo:'pct',      base: d.formas, forma:'debito',  pct: p.pctDebito||2.0 },
-      { id:'credito',  label:'Taxa Credito',            tipo:'pct',      base: d.formas, forma:'credito', pct: p.pctCredito||4.0 },
-      { id:'pix',      label:'Taxa Pix',                tipo:'pct',      base: d.formas, forma:'pix',     pct: p.pctPix||1.5 },
-      { id:'tecnico',  label:'Tecnico / Staff',         tipo:'qtd_unit', qtd: 0, unit: p.tecnicoVal||200.00 },
-      { id:'operador', label:'Operador de caixa',       tipo:'qtd_unit', qtd: 0, unit: p.operadorVal||180.00 },
-      { id:'desl',     label:'Deslocamento / hospedagem', tipo:'livre',  val: p.desl||0 },
+      { id:'pdv',      label:'PDV (por terminal)',           tipo:'qtd_unit', qtd:numPdvsFisicos, unit:p.pdvValor||89.90, obs:'terminais detectados: '+numPdvsFisicos },
+      { id:'debito',   label:'Taxa Debito',                  tipo:'pct',      forma:'debito',  pct:p.pctDebito||2.0 },
+      { id:'credito',  label:'Taxa Credito',                 tipo:'pct',      forma:'credito', pct:p.pctCredito||4.0 },
+      { id:'pix',      label:'Taxa Pix',                     tipo:'pct',      forma:'pix',     pct:p.pctPix||1.5 },
+      { id:'tecnico',  label:'Tecnico / Staff (por pessoa)',  tipo:'qtd_unit', qtd:0, unit:p.tecnicoVal||200 },
+      { id:'operador', label:'Operador de caixa (por pessoa)',tipo:'qtd_unit', qtd:0, unit:p.operadorVal||180 },
+      { id:'desl',     label:'Deslocamento / hospedagem',     tipo:'livre',    val:p.desl||0 },
     ];
   } else {
+    // INGRESSO — taxas de modalidade têm toggle Produtor/Cliente
     linhas = [
-      { id:'ativacao',    label:'Ativacao do evento',     tipo:'fixo',     val: p.ativacao||89.90 },
-      { id:'terminal',    label:'Terminal PDV',            tipo:'qtd_unit', qtd: numPdvs, unit: p.terminalVal||89.90, obs:'PDVs fisicos: '+numPdvs },
-      { id:'leitor',      label:'Leitor (dia do evento)', tipo:'qtd_unit', qtd: 0,        unit: p.leitor||59.90 },
-      { id:'ingFisico',   label:'Ingressos fisicos (R$/und)', tipo:'qtd_unit', qtd:0, unit: p.ingrFisico||0.80 },
-      { id:'ingDigital',  label:'Ingressos digitais (R$/und)', tipo:'qtd_unit', qtd:0, unit: p.ingrDigital||0.50 },
-      { id:'cortesia',    label:'Cortesia / cancelamento (R$/und)', tipo:'qtd_unit', qtd:0, unit: p.cortesia||0.30 },
-      { id:'debito',      label:'Taxa Debito PDV',         tipo:'pct',      base: d.formas, forma:'debito',  pct: p.pctDebito||2.8 },
-      { id:'credito',     label:'Taxa Credito PDV',        tipo:'pct',      base: d.formas, forma:'credito', pct: p.pctCredito||4.9 },
-      { id:'pix',         label:'Taxa Pix PDV',            tipo:'pct',      base: d.formas, forma:'pix',     pct: p.pctPix||1.6 },
-      { id:'credOnline',  label:'Taxa Credito Online (loja virtual)', tipo:'pct_loja', pct: p.pctCredOnline||8, forma:'credito' },
-      { id:'pixOnline',   label:'Taxa Pix Online (loja virtual)',     tipo:'pct_loja', pct: p.pctPixOnline||3,  forma:'pix' },
-      { id:'boleto',      label:'Boleto online (R$/und)',  tipo:'qtd_unit', qtd:0, unit: p.boleto||5.00 },
-      { id:'km',          label:'Deslocamento (R$/km)',    tipo:'qtd_unit', qtd:0, unit: p.kmVal||1.20 },
-      { id:'aliment',     label:'Diaria alimentacao (R$/pessoa)', tipo:'qtd_unit', qtd:0, unit: p.alimentVal||30.00 },
-      { id:'operador',    label:'Diaria operador',         tipo:'qtd_unit', qtd:0, unit: p.operadorVal||180.00 },
-      { id:'tecnico',     label:'Diaria tecnico',          tipo:'qtd_unit', qtd:0, unit: p.tecnicoVal||220.00 },
+      { id:'ativacao',   label:'Ativacao do sistema',              tipo:'fixo',     val:p.ativacao||89.90 },
+      { id:'terminal',   label:'Terminal PDV (por unidade)',        tipo:'qtd_unit', qtd:numPdvsFisicos, unit:p.terminalVal||89.90, obs:'PDVs fisicos detectados: '+numPdvsFisicos },
+      { id:'leitor',     label:'Leitor (dia do evento)',            tipo:'qtd_unit', qtd:0, unit:p.leitor||59.90 },
+      { id:'ingFisico',  label:'Ingresso fisico / impresso (por und)', tipo:'qtd_unit', qtd:0, unit:p.ingrFisico||0.80 },
+      { id:'ingDigital', label:'Ingresso digital / WhatsApp (por und)',tipo:'qtd_unit', qtd:0, unit:p.ingrDigital||0.50 },
+      { id:'cortesia',   label:'Cortesia / cancelamento (por und)', tipo:'qtd_unit', qtd:0, unit:p.cortesia||0.30 },
+      { id:'debito',     label:'Taxa Debito PDV',                   tipo:'pct_toggle', forma:'debito',  pct:p.pctDebito||2.8 },
+      { id:'credito',    label:'Taxa Credito PDV',                  tipo:'pct_toggle', forma:'credito', pct:p.pctCredito||4.9 },
+      { id:'pix',        label:'Taxa Pix PDV',                      tipo:'pct_toggle', forma:'pix',     pct:p.pctPix||1.6 },
+      { id:'km',         label:'Deslocamento (R$/km)',               tipo:'qtd_unit', qtd:0, unit:p.kmVal||1.20 },
+      { id:'aliment',    label:'Diaria alimentacao (por pessoa)',    tipo:'qtd_unit', qtd:0, unit:p.alimentVal||30 },
+      { id:'operador',   label:'Diaria operador (por pessoa)',       tipo:'qtd_unit', qtd:0, unit:p.operadorVal||180 },
+      { id:'tecnico',    label:'Diaria tecnico (por pessoa)',        tipo:'qtd_unit', qtd:0, unit:p.tecnicoVal||220 },
     ];
   }
 
   window._fechLinhas = linhas;
+  var container = document.getElementById('fechCobrancasList');
+  container.innerHTML = '';
 
   linhas.forEach(function(l) {
     var div = document.createElement('div');
     div.id = 'fech-linha-' + l.id;
     div.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px';
 
+    // Header: label + botão Não se aplica
     var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
       '<span style="font-size:12px;font-weight:bold;color:var(--gray)">' + l.label + '</span>' +
-      '<button type="button" onclick="toggleNaoAplica(\'' + l.id + '\')" id="btn-na-'+l.id+'" style="font-size:10px;padding:3px 8px;width:auto;background:#f3f4f6;color:#6b7280;border:1px solid var(--border)">Nao se aplica</button>' +
+      '<button type="button" onclick="toggleNaoAplica(\'' + l.id + '\')" id="btn-na-'+l.id+'" ' +
+      'style="font-size:10px;padding:3px 8px;width:auto;background:#f3f4f6;color:#6b7280;border:1px solid var(--border)">Nao se aplica</button>' +
     '</div>';
 
     var body = '';
-    if (l.tipo === 'fixo') {
-      body = '<div style="display:flex;align-items:center;gap:6px">' +
-        '<span style="font-size:12px;color:#6b7280">Valor:</span>' +
-        '<input type="number" id="fi-'+l.id+'" value="'+(l.val||0).toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+
+    if (l.tipo === 'fixo' || l.tipo === 'livre') {
+      var v0 = (l.val||0).toFixed(2);
+      body = '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="font-size:12px;color:#6b7280">R$</span>' +
+        '<input type="number" id="fi-'+l.id+'" value="'+v0+'" min="0" step="0.01" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(l.val||0)+'</span>' +
       '</div>';
+
     } else if (l.tipo === 'qtd_unit') {
-      var calc = (l.qtd||0) * (l.unit||0);
-      body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">' +
-        '<div><span style="font-size:11px;color:#6b7280">Qtd</span><input type="number" id="fq-'+l.id+'" value="'+(l.qtd||0)+'" min="0" step="1" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
-        '<div><span style="font-size:11px;color:#6b7280">Valor unitario (R$)</span><input type="number" id="fu-'+l.id+'" value="'+(l.unit||0).toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
+      var calc0 = (l.qtd||0) * (l.unit||0);
+      body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">' +
+        '<div><div style="font-size:11px;color:#6b7280">Qtd</div><input type="number" id="fq-'+l.id+'" value="'+(l.qtd||0)+'" min="0" step="1" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
+        '<div><div style="font-size:11px;color:#6b7280">Valor unit. (R$)</div><input type="number" id="fu-'+l.id+'" value="'+(l.unit||0).toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
       '</div>' +
-      (l.obs ? '<div style="font-size:11px;color:#9ca3af;margin-top:4px">'+l.obs+'</div>' : '') +
-      '<div style="text-align:right;margin-top:4px;font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calc)+'</div>';
+      (l.obs ? '<div style="font-size:11px;color:#9ca3af;margin-top:3px">'+l.obs+'</div>' : '') +
+      '<div style="text-align:right;margin-top:5px;font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calc0)+'</div>';
+
     } else if (l.tipo === 'pct') {
-      // Acha o valor da forma de pagamento correspondente
-      var baseVal = 0;
-      Object.keys(d.formas).forEach(function(f){
-        if (semAcento(f).indexOf(semAcento(l.forma)) >= 0) baseVal = d.formas[f].valor;
-      });
-      var calcPct = baseVal * (l.pct||0) / 100;
-      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: ' + formatMoney(baseVal) + '</div>' +
+      // Taxa % sobre base (ficha) — sempre desconta do produtor
+      var baseV = getBaseForma(d.formas, l.forma);
+      var calcP = baseV * (l.pct||0) / 100;
+      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: <b>'+formatMoney(baseV)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:6px">' +
-        '<input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px"> <span style="font-size:13px;color:#6b7280">%</span>' +
-        '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calcPct)+'</span>' +
+        '<input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+        '<span style="color:#6b7280;font-size:13px">%</span>' +
+        '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calcP)+'</span>' +
       '</div>';
-    } else if (l.tipo === 'pct_loja') {
-      // Taxas online — base é o valor da Loja Virtual da forma correspondente
-      // Por ora usa o total da forma (simplificado, pois relatorio não separa loja vs pdv por forma)
-      var baseLojaVal = 0;
-      Object.keys(d.formas).forEach(function(f){
-        if (semAcento(f).indexOf(semAcento(l.forma)) >= 0) baseLojaVal = d.formas[f].valor;
-      });
-      // Tenta pegar só loja virtual se disponível
-      if (d.pdvs['Loja Virtual']) {
-        // proporcional simplificado: não temos forma por loja, deixa usuário ajustar
-        baseLojaVal = 0;
-      }
-      var calcLoja = baseLojaVal * (l.pct||0) / 100;
-      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base (R$) — informe o valor vendido online nesta forma:</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 60px;gap:6px;align-items:center">' +
-        '<input type="number" id="fb-'+l.id+'" value="'+baseLojaVal.toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" placeholder="Valor base" style="font-size:13px;padding:6px 8px">' +
-        '<div style="display:flex;align-items:center;gap:4px"><input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="width:50px;font-size:12px;padding:5px 6px"><span style="font-size:11px">%</span></div>' +
-      '</div>' +
-      '<div style="text-align:right;margin-top:4px;font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calcLoja)+'</div>';
-    } else if (l.tipo === 'livre') {
-      body = '<div style="display:flex;align-items:center;gap:6px">' +
-        '<span style="font-size:12px;color:#6b7280">Valor (R$):</span>' +
-        '<input type="number" id="fi-'+l.id+'" value="'+(l.val||0).toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
-        '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(l.val||0)+'</span>' +
+
+    } else if (l.tipo === 'pct_toggle') {
+      // Taxa % com toggle Produtor / Cliente Final (padrão = Cliente = não desconta)
+      var baseT = getBaseForma(d.formas, l.forma);
+      var calcT = baseT * (l.pct||0) / 100;
+      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:6px">Base: <b>'+formatMoney(baseT)+'</b></div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+        '<input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+        '<span style="color:#6b7280;font-size:13px">%</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+        '<button type="button" id="btn-resp-'+l.id+'" onclick="toggleRespTaxa(\''+l.id+'\')" ' +
+        'style="font-size:11px;padding:4px 10px;width:auto;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:7px">👤 Cliente Final</button>' +
+        '<span style="font-size:11px;color:#9ca3af">Clique para mudar quem absorve a taxa</span>' +
+        '<span style="font-size:13px;font-weight:bold;color:#9ca3af" id="ft-'+l.id+'">R$ 0,00</span>' +
       '</div>';
     }
 
@@ -2303,6 +2305,21 @@ function renderCobrancas() {
     container.appendChild(div);
   });
 
+  recalcFech();
+}
+
+function toggleRespTaxa(id) {
+  var btn = document.getElementById('btn-resp-' + id);
+  var isCliente = btn.getAttribute('data-resp') !== 'produtor';
+  if (isCliente) {
+    btn.setAttribute('data-resp','produtor');
+    btn.textContent = '🏭 Produtor';
+    btn.style.background = '#fee2e2'; btn.style.color = '#991b1b'; btn.style.borderColor = '#fca5a5';
+  } else {
+    btn.setAttribute('data-resp','cliente');
+    btn.textContent = '👤 Cliente Final';
+    btn.style.background = '#fef3c7'; btn.style.color = '#92400e'; btn.style.borderColor = '#fcd34d';
+  }
   recalcFech();
 }
 
@@ -2314,20 +2331,20 @@ function toggleNaoAplica(id) {
     div.setAttribute('data-na','0');
     div.style.opacity = '1';
     btn.textContent = 'Nao se aplica';
-    btn.style.background = '#f3f4f6'; btn.style.color = '#6b7280';
+    btn.style.background = '#f3f4f6'; btn.style.color = '#6b7280'; btn.style.borderColor = 'var(--border)';
     div.querySelectorAll('input').forEach(function(i){ i.disabled = false; });
   } else {
     div.setAttribute('data-na','1');
     div.style.opacity = '0.4';
     btn.textContent = '✓ Nao se aplica';
-    btn.style.background = '#fef3c7'; btn.style.color = '#92400e';
+    btn.style.background = '#fef3c7'; btn.style.color = '#92400e'; btn.style.borderColor = '#fcd34d';
     div.querySelectorAll('input').forEach(function(i){ i.disabled = true; });
   }
   recalcFech();
 }
 
 function semAcento(s) {
-  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 function getBaseForma(formas, formaKey) {
   var base = 0;
@@ -2352,12 +2369,12 @@ function getLinhaValor(l) {
     var base = getBaseForma(d.formas, l.forma);
     var pct = parseFloat(document.getElementById('fp-'+l.id).value)||0;
     return base * pct / 100;
-  } else if (l.tipo === 'pct_loja') {
-    var bEl = document.getElementById('fb-'+l.id);
-    var pEl = document.getElementById('fp-'+l.id);
-    var b = bEl ? (parseFloat(bEl.value)||0) : 0;
-    var p = pEl ? (parseFloat(pEl.value)||0) : 0;
-    return b * p / 100;
+  } else if (l.tipo === 'pct_toggle') {
+    var btn = document.getElementById('btn-resp-'+l.id);
+    if (!btn || btn.getAttribute('data-resp') !== 'produtor') return 0; // cliente = nao desconta
+    var base2 = getBaseForma(d.formas, l.forma);
+    var pct2 = parseFloat(document.getElementById('fp-'+l.id).value)||0;
+    return base2 * pct2 / 100;
   }
   return 0;
 }
@@ -2372,13 +2389,21 @@ function recalcFech() {
     var v = getLinhaValor(l);
     totalCobranças += v;
     var ftEl = document.getElementById('ft-'+l.id);
-    if (ftEl) ftEl.textContent = '- ' + formatMoney(v);
+    if (ftEl) {
+      if (l.tipo === 'pct_toggle') {
+        var btn = document.getElementById('btn-resp-'+l.id);
+        var isProdutor = btn && btn.getAttribute('data-resp') === 'produtor';
+        ftEl.textContent = isProdutor ? '- ' + formatMoney(v) : 'R$ 0,00';
+        ftEl.style.color = isProdutor ? 'var(--red)' : '#9ca3af';
+      } else {
+        ftEl.textContent = '- ' + formatMoney(v);
+      }
+    }
   });
 
   var baseRepasse = d.totalGeral - d.dinheiro;
   var valorFinal = baseRepasse - totalCobranças;
 
-  // Resumo
   var resumoEl = document.getElementById('fechResumoLinhas');
   if (resumoEl) {
     resumoEl.innerHTML =
@@ -2388,10 +2413,11 @@ function recalcFech() {
   }
   var vfEl = document.getElementById('fechValorFinal');
   if (vfEl) vfEl.textContent = formatMoney(valorFinal);
-
   window._fechValorFinal = valorFinal;
   window._fechTotalCobranças = totalCobranças;
 }
+
+
 
 // ── GERAR FECHAMENTO FINAL ──
 function gerarFechamento() {
