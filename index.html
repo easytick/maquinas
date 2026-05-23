@@ -527,6 +527,7 @@
         <button class="lote-tab-btn active" onclick="setFinTab('solicitar')">📋 Solicitar</button>
         <button class="lote-tab-btn" onclick="setFinTab('pendentes')">⏳ Pendentes</button>
         <button class="lote-tab-btn" onclick="setFinTab('extrato')">📊 Extrato</button>
+        <button class="lote-tab-btn" onclick="setFinTab('saldo')">💰 Saldo Evento</button>
       </div>
 
       <!-- SOLICITAR -->
@@ -553,7 +554,14 @@
 
             </select>
           </label>
-          <input type="text" id="finEvento" placeholder="Evento ou descricao"/>
+          <div class="autocomplete-wrap">
+            <input type="text" id="finEvento" placeholder="Evento ou descricao" autocomplete="off"
+              oninput="showAutocomplete(this,'finEvento-list');checkSaldoDisponivel(this.value)"
+              onkeydown="handleAutocompleteKey(event,'finEvento-list')"
+              onblur="setTimeout(function(){hideAutocomplete('finEvento-list')},200)"/>
+            <div id="finEvento-list" class="autocomplete-list"></div>
+          </div>
+          <div id="finSaldoAlert" style="display:none;border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:4px"></div>
           <input type="text" id="finNome" placeholder="Nome do solicitante / favorecido"/>
           <label>Tipo de pagamento
             <select id="finTipoPagamento" onchange="togglePixFields()">
@@ -630,6 +638,15 @@
           </select>
         </div>
         <div id="finExtratoList"></div>
+      </div>
+
+      <!-- SALDO EVENTO -->
+      <div id="fin-saldo" class="lote-tab-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <p class="helper-text" style="margin:0">Controle de saldo disponivel por evento.</p>
+          <button onclick="openNovoSaldoModal()" style="width:auto;padding:8px 14px;font-size:13px;background:var(--green)">+ Monitorar evento</button>
+        </div>
+        <div id="saldoEventoList"><p style="color:#9ca3af;font-size:13px">Nenhum evento monitorado. Clique em + Monitorar evento.</p></div>
       </div>
     </div>
   </div>
@@ -739,6 +756,41 @@
     </div>
   </div>
 
+</div>
+
+<!-- SALDO EVENTO MODALS -->
+<div id="novoSaldoModal" class="modal">
+  <div class="modal-content">
+    <h2>💰 Monitorar Saldo de Evento</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Selecione o evento e informe o valor atual disponivel no sistema do cliente.</p>
+    <label>Evento
+      <select id="novoSaldoEvento" style="margin-top:4px"><option value="">Selecione o evento</option></select>
+    </label>
+    <label style="margin-top:8px">Valor atual disponivel (R$)
+      <input type="number" id="novoSaldoValor" placeholder="Ex: 400.00" min="0" step="0.01" style="margin-top:4px"/>
+    </label>
+    <p style="font-size:12px;color:#6b7280;margin-top:6px">Este valor representa o total atual no sistema do cliente, sem subtrair saques anteriores.</p>
+    <div class="modal-actions" style="margin-top:12px">
+      <button onclick="confirmarNovoSaldo()" style="background:var(--green)">Salvar</button>
+      <button class="btn-secundario" onclick="closeNovoSaldoModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="atualizarSaldoModal" class="modal">
+  <div class="modal-content">
+    <h2>📝 Atualizar Saldo</h2>
+    <input type="hidden" id="atualizarSaldoEvento"/>
+    <div id="atualizarSaldoInfo" style="background:#f9fafb;border-radius:9px;padding:11px;margin-bottom:12px;font-size:13px"></div>
+    <label>Novo valor atual no sistema (R$)
+      <input type="number" id="atualizarSaldoValor" placeholder="Ex: 600.00" min="0" step="0.01" style="margin-top:4px"/>
+    </label>
+    <p style="font-size:12px;color:#6b7280;margin-top:6px">Informe sempre o valor TOTAL atual, sem subtrair nada. O sistema calcula o disponivel automaticamente.</p>
+    <div class="modal-actions" style="margin-top:12px">
+      <button onclick="confirmarAtualizarSaldo()" style="background:var(--blue)">Atualizar</button>
+      <button class="btn-secundario" onclick="closeAtualizarSaldoModal()">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -1393,8 +1445,8 @@ function confirmarManutencaoLote(){if(!manutSelected.size){alert('Selecione ao m
 // ═══════════════════════════════════════════
 // FINANCEIRO
 // ═══════════════════════════════════════════
-var FIN_ABAS=['solicitar','pendentes','extrato'];
-function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes'){refreshFinEventos();renderPendentes();}if(tab==='extrato'){refreshFinEventos();renderExtrato();}}
+var FIN_ABAS=['solicitar','pendentes','extrato','saldo'];
+function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes'){refreshFinEventos();renderPendentes();}if(tab==='extrato'){refreshFinEventos();renderExtrato();}if(tab==='saldo'){renderSaldoEventoList();}}
 
 function toggleFinTipo(){}
 function togglePixFields(){var t=document.getElementById('finTipoPagamento').value;document.getElementById('pixFields').style.display=t==='Pix'?'block':'none';document.getElementById('naoPixFields').style.display=(t&&t!=='Pix'&&t!=='Dinheiro')?'block':'none';}
@@ -1773,7 +1825,7 @@ function setPage(page) {
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
-  if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); }
+  if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); renderSaldoEventoList(); }
   if(page==='recorrentes') { renderRecPainel(); }
 }
 
@@ -2521,6 +2573,207 @@ document.addEventListener('click', function(e) {
   else if (input.id === 'reserveEvent') listId = 'reserveEvent-list';
   if (listId) showAutocomplete(input, listId);
 });
+
+// ═══════════════════════════════════════════
+// SALDO EVENTO
+// ═══════════════════════════════════════════
+var saldoEventos = {}; // { eventName: { valor, historico:[], ativo:true } }
+
+function startSaldoListener() {
+  db.ref('saldoEventos').on('value', function(snap) {
+    var d = snap.val();
+    saldoEventos = d || {};
+    renderSaldoEventoList();
+  });
+}
+
+function saveSaldoEventos() {
+  db.ref('saldoEventos').set(saldoEventos);
+}
+
+function getSaquesDoEvento(eventName) {
+  return financeiro.filter(function(f) {
+    return f.evento === eventName && !f.isEntrada && f.status === 'Pago';
+  }).reduce(function(a, f) { return a + parseFloat(f.valor||0); }, 0);
+}
+
+function getSaldoDisponivel(eventName) {
+  var ev = saldoEventos[eventName];
+  if (!ev || !ev.ativo) return null;
+  var sacado = getSaquesDoEvento(eventName);
+  return { disponivel: (ev.valor||0) - sacado, valor: ev.valor||0, sacado: sacado };
+}
+
+function checkSaldoDisponivel(eventName) {
+  var alertEl = document.getElementById('finSaldoAlert');
+  if (!alertEl) return;
+  if (!eventName) { alertEl.style.display='none'; return; }
+  var s = getSaldoDisponivel(eventName);
+  if (!s) { alertEl.style.display='none'; return; }
+  alertEl.style.display = 'block';
+  var disp = s.disponivel;
+  var cor, bg, bord;
+  if (disp < 0) { cor='#991b1b'; bg='#fee2e2'; bord='#fca5a5'; }
+  else if (disp < s.valor * 0.2) { cor='#92400e'; bg='#fef3c7'; bord='#fcd34d'; }
+  else { cor='#166534'; bg='#dcfce7'; bord='#86efac'; }
+  alertEl.style.cssText = 'display:block;border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:4px;background:'+bg+';border:1.5px solid '+bord+';color:'+cor;
+  alertEl.innerHTML = '<b>💰 Saldo disponivel: ' + formatMoney(disp) + '</b>' +
+    '<div style="font-size:12px;margin-top:3px">Valor no sistema: ' + formatMoney(s.valor) +
+    ' · Ja sacado: ' + formatMoney(s.sacado) + '</div>';
+}
+
+// ── RENDER SALDO LIST ──
+function renderSaldoEventoList() {
+  var list = document.getElementById('saldoEventoList');
+  if (!list) return;
+  var eventos = Object.keys(saldoEventos).filter(function(k){ return saldoEventos[k].ativo; });
+  if (!eventos.length) {
+    list.innerHTML = '<p style="color:#9ca3af;font-size:13px">Nenhum evento monitorado. Clique em + Monitorar evento.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  eventos.sort().forEach(function(evName) {
+    var s = getSaldoDisponivel(evName);
+    if (!s) return;
+    var disp = s.disponivel;
+    var ev = saldoEventos[evName];
+    var lastUpdate = ev.historico && ev.historico.length ? ev.historico[ev.historico.length-1] : null;
+
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid ' + (disp < 0 ? 'var(--red)' : disp < s.valor*0.2 ? '#f59e0b' : 'var(--green)');
+
+    var dispColor = disp < 0 ? 'var(--red)' : disp < s.valor*0.2 ? '#92400e' : 'var(--green)';
+
+    card.innerHTML =
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">' +
+        '<div><b style="font-size:15px">' + evName + '</b>' +
+        (lastUpdate ? '<div style="font-size:11px;color:#9ca3af;margin-top:2px">Atualizado em ' + formatDate(lastUpdate.data) + ' · ' + lastUpdate.por + '</div>' : '') +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:#6b7280">Disponivel</div><b style="font-size:20px;color:' + dispColor + '">' + formatMoney(disp) + '</b></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f9fafb;border-radius:9px;padding:10px;font-size:12px;margin-bottom:10px">' +
+        '<div><div style="color:#6b7280">Valor no sistema</div><b>' + formatMoney(s.valor) + '</b></div>' +
+        '<div><div style="color:#6b7280">Ja sacado (pago)</div><b style="color:var(--red)">- ' + formatMoney(s.sacado) + '</b></div>' +
+      '</div>';
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px';
+
+    var btnUp = document.createElement('button');
+    btnUp.textContent = '📝 Atualizar valor';
+    btnUp.style.cssText = 'flex:1;font-size:12px;padding:9px;background:var(--blue)';
+    btnUp.onclick = (function(n){ return function(){ openAtualizarSaldoModal(n); }; })(evName);
+
+    var btnHist = document.createElement('button');
+    btnHist.textContent = '📋 Historico';
+    btnHist.style.cssText = 'flex:1;font-size:12px;padding:9px;background:#f3f4f6;color:#374151;border:1px solid var(--border)';
+    btnHist.onclick = (function(n){ return function(){ toggleSaldoHist(n); }; })(evName);
+
+    var btnDel = document.createElement('button');
+    btnDel.textContent = '⏸️';
+    btnDel.style.cssText = 'width:auto;padding:9px 12px;font-size:12px;background:#fee2e2;color:#991b1b;border:none;border-radius:9px;cursor:pointer;font-family:Arial,sans-serif';
+    btnDel.title = 'Desativar monitoramento';
+    btnDel.onclick = (function(n){ return function(){ desativarSaldo(n); }; })(evName);
+
+    row.appendChild(btnUp); row.appendChild(btnHist); row.appendChild(btnDel);
+    card.appendChild(row);
+
+    // Historico hidden
+    var histDiv = document.createElement('div');
+    histDiv.id = 'saldoHist-' + evName.replace(/\s/g,'_');
+    histDiv.style.display = 'none';
+    histDiv.style.cssText = 'margin-top:10px;padding:10px;background:#f9fafb;border-radius:9px;border:1px solid var(--border)';
+    if (!ev.historico || !ev.historico.length) {
+      histDiv.innerHTML = '<p style="color:#9ca3af;font-size:12px">Sem historico de atualizacoes.</p>';
+    } else {
+      histDiv.innerHTML = ev.historico.slice().reverse().map(function(h) {
+        return '<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px">' +
+          '<span style="color:#6b7280">' + formatDate(h.data) + ' · ' + h.por + '</span>' +
+          '<b style="color:var(--blue)">' + formatMoney(h.valor) + '</b></div>';
+      }).join('');
+    }
+    card.appendChild(histDiv);
+    list.appendChild(card);
+  });
+}
+
+function toggleSaldoHist(evName) {
+  var el = document.getElementById('saldoHist-' + evName.replace(/\s/g,'_'));
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function desativarSaldo(evName) {
+  if (!confirm('Desativar monitoramento de "' + evName + '"?')) return;
+  if (saldoEventos[evName]) { saldoEventos[evName].ativo = false; }
+  saveSaldoEventos();
+}
+
+// ── NOVO SALDO MODAL ──
+function openNovoSaldoModal() {
+  var sel = document.getElementById('novoSaldoEvento');
+  var events = getAllEvents ? getAllEvents() : getEvents();
+  sel.innerHTML = '<option value="">Selecione o evento</option>' +
+    events.filter(function(e){ return !saldoEventos[e] || !saldoEventos[e].ativo; })
+    .map(function(e){ return '<option value="'+e+'">'+e+'</option>'; }).join('');
+  document.getElementById('novoSaldoValor').value = '';
+  document.getElementById('novoSaldoModal').classList.add('open');
+}
+function closeNovoSaldoModal() { document.getElementById('novoSaldoModal').classList.remove('open'); }
+function confirmarNovoSaldo() {
+  var evName = document.getElementById('novoSaldoEvento').value;
+  var valor = parseFloat(document.getElementById('novoSaldoValor').value);
+  if (!evName) { alert('Selecione o evento.'); return; }
+  if (!valor || valor <= 0) { alert('Informe o valor.'); return; }
+  var un = getCurrentUserName();
+  var entry = { valor: valor, ativo: true, historico: [{ data: getToday(), valor: valor, por: un, registradoEm: new Date().toISOString() }] };
+  if (saldoEventos[evName]) {
+    saldoEventos[evName].valor = valor;
+    saldoEventos[evName].ativo = true;
+    if (!saldoEventos[evName].historico) saldoEventos[evName].historico = [];
+    saldoEventos[evName].historico.push({ data: getToday(), valor: valor, por: un, registradoEm: new Date().toISOString() });
+  } else {
+    saldoEventos[evName] = entry;
+  }
+  saveSaldoEventos();
+  closeNovoSaldoModal();
+  alert('Monitoramento ativado para "' + evName + '"!');
+}
+
+// ── ATUALIZAR SALDO MODAL ──
+function openAtualizarSaldoModal(evName) {
+  document.getElementById('atualizarSaldoEvento').value = evName;
+  document.getElementById('atualizarSaldoValor').value = '';
+  var s = getSaldoDisponivel(evName);
+  var info = document.getElementById('atualizarSaldoInfo');
+  if (s && info) {
+    info.innerHTML = '<b>' + evName + '</b><br>' +
+      'Ultimo valor: ' + formatMoney(s.valor) + '<br>' +
+      'Ja sacado: ' + formatMoney(s.sacado) + '<br>' +
+      'Disponivel atual: <b>' + formatMoney(s.disponivel) + '</b>';
+  }
+  document.getElementById('atualizarSaldoModal').classList.add('open');
+}
+function closeAtualizarSaldoModal() { document.getElementById('atualizarSaldoModal').classList.remove('open'); }
+function confirmarAtualizarSaldo() {
+  var evName = document.getElementById('atualizarSaldoEvento').value;
+  var valor = parseFloat(document.getElementById('atualizarSaldoValor').value);
+  if (!valor || valor <= 0) { alert('Informe o valor.'); return; }
+  var un = getCurrentUserName();
+  if (!saldoEventos[evName]) saldoEventos[evName] = { ativo: true, historico: [] };
+  saldoEventos[evName].valor = valor;
+  if (!saldoEventos[evName].historico) saldoEventos[evName].historico = [];
+  saldoEventos[evName].historico.push({ data: getToday(), valor: valor, por: un, registradoEm: new Date().toISOString() });
+  saveSaldoEventos();
+  closeAtualizarSaldoModal();
+  renderSaldoEventoList();
+}
+
+// Hook saldo listener into startFirebaseListener
+var _origSFLSaldo = startFirebaseListener;
+startFirebaseListener = function() {
+  _origSFLSaldo();
+  startSaldoListener();
+};
 
 </script>
 </body>
