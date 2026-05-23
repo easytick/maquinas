@@ -865,7 +865,9 @@
 
       <!-- HISTORICO -->
       <div id="fech-historico" class="lote-tab-content">
-        <p style="color:#9ca3af;font-size:13px">Nenhum fechamento salvo ainda.</p>
+        <div id="fech-hist-lista">
+          <p style="color:#9ca3af;font-size:13px">Carregando...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -2025,6 +2027,7 @@ function setFechTab(tab) {
   });
   document.getElementById('fech-novo').classList.toggle('active', tab==='novo');
   document.getElementById('fech-historico').classList.toggle('active', tab==='historico');
+  if (tab === 'historico') renderFechHistorico();
 }
 
 function fechVoltarPasso1() {
@@ -2887,6 +2890,30 @@ function gerarFechamento() {
   document.getElementById('fechRelatorioFinal').textContent = txt;
   document.getElementById('fech-passo2').style.display = 'none';
   document.getElementById('fech-passo3').style.display = 'block';
+
+  // Salva no Firebase
+  var cobAtivas = [];
+  (window._fechLinhas||[]).forEach(function(l) {
+    var div = document.getElementById('fech-linha-'+l.id);
+    if (div && div.getAttribute('data-na') === '1') return;
+    var v = getLinhaValor(l);
+    if (v === 0) return;
+    cobAtivas.push({ label: l.label, valor: v });
+  });
+  saveFechamento({
+    evento: evento,
+    tipo: d.tipo,
+    totalGeral: d.totalGeral,
+    dinheiro: d.dinheiro,
+    totalCobranças: window._fechTotalCobranças || 0,
+    totalSaques: window._fechTotalSaques || 0,
+    valorFinal: window._fechValorFinal || 0,
+    formas: d.formas,
+    pdvs: d.pdvs,
+    cobranças: cobAtivas,
+    saques: window._fechSaquesSelecionados || [],
+    textoFinal: txt
+  });
 }
 
 function copiarFechamento() {
@@ -3602,7 +3629,139 @@ var _origSFL = startFirebaseListener;
 startFirebaseListener = function() {
   _origSFL();
   startRecorrentesListener();
+  startFechamentosListener();
 };
+
+// ═══════════════════════════════════════════
+// FECHAMENTOS — FIREBASE
+// ═══════════════════════════════════════════
+var fechamentos = [];
+
+function startFechamentosListener() {
+  var db = firebase.database();
+  db.ref('fechamentos').on('value', function(snap) {
+    fechamentos = [];
+    var val = snap.val();
+    if (val) {
+      Object.keys(val).forEach(function(k) {
+        fechamentos.push(val[k]);
+      });
+      // Ordena do mais recente para o mais antigo
+      fechamentos.sort(function(a,b){ return new Date(b.criadoEm) - new Date(a.criadoEm); });
+    }
+    if (document.getElementById('fech-historico') &&
+        document.getElementById('fech-historico').classList.contains('active')) {
+      renderFechHistorico();
+    }
+  });
+}
+
+function saveFechamento(dados) {
+  var db = firebase.database();
+  var id = 'fech_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+  var obj = {
+    id: id,
+    evento: dados.evento,
+    tipo: dados.tipo,
+    totalGeral: dados.totalGeral,
+    dinheiro: dados.dinheiro,
+    totalCobranças: dados.totalCobranças,
+    totalSaques: dados.totalSaques || 0,
+    valorFinal: dados.valorFinal,
+    formas: dados.formas,
+    pdvs: dados.pdvs,
+    cobranças: dados.cobranças,
+    saques: dados.saques || [],
+    textoFinal: dados.textoFinal,
+    criadoEm: new Date().toISOString(),
+    criadoPor: getCurrentUserName()
+  };
+  db.ref('fechamentos/' + id).set(obj);
+  return id;
+}
+
+function deleteFechamento(id) {
+  if (!confirm('Excluir este fechamento? Esta ação não pode ser desfeita.')) return;
+  firebase.database().ref('fechamentos/' + id).remove();
+}
+
+function renderFechHistorico() {
+  var container = document.getElementById('fech-hist-lista');
+  if (!container) return;
+
+  if (fechamentos.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">Nenhum fechamento salvo ainda.</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+  fechamentos.forEach(function(f) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px';
+
+    var tipoColor = f.tipo === 'ficha' ? '#166534' : '#1e40af';
+    var tipoBg = f.tipo === 'ficha' ? '#dcfce7' : '#dbeafe';
+    var tipoLabel = f.tipo === 'ficha' ? '🍺 Ficha' : '🎟️ Ingresso';
+    var data = f.criadoEm ? new Date(f.criadoEm).toLocaleString('pt-BR') : '-';
+
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">' +
+        '<div>' +
+          '<b style="font-size:14px;color:#1f2937">' + (f.evento||'-') + '</b>' +
+          '<span style="background:'+tipoBg+';color:'+tipoColor+';border-radius:999px;padding:2px 8px;font-size:11px;font-weight:bold;margin-left:6px">' + tipoLabel + '</span>' +
+          '<div style="font-size:11px;color:#9ca3af;margin-top:3px">' + data + ' · ' + (f.criadoPor||'-') + '</div>' +
+        '</div>' +
+        '<b style="font-size:18px;color:var(--green);white-space:nowrap">' + formatMoney(f.valorFinal||0) + '</b>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;margin-bottom:10px">' +
+        '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Total bruto</div><b>' + formatMoney(f.totalGeral||0) + '</b></div>' +
+        '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Cobranças</div><b style="color:var(--red)">- ' + formatMoney(f.totalCobranças||0) + '</b></div>' +
+        '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Saques</div><b style="color:var(--red)">- ' + formatMoney(f.totalSaques||0) + '</b></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button type="button" data-fid="' + f.id + '" onclick="histVerTexto(this)" style="flex:1;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">📋 Ver texto</button>' +
+        '<button type="button" data-fid="' + f.id + '" onclick="histExcluir(this)" style="font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:6px 10px;width:auto">🗑️</button>' +
+      '</div>';
+
+    container.appendChild(card);
+  });
+}
+
+
+function fechHistFecharModal(btn) { var m = btn; while(m && m.style && !m.style.position.includes('fixed')) m = m.parentElement; if(m) m.remove(); }
+function histVerTexto(btn) { verTextoFechamento(btn.getAttribute('data-fid')); }
+function histExcluir(btn) { deleteFechamento(btn.getAttribute('data-fid')); }
+function histCopiar(btn) { copiarTextoHist(btn.getAttribute('data-fid')); }
+
+function verTextoFechamento(id) {
+  var f = fechamentos.find(function(x){ return x.id === id; });
+  if (!f || !f.textoFinal) { alert('Texto não disponível.'); return; }
+  var modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:12px">' +
+        '<b style="font-size:15px">' + (f.evento||'-') + '</b>' +
+        '<button type="button" onclick="fechHistFecharModal(this)" style="width:auto;padding:4px 10px;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">✕ Fechar</button>' +
+      '</div>' +
+      '<pre style="font-size:12px;font-family:Arial,sans-serif;line-height:1.7;white-space:pre-wrap;margin:0">' + f.textoFinal + '</pre>' +
+      '<button type="button" data-fid="' + f.id + '" onclick="histCopiar(this)" style="margin-top:10px;background:#374151;font-size:13px">📋 Copiar</button>' +
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+function copiarTextoHist(id) {
+  var f = fechamentos.find(function(x){ return x.id === id; });
+  if (!f) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(f.textoFinal).then(function(){ alert('Copiado!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = f.textoFinal; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('Copiado!');
+  }
+}
 
 // ═══════════════════════════════════════════
 // PAINEL DE ADMINISTRACAO
