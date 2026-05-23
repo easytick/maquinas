@@ -1968,6 +1968,14 @@ function parseMoney(str) {
 }
 
 // ── PARSER RELATORIO ──
+// regex que aceita linha de total com ou sem colunas extras (ingresso tem: qtd  R$ val  qtd2  R$ val2)
+function matchTotalLinha(linha) {
+  // formato ficha:    "84\tR$ 1.275,00"
+  // formato ingresso: "25\tR$ 1.000,00\t0\tR$ 0,00"
+  var m = linha.trim().match(/^(\d+)\s+R\$\s*([\d.,]+)/);
+  return m ? { qtd: parseInt(m[1]), valor: parseMoney(m[2]) } : null;
+}
+
 function parsearRelatorio() {
   var texto = document.getElementById('fechRelatorioTexto').value.trim();
   var erro = document.getElementById('fechErro');
@@ -1978,30 +1986,52 @@ function parsearRelatorio() {
   var tipo = 'ficha';
   if (/Ingressos:/i.test(texto) || /Agrupado por Lote/i.test(texto) || /Agrupado por Revendedor/i.test(texto)) tipo = 'ingresso';
 
-  // Total geral
-  var secaoProduto = (texto.split(/Agrupado por Produto/i)[1] || texto.split(/Agrupado por Lote/i)[1] || '').split(/Agrupado por/i)[0];
+  // ── TOTAL GERAL ──
+  // Para ingresso: seção "Agrupado por Lote", para ficha: "Agrupado por Produto"
+  var secaoProduto = tipo === 'ficha'
+    ? (texto.split(/Agrupado por Produto/i)[1]||'').split(/Agrupado por/i)[0]
+    : (texto.split(/Agrupado por Lote/i)[1]||'').split(/Agrupado por/i)[0];
+
   var totalGeral = 0, totalQtd = 0;
+  // Pega a última linha que começa com número seguido de R$
+  // Ignora linhas de cabeçalho (Lote, Unitário, etc.)
   var linhasProd = secaoProduto.split('\n');
   for (var k = linhasProd.length - 1; k >= 0; k--) {
-    var mt = linhasProd[k].trim().match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
-    if (mt) { totalQtd = parseInt(mt[1]); totalGeral = parseMoney(mt[2]); break; }
+    var lk = linhasProd[k].trim();
+    // Para ingresso, ignora linhas que têm "R$ 40,00" antes (são linhas de produto, não total)
+    // O total tem apenas qtd + valor (sem unitário no meio)
+    var mt = matchTotalLinha(lk);
+    if (mt && mt.qtd > 1) { // qtd > 1 para evitar pegar linhas de produto individual com qtd=1 lote
+      totalQtd = mt.qtd; totalGeral = mt.valor; break;
+    }
+  }
+  // Fallback: pega qualquer linha de total se não encontrou com qtd>1
+  if (totalGeral === 0) {
+    for (var k2 = linhasProd.length - 1; k2 >= 0; k2--) {
+      var mt2 = matchTotalLinha(linhasProd[k2].trim());
+      if (mt2) { totalQtd = mt2.qtd; totalGeral = mt2.valor; break; }
+    }
   }
 
-  // Formas de pagamento
+  // ── FORMAS DE PAGAMENTO ──
   var formas = {};
   var secaoForma = texto.split(/Agrupado por Forma\s*Pagamento/i)[1] || '';
   var formaAtual = null;
   secaoForma.split('\n').forEach(function(linha) {
     linha = linha.trim(); if (!linha) return;
+    // Ignora linhas de cabeçalho de tabela
+    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Forma)/i.test(linha) && !/^(Déb|Deb|Cré|Cre|Pix|Din)/i.test(linha)) return;
     var isForma = /^(Déb|Deb|Cré|Cre|Pix|Din)/i.test(linha) && !/R\$/.test(linha);
     if (isForma) { formaAtual = linha.replace(/\s+/g,' ').trim(); formas[formaAtual] = {qtd:0,valor:0}; return; }
     if (formaAtual) {
-      var m = linha.match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
-      if (m) { formas[formaAtual].qtd = parseInt(m[1]); formas[formaAtual].valor = parseMoney(m[2]); formaAtual = null; }
+      var m = matchTotalLinha(linha);
+      // Para ingresso: linha de total da forma tem qtd + valor + qtd_validado + valor_validado
+      // Ex: "7\tR$ 280,00\t0\tR$ 0,00"  — queremos qtd=7, valor=280
+      if (m) { formas[formaAtual].qtd = m.qtd; formas[formaAtual].valor = m.valor; formaAtual = null; }
     }
   });
 
-  // PDVs
+  // ── PDVs / REVENDEDORES ──
   var pdvs = {};
   var secaoPdv = tipo === 'ficha'
     ? (texto.split(/Agrupado por Ponto de Venda/i)[1]||'').split(/Agrupado por Forma/i)[0]
@@ -2009,10 +2039,11 @@ function parsearRelatorio() {
   var pdvAtual = null;
   secaoPdv.split('\n').forEach(function(lp) {
     lp = lp.trim(); if (!lp) return;
+    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Revendedor|Ponto)/i.test(lp)) return;
     if (/^PDV\s/i.test(lp) || /^Loja Virtual/i.test(lp)) { pdvAtual = lp; pdvs[pdvAtual] = {qtd:0,valor:0}; return; }
     if (pdvAtual) {
-      var m = lp.match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
-      if (m) { pdvs[pdvAtual].qtd = parseInt(m[1]); pdvs[pdvAtual].valor = parseMoney(m[2]); pdvAtual = null; }
+      var m = matchTotalLinha(lp);
+      if (m) { pdvs[pdvAtual].qtd = m.qtd; pdvs[pdvAtual].valor = m.valor; pdvAtual = null; }
     }
   });
 
@@ -2021,12 +2052,14 @@ function parsearRelatorio() {
     erro.style.display = 'block'; return;
   }
 
-  // Renderizar resumo
+  // ── RENDERIZAR RESUMO ──
   document.getElementById('fechTipoBadge').innerHTML = tipo === 'ficha'
     ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
     : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
 
-  document.getElementById('fechTotalBruto').textContent = formatMoney(totalGeral);
+  // Total bruto editável
+  var tbEl = document.getElementById('fechTotalBruto');
+  tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:120px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
 
   var dinheiro = 0;
   var formasList = document.getElementById('fechFormasList');
@@ -2035,11 +2068,22 @@ function parsearRelatorio() {
     var v = formas[f], isDin = /dinheiro/i.test(f);
     if (isDin) dinheiro = v.valor;
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
-    row.innerHTML = '<span style="color:#374151">' + f + ' <span style="color:#9ca3af">(' + v.qtd + ')</span></span><b style="color:' + (isDin?'#92400e':'#1f2937') + '">' + formatMoney(v.valor) + (isDin?' 💵':'') + '</b>';
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px';
+    var fId = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    row.innerHTML = '<span style="color:#374151;flex:1">' + f + ' <span style="color:#9ca3af">(' + v.qtd + ')</span></span>' +
+      '<input type="number" id="'+fId+'" value="'+v.valor.toFixed(2)+'" min="0" step="0.01" onchange="fechRecalcFormas()" style="width:100px;font-size:12px;font-weight:bold;color:'+(isDin?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
+      (isDin ? '<span style="font-size:14px">💵</span>' : '');
+    row.setAttribute('data-forma', f);
+    row.setAttribute('data-din', isDin ? '1' : '0');
     formasList.appendChild(row);
   });
-  document.getElementById('fechValorDinheiro').textContent = dinheiro.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  // Salva mapa forma->inputId para recalc
+  window._fechFormasMap = {};
+  Object.keys(formas).forEach(function(f){
+    window._fechFormasMap[f] = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  });
+
+  fechRecalcFormas(dinheiro);
 
   var pdvList = document.getElementById('fechPdvList');
   pdvList.innerHTML = '';
@@ -2047,7 +2091,7 @@ function parsearRelatorio() {
   Object.keys(pdvs).forEach(function(p) {
     var v = pdvs[p], isLoja = /loja virtual/i.test(p);
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
     row.innerHTML = '<span>' + (isLoja?'🌐 ':'📍 ') + p + '</span><b>' + formatMoney(v.valor) + ' <span style="color:#9ca3af;font-size:11px">(' + v.qtd + ')</span></b>';
     pdvList.appendChild(row);
   });
@@ -2057,6 +2101,37 @@ function parsearRelatorio() {
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
   document.getElementById('fech-cobranças').style.display = 'none';
+}
+
+// Atualiza _fechDados quando usuário edita os campos de vendas
+function fechRecalcFormas(dinheiroOverride) {
+  var d = window._fechDados;
+  if (!d) return;
+  var map = window._fechFormasMap || {};
+  var dinheiro = 0, totalGeral = 0;
+  // Atualiza formas a partir dos inputs
+  Object.keys(map).forEach(function(f) {
+    var el = document.getElementById(map[f]);
+    if (el) {
+      var v = parseFloat(el.value)||0;
+      d.formas[f].valor = v;
+      totalGeral += v;
+      if (/dinheiro/i.test(f)) dinheiro = v;
+    }
+  });
+  // Atualiza total bruto
+  var tbInput = document.getElementById('fechTotalBrutoInput');
+  if (tbInput) totalGeral = parseFloat(tbInput.value)||totalGeral;
+  d.totalGeral = totalGeral;
+  d.dinheiro = (dinheiroOverride !== undefined) ? dinheiroOverride : dinheiro;
+  // Atualiza aviso dinheiro
+  var dinEl = document.getElementById('fechValorDinheiro');
+  if (dinEl) dinEl.textContent = d.dinheiro.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  recalcFech();
+}
+
+function fechAtualizarTotal() {
+  fechRecalcFormas();
 }
 
 // ── PARSER ORÇAMENTO ──
