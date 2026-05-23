@@ -2186,7 +2186,7 @@ function renderCobrancas() {
       // Acha o valor da forma de pagamento correspondente
       var baseVal = 0;
       Object.keys(d.formas).forEach(function(f){
-        if (f.toLowerCase().indexOf(l.forma) >= 0) baseVal = d.formas[f].valor;
+        if (semAcento(f).indexOf(semAcento(l.forma)) >= 0) baseVal = d.formas[f].valor;
       });
       var calcPct = baseVal * (l.pct||0) / 100;
       body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: ' + formatMoney(baseVal) + '</div>' +
@@ -2199,7 +2199,7 @@ function renderCobrancas() {
       // Por ora usa o total da forma (simplificado, pois relatorio não separa loja vs pdv por forma)
       var baseLojaVal = 0;
       Object.keys(d.formas).forEach(function(f){
-        if (f.toLowerCase().indexOf(l.forma) >= 0) baseLojaVal = d.formas[f].valor;
+        if (semAcento(f).indexOf(semAcento(l.forma)) >= 0) baseLojaVal = d.formas[f].valor;
       });
       // Tenta pegar só loja virtual se disponível
       if (d.pdvs['Loja Virtual']) {
@@ -2248,6 +2248,17 @@ function toggleNaoAplica(id) {
   recalcFech();
 }
 
+function semAcento(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+function getBaseForma(formas, formaKey) {
+  var base = 0;
+  Object.keys(formas).forEach(function(f){
+    if (semAcento(f).indexOf(semAcento(formaKey)) >= 0) base = formas[f].valor;
+  });
+  return base;
+}
+
 function getLinhaValor(l) {
   var div = document.getElementById('fech-linha-' + l.id);
   if (!div || div.getAttribute('data-na') === '1') return 0;
@@ -2260,8 +2271,7 @@ function getLinhaValor(l) {
     var u = parseFloat(document.getElementById('fu-'+l.id).value)||0;
     return q * u;
   } else if (l.tipo === 'pct') {
-    var base = 0;
-    Object.keys(d.formas).forEach(function(f){ if(f.toLowerCase().indexOf(l.forma)>=0) base = d.formas[f].valor; });
+    var base = getBaseForma(d.formas, l.forma);
     var pct = parseFloat(document.getElementById('fp-'+l.id).value)||0;
     return base * pct / 100;
   } else if (l.tipo === 'pct_loja') {
