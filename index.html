@@ -45,7 +45,7 @@
     .page.active{display:block}
 
     /* BOTTOM NAV */
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(6,1fr);z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
     .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:none;background:none;cursor:pointer;font-family:Arial,sans-serif}
     .nav-btn .n-icon{font-size:21px}
     .nav-btn .n-label{font-size:10px;color:#9ca3af}
@@ -678,10 +678,89 @@
       <div class="n-dot"></div>
       <span class="n-label">Recorrentes</span>
     </button>
+    <button class="nav-btn" onclick="setPage('fechamentos')">
+      <span class="n-icon">🧾</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Fechamento</span>
+    </button>
   </nav>
 
   <!-- FAB Cadastrar -->
   <button class="fab" id="fabCadastrar" onclick="openCadastroModal()" style="display:none" title="Cadastrar maquina">➕</button>
+
+  <!-- PAGE: FECHAMENTOS -->
+  <div id="page-fechamentos" class="page">
+    <div class="card">
+      <div class="lote-tabs" style="margin:-16px -16px 14px;grid-template-columns:repeat(2,1fr)">
+        <button class="lote-tab-btn active" onclick="setFechTab('novo')">📋 Novo Fechamento</button>
+        <button class="lote-tab-btn" onclick="setFechTab('historico')">📂 Historico</button>
+      </div>
+
+      <!-- NOVO FECHAMENTO -->
+      <div id="fech-novo" class="lote-tab-content active">
+        <p class="helper-text">Cole o relatorio de vendas do sistema Easytick e selecione o evento.</p>
+
+        <div style="margin-bottom:10px">
+          <textarea id="fechRelatorioTexto" rows="8"
+            placeholder="Cole aqui o texto do relatorio de vendas..."
+            style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:Arial,sans-serif;background:#fafafa;resize:vertical;line-height:1.6"></textarea>
+          <button type="button" onclick="parsearRelatorio()" style="margin-top:6px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">
+            🔍 Ler relatorio
+          </button>
+        </div>
+
+        <div id="fechResultado" style="display:none">
+          <div id="fechTipoBadge" style="margin-bottom:10px"></div>
+
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;font-weight:bold;color:var(--gray)">Evento
+              <div class="autocomplete-wrap" style="margin-top:4px">
+                <input type="text" id="fechEvento" placeholder="Selecione ou digite o evento" autocomplete="off"
+                  oninput="showAutocomplete(this,'fechEvento-list')"
+                  onkeydown="handleAutocompleteKey(event,'fechEvento-list')"
+                  onblur="setTimeout(function(){hideAutocomplete('fechEvento-list')},200)"/>
+                <div id="fechEvento-list" class="autocomplete-list"></div>
+              </div>
+            </label>
+          </div>
+
+          <div style="background:#f9fafb;border-radius:12px;padding:12px;border:1.5px solid var(--border);margin-bottom:10px">
+            <div style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">📊 Dados lidos do relatorio</div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:#374151">Total bruto</span>
+              <b style="font-size:16px;color:var(--blue)" id="fechTotalBruto">R$ 0,00</b>
+            </div>
+
+            <div style="margin-top:8px">
+              <div style="font-size:11px;font-weight:bold;color:#9ca3af;margin-bottom:6px;text-transform:uppercase">Por forma de pagamento</div>
+              <div id="fechFormasList"></div>
+            </div>
+
+            <div style="margin-top:10px" id="fechPdvSection">
+              <div style="font-size:11px;font-weight:bold;color:#9ca3af;margin-bottom:6px;text-transform:uppercase" id="fechPdvLabel">Por PDV</div>
+              <div id="fechPdvList"></div>
+            </div>
+          </div>
+
+          <div style="background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#92400e">
+            💵 <b>Dinheiro (R$ <span id="fechValorDinheiro">0,00</span>):</b> ja ficou com o produtor — sera deduzido do repasse.
+          </div>
+
+          <div style="text-align:center;color:#9ca3af;font-size:12px;padding:8px 0">
+            ✅ Relatorio lido com sucesso. As cobranças e despesas virao na proxima etapa.
+          </div>
+        </div>
+
+        <div id="fechErro" style="display:none;background:#fee2e2;border-radius:10px;padding:10px;font-size:13px;color:#991b1b;margin-top:8px"></div>
+      </div>
+
+      <!-- HISTORICO -->
+      <div id="fech-historico" class="lote-tab-content">
+        <p style="color:#9ca3af;font-size:13px">Nenhum fechamento salvo ainda.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- RECORRENTES PAGE -->
   <div id="page-recorrentes" class="page">
@@ -1816,17 +1895,164 @@ document.getElementById('customStartDate').addEventListener('change',function(){
 var currentPage = 'inicio';
 function setPage(page) {
   currentPage = page;
-  ['inicio','maquinas','acoes','financeiro','recorrentes'].forEach(function(p){
+  ['inicio','maquinas','acoes','financeiro','recorrentes','fechamentos'].forEach(function(p){
     document.getElementById('page-'+p).classList.toggle('active', p===page);
   });
   document.querySelectorAll('.nav-btn').forEach(function(btn,i){
-    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes'][i]===page);
+    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes','fechamentos'][i]===page);
   });
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
   if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); renderSaldoEventoList(); }
   if(page==='recorrentes') { renderRecPainel(); }
+}
+
+// ═══════════════════════════════════════════
+// FECHAMENTOS
+// ═══════════════════════════════════════════
+function setFechTab(tab) {
+  document.querySelectorAll('#page-fechamentos .lote-tab-btn').forEach(function(b,i){
+    b.classList.toggle('active', (i===0&&tab==='novo')||(i===1&&tab==='historico'));
+  });
+  document.getElementById('fech-novo').classList.toggle('active', tab==='novo');
+  document.getElementById('fech-historico').classList.toggle('active', tab==='historico');
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  return parseFloat(str.replace(/\./g,'').replace(',','.')) || 0;
+}
+
+function parsearRelatorio() {
+  var texto = document.getElementById('fechRelatorioTexto').value.trim();
+  var erro = document.getElementById('fechErro');
+  var resultado = document.getElementById('fechResultado');
+  erro.style.display = 'none';
+  resultado.style.display = 'none';
+
+  if (!texto) {
+    erro.textContent = 'Cole o texto do relatorio antes de continuar.';
+    erro.style.display = 'block';
+    return;
+  }
+
+  // Detectar tipo: Ficha ou Ingresso
+  var tipo = 'ficha';
+  if (/Ingressos:/i.test(texto) || /Agrupado por Lote/i.test(texto) || /Agrupado por Revendedor/i.test(texto)) {
+    tipo = 'ingresso';
+  }
+
+  // ── TOTAL GERAL (ultima linha "NNN  R$ X" da seção de produto) ──
+  var secaoProduto = (texto.split(/Agrupado por Produto/i)[1] || texto.split(/Agrupado por Lote/i)[1] || '').split(/Agrupado por/i)[0];
+  var totalGeral = 0, totalQtd = 0;
+  var linhasProd = secaoProduto.split('\n');
+  for (var k = linhasProd.length - 1; k >= 0; k--) {
+    var lk = linhasProd[k].trim();
+    var mt = lk.match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
+    if (mt) { totalQtd = parseInt(mt[1]); totalGeral = parseMoney(mt[2]); break; }
+  }
+
+  // ── PARSER FORMAS DE PAGAMENTO ──
+  var formas = {};
+  var secaoForma = texto.split(/Agrupado por Forma\s*Pagamento/i)[1] || '';
+  var linhasF = secaoForma.split('\n');
+  var formaAtual = null;
+  for (var i = 0; i < linhasF.length; i++) {
+    var linha = linhasF[i].trim();
+    if (!linha) continue;
+    // Nome da forma: começa com letra conhecida, sem R$
+    var isForma = /^(Déb|Deb|Cré|Cre|Pix|Din)/i.test(linha) && !/R\$/.test(linha);
+    if (isForma) {
+      formaAtual = linha.replace(/\s+/g,' ').trim();
+      if (!formas[formaAtual]) formas[formaAtual] = { qtd: 0, valor: 0 };
+      continue;
+    }
+    if (formaAtual) {
+      var matchTotal = linha.match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
+      if (matchTotal) {
+        formas[formaAtual].qtd = parseInt(matchTotal[1]);
+        formas[formaAtual].valor = parseMoney(matchTotal[2]);
+        formaAtual = null;
+      }
+    }
+  }
+
+  // ── PARSER PDVs / REVENDEDORES ──
+  var pdvs = {};
+  var secaoPdv = '';
+  if (tipo === 'ficha') {
+    secaoPdv = (texto.split(/Agrupado por Ponto de Venda/i)[1] || '').split(/Agrupado por Forma/i)[0];
+  } else {
+    secaoPdv = (texto.split(/Agrupado por Revendedor/i)[1] || '').split(/Agrupado por Forma/i)[0];
+  }
+  var pdvLinhas = secaoPdv.split('\n');
+  var pdvAtual = null;
+  for (var j = 0; j < pdvLinhas.length; j++) {
+    var lp = pdvLinhas[j].trim();
+    if (!lp) continue;
+    var isPdv = /^PDV\s/i.test(lp) || /^Loja Virtual/i.test(lp);
+    if (isPdv) {
+      pdvAtual = lp;
+      if (!pdvs[pdvAtual]) pdvs[pdvAtual] = { qtd: 0, valor: 0 };
+      continue;
+    }
+    if (pdvAtual) {
+      var matchPdv = lp.match(/^(\d+)\s+R\$\s*([\d.,]+)$/);
+      if (matchPdv) {
+        pdvs[pdvAtual].qtd = parseInt(matchPdv[1]);
+        pdvs[pdvAtual].valor = parseMoney(matchPdv[2]);
+        pdvAtual = null;
+      }
+    }
+  }
+
+  // Validação mínima
+  if (totalGeral === 0 && Object.keys(formas).length === 0) {
+    erro.textContent = 'Nao foi possivel ler o relatorio. Verifique se o texto esta completo e tente novamente.';
+    erro.style.display = 'block';
+    return;
+  }
+
+  // ── RENDERIZAR ──
+  document.getElementById('fechTipoBadge').innerHTML = tipo === 'ficha'
+    ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
+    : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
+
+  document.getElementById('fechTotalBruto').textContent = formatMoney(totalGeral);
+
+  var dinheiro = 0;
+  var formasList = document.getElementById('fechFormasList');
+  formasList.innerHTML = '';
+  Object.keys(formas).forEach(function(f) {
+    var v = formas[f];
+    var isDin = /dinheiro/i.test(f);
+    if (isDin) dinheiro = v.valor;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px';
+    row.innerHTML = '<span style="color:#374151">' + f + ' <span style="font-size:11px;color:#9ca3af">(' + v.qtd + ' vend.)</span></span>' +
+      '<b style="color:' + (isDin ? '#92400e' : '#1f2937') + '">' + formatMoney(v.valor) + (isDin ? ' 💵' : '') + '</b>';
+    formasList.appendChild(row);
+  });
+  document.getElementById('fechValorDinheiro').textContent = dinheiro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  var pdvList = document.getElementById('fechPdvList');
+  pdvList.innerHTML = '';
+  document.getElementById('fechPdvLabel').textContent = tipo === 'ingresso' ? 'Por Revendedor / Loja Virtual' : 'Por PDV';
+  Object.keys(pdvs).forEach(function(p) {
+    var v = pdvs[p];
+    var isLoja = /loja virtual/i.test(p);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
+    row.innerHTML = '<span style="color:#374151">' + (isLoja ? '🌐 ' : '📍 ') + p + '</span>' +
+      '<b>' + formatMoney(v.valor) + ' <span style="font-size:11px;color:#9ca3af">(' + v.qtd + ')</span></b>';
+    pdvList.appendChild(row);
+  });
+
+  // Salvar para uso na próxima etapa
+  window._fechDados = { tipo: tipo, formas: formas, pdvs: pdvs, totalGeral: totalGeral, totalQtd: totalQtd, dinheiro: dinheiro };
+
+  resultado.style.display = 'block';
 }
 
 // ═══════════════════════════════════════════
