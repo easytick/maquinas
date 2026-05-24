@@ -714,6 +714,19 @@
             </button>
           </div>
 
+          <!-- EVENTO (passo 1) -->
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;font-weight:bold;color:var(--gray)">Evento
+              <div class="autocomplete-wrap" style="margin-top:4px">
+                <input type="text" id="fechEvento" placeholder="Selecione ou digite o evento" autocomplete="off"
+                  oninput="showAutocomplete(this,'fechEvento-list')"
+                  onkeydown="handleAutocompleteKey(event,'fechEvento-list')"
+                  onblur="setTimeout(function(){hideAutocomplete('fechEvento-list')},200)"/>
+                <div id="fechEvento-list" class="autocomplete-list"></div>
+              </div>
+            </label>
+          </div>
+
           <!-- MODO RELATORIO -->
           <div id="fech-modo-relatorio">
             <p class="helper-text">Cole o relatorio de vendas do sistema Easytick.</p>
@@ -758,19 +771,6 @@
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
             <div id="fechTipoBadge"></div>
             <button type="button" onclick="fechVoltarPasso1()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:11px;padding:4px 10px;width:auto">← Voltar</button>
-          </div>
-
-          <!-- Evento -->
-          <div style="margin-bottom:10px">
-            <label style="font-size:12px;font-weight:bold;color:var(--gray)">Evento
-              <div class="autocomplete-wrap" style="margin-top:4px">
-                <input type="text" id="fechEvento" placeholder="Selecione ou digite o evento" autocomplete="off"
-                  oninput="showAutocomplete(this,'fechEvento-list')"
-                  onkeydown="handleAutocompleteKey(event,'fechEvento-list')"
-                  onblur="setTimeout(function(){hideAutocomplete('fechEvento-list')},200)"/>
-                <div id="fechEvento-list" class="autocomplete-list"></div>
-              </div>
-            </label>
           </div>
 
           <!-- Resumo vendas -->
@@ -2167,11 +2167,11 @@ function confirmarManual() {
   renderDadosLidos();
   window._fechParams = {};
   renderCobrancas();
-  // Busca automática de saques pelo nome do evento
-  setTimeout(function(){
-    var ev = document.getElementById('fechEvento');
-    if (ev && ev.value) inicializarSaquesAuto(ev.value);
-  }, 100);
+  // Busca automática de saques pelo nome do evento (já preenchido no passo 1)
+  var evInput = document.getElementById('fechEvento');
+  if (evInput && evInput.value.trim()) {
+    inicializarSaquesAuto(evInput.value.trim());
+  }
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
 }
@@ -2303,11 +2303,11 @@ function parsearRelatorio() {
   renderDadosLidos();
   window._fechParams = {};
   renderCobrancas();
-  // Busca automática de saques pelo nome do evento
-  setTimeout(function(){
-    var ev = document.getElementById('fechEvento');
-    if (ev && ev.value) inicializarSaquesAuto(ev.value);
-  }, 100);
+  // Busca automática de saques pelo nome do evento (já preenchido no passo 1)
+  var evInput = document.getElementById('fechEvento');
+  if (evInput && evInput.value.trim()) {
+    inicializarSaquesAuto(evInput.value.trim());
+  }
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
 }
