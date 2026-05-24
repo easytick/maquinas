@@ -2201,10 +2201,14 @@ function limparEstadoFechamento() {
 }
 
 function matchTotalLinha(linha) {
-  // formato ficha:    "84\tR$ 1.275,00"
-  // formato ingresso: "25\tR$ 1.000,00\t0\tR$ 0,00"
-  var m = linha.trim().match(/^(\d+)\s+R\$\s*([\d.,]+)/);
-  return m ? { qtd: parseInt(m[1]), valor: parseMoney(m[2]) } : null;
+  // Aceita qtd com ponto de milhar: "1.566", "3.695"
+  // Aceita valor com milhar: "R$ 83.559,00"
+  // Aceita ingresso: "25  R$ 1.000,00  0  R$ 0,00"
+  var m = linha.trim().match(/^([\d.]+)\s+R\$\s*([\d.,]+)/);
+  if (!m) return null;
+  var qtd = parseInt(m[1].replace(/\./g,""));
+  var valor = parseMoney(m[2]);
+  return { qtd: qtd, valor: valor };
 }
 
 function parsearRelatorio() {
