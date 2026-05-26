@@ -3114,13 +3114,14 @@ function baixarImagemFechamento() {
   var ROW_H = 38;
   var HEADER_H = 130;
 
-  // Conta linhas totais para altura
+  // Conta linhas totais para altura (inclui saques)
   var totalRows = 0;
   totalRows += Object.keys(d.formas).length + 1; // vendas + total
   if (d.tipo === 'ingresso') totalRows += 2; // entrada loja + entrada maquinas
   totalRows += cobrancasAtivas.length;
-  totalRows += 1; // total final
-  var H = HEADER_H + 60 + (totalRows + 8) * ROW_H + 120;
+  totalRows += (window._fechSaquesSelecionados||[]).length; // saques antecipados
+  totalRows += 3; // total final + box vermelha + rodapé
+  var H = HEADER_H + 80 + (totalRows + 10) * ROW_H + 160;
 
   var canvas = document.createElement('canvas');
   canvas.width = W * 2; canvas.height = H * 2;
