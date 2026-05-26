@@ -729,8 +729,30 @@
 
           <!-- MODO RELATORIO -->
           <div id="fech-modo-relatorio">
-            <p class="helper-text">Cole o relatorio de vendas do sistema Easytick.</p>
-            <textarea id="fechRelatorioTexto" rows="7" placeholder="Cole aqui o texto do relatorio de vendas..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:Arial,sans-serif;background:#fafafa;resize:vertical;line-height:1.6"></textarea>
+            <!-- Campo unico para ficha (escondido para ingresso) -->
+            <div id="fech-campo-ficha">
+              <p class="helper-text">Cole o relatorio de vendas do sistema Easytick.</p>
+              <textarea id="fechRelatorioTexto" rows="6" placeholder="Cole aqui o texto do relatorio de vendas (Fichas)..." style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:Arial,sans-serif;background:#fafafa;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <!-- Dois campos para ingresso -->
+            <div id="fech-campo-ingresso" style="display:none">
+              <div style="background:#dbeafe;border-radius:10px;padding:10px;margin-bottom:8px">
+                <div style="font-size:12px;font-weight:bold;color:#1e40af;margin-bottom:6px">🌐 Relatorio Loja Virtual (Origem: Loja virtual)</div>
+                <textarea id="fechRelatorioLoja" rows="5" placeholder="Cole aqui o relatorio filtrado por Origem: Loja virtual..." style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #93c5fd;font-size:12px;font-family:Arial,sans-serif;background:#fff;resize:vertical;line-height:1.5"></textarea>
+              </div>
+              <div style="background:#dcfce7;border-radius:10px;padding:10px;margin-bottom:8px">
+                <div style="font-size:12px;font-weight:bold;color:#166534;margin-bottom:6px">📱 Relatorio Aplicativo (Origem: Aplicativo)</div>
+                <textarea id="fechRelatorioApp" rows="5" placeholder="Cole aqui o relatorio filtrado por Origem: Aplicativo..." style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #86efac;font-size:12px;font-family:Arial,sans-serif;background:#fff;resize:vertical;line-height:1.5"></textarea>
+              </div>
+              <!-- textarea oculto compatibilidade -->
+              <textarea id="fechRelatorioTexto" style="display:none"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button type="button" onclick="setFechTipoRelatorio('ficha')" id="btn-rel-ficha"
+                style="flex:1;padding:8px;font-size:12px;border-radius:8px;border:2px solid var(--blue);background:#eef6ff;color:var(--blue);font-weight:bold;font-family:Arial,sans-serif;cursor:pointer">🍺 Ficha</button>
+              <button type="button" onclick="setFechTipoRelatorio('ingresso')" id="btn-rel-ingresso"
+                style="flex:1;padding:8px;font-size:12px;border-radius:8px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">🎟️ Ingresso</button>
+            </div>
             <button type="button" onclick="parsearRelatorio()" style="margin-top:6px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px">🔍 Ler relatorio</button>
           </div>
 
@@ -2211,37 +2233,35 @@ function matchTotalLinha(linha) {
   return { qtd: qtd, valor: valor };
 }
 
-function parsearRelatorio() {
-  limparEstadoFechamento();
-  var texto = document.getElementById('fechRelatorioTexto').value.trim();
-  var erro = document.getElementById('fechErro');
-  erro.style.display = 'none';
+function setFechTipoRelatorio(tipo) {
+  var isFicha = tipo === 'ficha';
+  document.getElementById('fech-campo-ficha').style.display = isFicha ? 'block' : 'none';
+  document.getElementById('fech-campo-ingresso').style.display = isFicha ? 'none' : 'block';
+  document.getElementById('btn-rel-ficha').style.borderColor = isFicha ? 'var(--blue)' : 'var(--border)';
+  document.getElementById('btn-rel-ficha').style.background = isFicha ? '#eef6ff' : '#f9fafb';
+  document.getElementById('btn-rel-ficha').style.color = isFicha ? 'var(--blue)' : '#6b7280';
+  document.getElementById('btn-rel-ingresso').style.borderColor = isFicha ? 'var(--border)' : 'var(--blue)';
+  document.getElementById('btn-rel-ingresso').style.background = isFicha ? '#f9fafb' : '#eef6ff';
+  document.getElementById('btn-rel-ingresso').style.color = isFicha ? '#6b7280' : 'var(--blue)';
+  window._fechTipoRelatorio = tipo;
+}
 
-  if (!texto) { erro.textContent = 'Cole o texto do relatorio antes de continuar.'; erro.style.display = 'block'; return; }
-
+// Extrai dados de um texto de relatório (ficha ou ingresso)
+function extrairDadosRelatorio(texto) {
+  if (!texto || !texto.trim()) return null;
   var tipo = 'ficha';
   if (/Ingressos:/i.test(texto) || /Agrupado por Lote/i.test(texto) || /Agrupado por Revendedor/i.test(texto)) tipo = 'ingresso';
 
-  // ── TOTAL GERAL ──
-  // Para ingresso: seção "Agrupado por Lote", para ficha: "Agrupado por Produto"
+  // Total geral
   var secaoProduto = tipo === 'ficha'
     ? (texto.split(/Agrupado por Produto/i)[1]||'').split(/Agrupado por/i)[0]
     : (texto.split(/Agrupado por Lote/i)[1]||'').split(/Agrupado por/i)[0];
-
   var totalGeral = 0, totalQtd = 0;
-  // Pega a última linha que começa com número seguido de R$
-  // Ignora linhas de cabeçalho (Lote, Unitário, etc.)
   var linhasProd = secaoProduto.split('\n');
   for (var k = linhasProd.length - 1; k >= 0; k--) {
-    var lk = linhasProd[k].trim();
-    // Para ingresso, ignora linhas que têm "R$ 40,00" antes (são linhas de produto, não total)
-    // O total tem apenas qtd + valor (sem unitário no meio)
-    var mt = matchTotalLinha(lk);
-    if (mt && mt.qtd > 1) { // qtd > 1 para evitar pegar linhas de produto individual com qtd=1 lote
-      totalQtd = mt.qtd; totalGeral = mt.valor; break;
-    }
+    var mt = matchTotalLinha(linhasProd[k].trim());
+    if (mt && mt.qtd > 1) { totalQtd = mt.qtd; totalGeral = mt.valor; break; }
   }
-  // Fallback: pega qualquer linha de total se não encontrou com qtd>1
   if (totalGeral === 0) {
     for (var k2 = linhasProd.length - 1; k2 >= 0; k2--) {
       var mt2 = matchTotalLinha(linhasProd[k2].trim());
@@ -2249,25 +2269,22 @@ function parsearRelatorio() {
     }
   }
 
-  // ── FORMAS DE PAGAMENTO ──
+  // Formas de pagamento
   var formas = {};
   var secaoForma = texto.split(/Agrupado por Forma\s*Pagamento/i)[1] || '';
   var formaAtual = null;
   secaoForma.split('\n').forEach(function(linha) {
     linha = linha.trim(); if (!linha) return;
-    // Ignora linhas de cabeçalho de tabela
-    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Forma)/i.test(linha) && !/^(Déb|Deb|Cré|Cre|Pix|Din)/i.test(linha)) return;
-    var isForma = /^(Déb|Deb|Cré|Cre|Pix|Din)/i.test(linha) && !/R\$/.test(linha);
+    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Forma|Desconto)/i.test(linha) && !/^(Déb|Deb|Cré|Cre|Pix|Din|Bol|Não|Nao)/i.test(linha)) return;
+    var isForma = /^(Déb|Deb|Cré|Cre|Pix|Din|Bol|Não\s*inf|Nao\s*inf)/i.test(linha) && !/R\$/.test(linha);
     if (isForma) { formaAtual = linha.replace(/\s+/g,' ').trim(); formas[formaAtual] = {qtd:0,valor:0}; return; }
     if (formaAtual) {
       var m = matchTotalLinha(linha);
-      // Para ingresso: linha de total da forma tem qtd + valor + qtd_validado + valor_validado
-      // Ex: "7\tR$ 280,00\t0\tR$ 0,00"  — queremos qtd=7, valor=280
       if (m) { formas[formaAtual].qtd = m.qtd; formas[formaAtual].valor = m.valor; formaAtual = null; }
     }
   });
 
-  // ── PDVs / REVENDEDORES ──
+  // PDVs / Revendedores
   var pdvs = {};
   var secaoPdv = tipo === 'ficha'
     ? (texto.split(/Agrupado por Ponto de Venda/i)[1]||'').split(/Agrupado por Forma/i)[0]
@@ -2275,39 +2292,121 @@ function parsearRelatorio() {
   var pdvAtual = null;
   secaoPdv.split('\n').forEach(function(lp) {
     lp = lp.trim(); if (!lp) return;
-    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Revendedor|Ponto)/i.test(lp)) return;
+    if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Revendedor|Ponto|Desconto)/i.test(lp)) return;
     if (/^PDV\s/i.test(lp) || /^Loja Virtual/i.test(lp)) { pdvAtual = lp; pdvs[pdvAtual] = {qtd:0,valor:0}; return; }
+    // Revendedor = qualquer nome que não seja cabeçalho nem PDV
+    if (!pdvAtual && lp && !/R\$/.test(lp) && lp.length > 2 && !/^\d/.test(lp)) { pdvAtual = lp; pdvs[pdvAtual] = {qtd:0,valor:0}; return; }
     if (pdvAtual) {
       var m = matchTotalLinha(lp);
       if (m) { pdvs[pdvAtual].qtd = m.qtd; pdvs[pdvAtual].valor = m.valor; pdvAtual = null; }
     }
   });
 
-  if (totalGeral === 0 && Object.keys(formas).length === 0) {
-    erro.textContent = 'Nao foi possivel ler o relatorio. Verifique se o texto esta completo.';
-    erro.style.display = 'block'; return;
-  }
-
-  // Garante total bruto correto:
-  // 1) Se totalGeral < soma dos PDVs, usa soma dos PDVs (mais confiável)
-  // 2) Se totalGeral < soma das formas, usa soma das formas
-  var somaPdvs = 0;
-  Object.keys(pdvs).forEach(function(p){ somaPdvs += pdvs[p].valor; });
-  var somaFormas = 0;
-  Object.keys(formas).forEach(function(f){ somaFormas += formas[f].valor; });
+  // Fallback total
+  var somaPdvs = 0; Object.keys(pdvs).forEach(function(p){ somaPdvs += pdvs[p].valor; });
+  var somaFormas = 0; Object.keys(formas).forEach(function(f){ somaFormas += formas[f].valor; });
   if (somaPdvs > totalGeral) totalGeral = somaPdvs;
   if (somaFormas > totalGeral) totalGeral = somaFormas;
 
-  // Calcula dinheiro antes de salvar
-  var dinheiro = 0;
-  Object.keys(formas).forEach(function(f){ if(/dinheiro/i.test(f)) dinheiro = formas[f].valor; });
+  // Detecta origem
+  var origem = 'geral';
+  if (/Origem:\s*Loja\s*virtual/i.test(texto)) origem = 'loja';
+  else if (/Origem:\s*Aplicativo/i.test(texto)) origem = 'app';
 
-  window._fechDados = { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalQtd:totalQtd, dinheiro:dinheiro };
+  return { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalQtd:totalQtd, origem:origem };
+}
+
+function parsearRelatorio() {
+  limparEstadoFechamento();
+  var erro = document.getElementById('fechErro');
+  erro.style.display = 'none';
+  var tipoRel = window._fechTipoRelatorio || 'ficha';
+
+  if (tipoRel === 'ficha') {
+    var texto = document.getElementById('fechRelatorioTexto').value.trim();
+    if (!texto) { erro.textContent = 'Cole o texto do relatorio de ficha antes de continuar.'; erro.style.display = 'block'; return; }
+    var dados = extrairDadosRelatorio(texto);
+    if (!dados || dados.totalGeral === 0) { erro.textContent = 'Nao foi possivel ler o relatorio.'; erro.style.display = 'block'; return; }
+    var dinheiro = 0;
+    Object.keys(dados.formas).forEach(function(f){ if(/dinheiro/i.test(f)) dinheiro = dados.formas[f].valor; });
+    window._fechDados = { tipo:'ficha', formas:dados.formas, pdvs:dados.pdvs, totalGeral:dados.totalGeral, totalQtd:dados.totalQtd, dinheiro:dinheiro };
+
+  } else {
+    // INGRESSO: dois relatórios
+    var textoLoja = document.getElementById('fechRelatorioLoja').value.trim();
+    var textoApp  = document.getElementById('fechRelatorioApp').value.trim();
+    if (!textoLoja && !textoApp) { erro.textContent = 'Cole ao menos um dos relatorios de ingresso.'; erro.style.display = 'block'; return; }
+
+    var dadosLoja = textoLoja ? extrairDadosRelatorio(textoLoja) : null;
+    var dadosApp  = textoApp  ? extrairDadosRelatorio(textoApp)  : null;
+
+    // Loja Virtual: tudo que entrou pelo site (base do repasse)
+    var totalLoja = dadosLoja ? dadosLoja.totalGeral : 0;
+    var formasLoja = dadosLoja ? dadosLoja.formas : {};
+
+    // Aplicativo: separa "Não informado" (digital, fica c/ produtor) de formas com pagamento (PDV físico)
+    var totalApp = dadosApp ? dadosApp.totalGeral : 0;
+    var formasApp = dadosApp ? dadosApp.formas : {};
+    var totalDigital = 0; // não informado = app/whatsapp = fica c/ produtor
+    var formasPdv = {};   // débito/crédito/pix do app = PDV físico
+
+    Object.keys(formasApp).forEach(function(f) {
+      if (/n.o\s*inf/i.test(f) || /nao\s*inf/i.test(f) || /não\s*inf/i.test(f)) {
+        totalDigital += formasApp[f].valor;
+      } else {
+        formasPdv[f] = formasApp[f];
+      }
+    });
+
+    // Monta formas consolidadas para exibição
+    var formasConsolidadas = {};
+    // Loja virtual como forma
+    if (totalLoja > 0) formasConsolidadas['Loja Virtual'] = { qtd: dadosLoja ? dadosLoja.totalQtd : 0, valor: totalLoja, _isLoja: true };
+    // Digital (app) como dinheiro do produtor
+    if (totalDigital > 0) formasConsolidadas['Digital (App/WhatsApp)'] = { qtd: 0, valor: totalDigital, _isDigital: true };
+    // PDV físico por forma
+    Object.keys(formasPdv).forEach(function(f) {
+      formasConsolidadas['PDV - ' + f] = formasPdv[f];
+    });
+
+    var totalGeral = totalLoja + totalApp;
+    var totalPdv = 0;
+    Object.keys(formasPdv).forEach(function(f){ totalPdv += formasPdv[f].valor; });
+
+    // Validação
+    window._fechValidacao = {
+      loja: totalLoja,
+      digital: totalDigital,
+      pdv: totalPdv,
+      total: totalGeral
+    };
+
+    // PDVs revendedores da loja
+    var pdvs = dadosLoja ? dadosLoja.pdvs : {};
+    if (dadosApp && dadosApp.pdvs) {
+      Object.keys(dadosApp.pdvs).forEach(function(p){
+        if (!pdvs[p]) pdvs[p] = dadosApp.pdvs[p];
+      });
+    }
+
+    window._fechDados = {
+      tipo: 'ingresso',
+      formas: formasConsolidadas,
+      formasLoja: formasLoja,
+      formasPdv: formasPdv,
+      totalDigital: totalDigital,
+      pdvs: pdvs,
+      totalGeral: totalGeral,
+      totalLoja: totalLoja,
+      totalPdv: totalPdv,
+      totalQtd: (dadosLoja ? dadosLoja.totalQtd : 0) + (dadosApp ? dadosApp.totalQtd : 0),
+      dinheiro: totalDigital  // digital fica c/ produtor, como dinheiro
+    };
+  }
 
   renderDadosLidos();
   window._fechParams = {};
   renderCobrancas();
-  // Busca automática de saques pelo nome do evento (já preenchido no passo 1)
   var evInput = document.getElementById('fechEvento');
   if (evInput && evInput.value.trim()) {
     inicializarSaquesAuto(evInput.value.trim());
@@ -2364,22 +2463,49 @@ function renderDadosLidos() {
   var formasList = document.getElementById('fechFormasList');
   formasList.innerHTML = '';
   window._fechFormasMap = {};
-  var dinheiro = 0;
+  var dinheiro = d.dinheiro || 0;
+
   Object.keys(d.formas).forEach(function(f) {
-    var v = d.formas[f], isDin = /dinheiro/i.test(f);
-    if (isDin) dinheiro = v.valor;
+    var v = d.formas[f];
+    var isDigital = v._isDigital;
+    var isLoja = v._isLoja;
+    var isDin = /dinheiro/i.test(f);
+    var isRed = isDigital || isDin;
+
     var fId = 'fv-' + f.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
     window._fechFormasMap[f] = fId;
+
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px';
-    row.innerHTML = '<span style="color:#374151;flex:1">' + f + (v.qtd ? ' <span style="color:#9ca3af">('+v.qtd+')</span>' : '') + '</span>' +
+    var bgColor = isDigital ? '#fef3c7' : isLoja ? '#eff6ff' : '';
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;gap:8px;' + (bgColor ? 'background:'+bgColor+';border-radius:6px;' : '');
+
+    var icon = isDigital ? '📱 ' : isLoja ? '🌐 ' : '';
+    var suffix = isDigital ? ' <span style="font-size:10px;color:#92400e;font-weight:bold">fica c/ produtor</span>' : '';
+
+    row.innerHTML = '<span style="color:#374151;flex:1">' + icon + f + (v.qtd ? ' <span style="color:#9ca3af">('+v.qtd+')</span>' : '') + suffix + '</span>' +
       '<input type="number" id="'+fId+'" value="'+v.valor.toFixed(2)+'" min="0" step="0.01" onchange="fechRecalcFormas()" ' +
-      'style="width:110px;font-size:12px;font-weight:bold;color:'+(isDin?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
-      (isDin ? '<span style="font-size:14px">💵</span>' : '');
+      'style="width:110px;font-size:12px;font-weight:bold;color:'+(isRed?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
+      (isRed ? '<span style="font-size:14px">💵</span>' : '');
     formasList.appendChild(row);
   });
 
-  // PDVs
+  // Validação ingresso: LV + App = Total
+  if (d.tipo === 'ingresso' && window._fechValidacao) {
+    var val = window._fechValidacao;
+    var soma = val.loja + val.digital + val.pdv;
+    var bate = Math.abs(soma - val.total) < 0.01;
+    var validEl = document.createElement('div');
+    validEl.style.cssText = 'margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:bold;' +
+      (bate ? 'background:#dcfce7;color:#166534;' : 'background:#fef3c7;color:#92400e;');
+    validEl.innerHTML = (bate ? '✅ ' : '⚠️ ') +
+      'Loja Virtual (' + formatMoney(val.loja) + ') + Digital (' + formatMoney(val.digital) + ')' +
+      (val.pdv > 0 ? ' + PDV (' + formatMoney(val.pdv) + ')' : '') +
+      ' = ' + formatMoney(soma) +
+      (bate ? ' — confere!' : ' — diverge do total (' + formatMoney(val.total) + ')');
+    formasList.appendChild(validEl);
+  }
+
+  // PDVs / Revendedores
   var pdvList = document.getElementById('fechPdvList');
   pdvList.innerHTML = '';
   document.getElementById('fechPdvLabel').textContent = d.tipo === 'ingresso' ? 'Por Revendedor / Loja Virtual' : 'Por PDV';
@@ -2387,13 +2513,14 @@ function renderDadosLidos() {
     var v = d.pdvs[p], isLoja = /loja virtual/i.test(p);
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px';
-    row.innerHTML = '<span>' + (isLoja?'🌐 ':'📍 ') + p + '</span><b>' + formatMoney(v.valor) + (v.qtd ? ' <span style="color:#9ca3af;font-size:11px">('+v.qtd+')</span>' : '') + '</b>';
+    row.innerHTML = '<span>' + (isLoja?'🌐 ':'👤 ') + p + '</span><b>' + formatMoney(v.valor) + (v.qtd ? ' <span style="color:#9ca3af;font-size:11px">('+v.qtd+')</span>' : '') + '</b>';
     pdvList.appendChild(row);
   });
 
-  // Aviso dinheiro
-  document.getElementById('fechValorDinheiro').textContent = dinheiro.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  d.dinheiro = dinheiro;
+  // Aviso dinheiro/digital
+  var dinLabel = d.tipo === 'ingresso' ? (d.totalDigital||0) : dinheiro;
+  document.getElementById('fechValorDinheiro').textContent = dinLabel.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  d.dinheiro = d.tipo === 'ingresso' ? (d.totalDigital||0) : dinheiro;
 }
 
 // ── PARSER ORÇAMENTO ──
@@ -2667,6 +2794,7 @@ function recalcFech() {
   var totalSaques = 0;
   (window._fechSaquesSelecionados || []).forEach(function(s){ totalSaques += s.valor; });
 
+  // Para ingresso: base = loja virtual + PDV físico (digital fica c/ produtor como dinheiro)
   var baseRepasse = d.totalGeral - d.dinheiro;
   var valorFinal = baseRepasse - totalCobranças - totalSaques;
 
@@ -2966,11 +3094,15 @@ function baixarImagemFechamento() {
     cobrancasAtivas.push({ label: l.label + extra, valor: v, qtd: qtdLabel });
   });
 
-  // Formas sem dinheiro (para entrada máquinas)
-  var totalMaquinas = 0;
-  Object.keys(d.formas).forEach(function(f){
-    if (!/dinheiro/i.test(f)) totalMaquinas += d.formas[f].valor;
-  });
+  // Entrada loja virtual e PDV físico
+  var totalMaquinas = d.totalPdv || 0;
+  if (!d.totalLoja && !d.totalPdv) {
+    // fallback para modelo antigo
+    Object.keys(d.formas).forEach(function(f){
+      if (!/dinheiro/i.test(f) && !d.formas[f]._isDigital) totalMaquinas += d.formas[f].valor;
+    });
+  }
+  var totalLojaImg = d.totalLoja || (d.pdvs && d.pdvs['Loja Virtual'] ? d.pdvs['Loja Virtual'].valor : 0);
 
   // ── DIMENSÕES ──
   var W = 900;
@@ -3078,7 +3210,8 @@ function baixarImagemFechamento() {
     // Para ingresso: Loja Virtual + Máquinas separado
     if (d.tipo === 'ingresso') {
       var lojaVal = d.pdvs['Loja Virtual'] ? d.pdvs['Loja Virtual'].valor : 0;
-      tableRow('(+) ENTRADA LOJA VIRTUAL', formatMoney(lojaVal), '1', formatMoney(lojaVal), y, '#86efac', '#14532d', '#14532d', true);
+      var lojaImgVal = d.totalLoja || lojaVal;
+      tableRow('(+) ENTRADA LOJA VIRTUAL', formatMoney(lojaImgVal), '1', formatMoney(lojaImgVal), y, '#86efac', '#14532d', '#14532d', true);
       y += ROW_H;
       tableRow('(+) ENTRADA MAQUINAS (PDVs)', formatMoney(totalMaquinas), '1', formatMoney(totalMaquinas), y, '#86efac', '#14532d', '#14532d', true);
       y += ROW_H;
