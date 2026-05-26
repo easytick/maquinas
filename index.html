@@ -2259,22 +2259,33 @@ function extrairDadosRelatorio(texto) {
   var tipo = 'ficha';
   if (/Ingressos:/i.test(texto) || /Agrupado por Lote/i.test(texto) || /Agrupado por Revendedor/i.test(texto)) tipo = 'ingresso';
 
-  // Total geral
+  // Total geral — captura bruto, desconto e líquido
   var secaoProduto = tipo === 'ficha'
     ? (texto.split(/Agrupado por Produto/i)[1]||'').split(/Agrupado por/i)[0]
     : (texto.split(/Agrupado por Lote/i)[1]||'').split(/Agrupado por/i)[0];
-  var totalGeral = 0, totalQtd = 0;
+  var totalGeral = 0, totalBruto = 0, totalDesconto = 0, totalQtd = 0;
   var linhasProd = secaoProduto.split('\n');
   for (var k = linhasProd.length - 1; k >= 0; k--) {
-    var mt = matchTotalLinha(linhasProd[k].trim());
-    if (mt && mt.qtd > 1) { totalQtd = mt.qtd; totalGeral = mt.valor; break; }
+    var lk = linhasProd[k].trim();
+    // Tenta capturar bruto + desconto + liquido numa linha só
+    var mFull = lk.match(/^([\d.]+)\s+R\$\s*([\d.,]+)\s+R\$\s*([\d.,]+)\s+R\$\s*([\d.,]+)/);
+    if (mFull && parseInt(mFull[1].replace(/\./g,'')) > 1) {
+      totalQtd     = parseInt(mFull[1].replace(/\./g,''));
+      totalBruto   = parseMoney(mFull[2]);
+      totalDesconto= parseMoney(mFull[3]);
+      totalGeral   = parseMoney(mFull[4]); // Valor Liq.
+      break;
+    }
+    var mt = matchTotalLinha(lk);
+    if (mt && mt.qtd > 1) { totalQtd = mt.qtd; totalGeral = mt.valor; totalBruto = mt.valor; break; }
   }
   if (totalGeral === 0) {
     for (var k2 = linhasProd.length - 1; k2 >= 0; k2--) {
       var mt2 = matchTotalLinha(linhasProd[k2].trim());
-      if (mt2) { totalQtd = mt2.qtd; totalGeral = mt2.valor; break; }
+      if (mt2) { totalQtd = mt2.qtd; totalGeral = mt2.valor; totalBruto = mt2.valor; break; }
     }
   }
+  if (!totalBruto) totalBruto = totalGeral;
 
   // Formas de pagamento
   var formas = {};
@@ -2320,7 +2331,7 @@ function extrairDadosRelatorio(texto) {
   if (/Origem:\s*Loja\s*virtual/i.test(texto)) origem = 'loja';
   else if (/Origem:\s*Aplicativo/i.test(texto)) origem = 'app';
 
-  return { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalQtd:totalQtd, origem:origem };
+  return { tipo:tipo, formas:formas, pdvs:pdvs, totalGeral:totalGeral, totalBruto:totalBruto, totalDesconto:totalDesconto, totalQtd:totalQtd, origem:origem };
 }
 
 function parsearRelatorio() {
@@ -2404,6 +2415,8 @@ function parsearRelatorio() {
       totalDigital: totalDigital,
       pdvs: pdvs,
       totalGeral: totalGeral,
+      totalBruto: dadosLoja ? (dadosLoja.totalBruto||dadosLoja.totalGeral) : totalGeral,
+      totalDesconto: dadosLoja ? (dadosLoja.totalDesconto||0) : 0,
       totalLoja: totalLoja,
       totalPdv: totalPdv,
       totalQtd: (dadosLoja ? dadosLoja.totalQtd : 0) + (dadosApp ? dadosApp.totalQtd : 0),
@@ -2462,9 +2475,18 @@ function renderDadosLidos() {
     ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
     : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
 
-  // Total bruto editável
+  // Total bruto — para ingresso mostra breakdown completo
   var tbEl = document.getElementById('fechTotalBruto');
-  tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
+  if (d.tipo === 'ingresso' && d.totalBruto && d.totalBruto !== d.totalGeral) {
+    tbEl.innerHTML =
+      '<div style="font-size:12px;color:#6b7280;text-align:right;line-height:1.8">' +
+        '<div>Total bruto: <b style="color:#374151">' + formatMoney(d.totalBruto) + '</b></div>' +
+        (d.totalDesconto > 0 ? '<div style="color:#dc2626">(-) Cupons: <b>- ' + formatMoney(d.totalDesconto) + '</b></div>' : '') +
+        '<div>= Valor líquido: <b style="color:var(--blue);font-size:15px">' + formatMoney(d.totalGeral) + '</b></div>' +
+      '</div>';
+  } else {
+    tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
+  }
 
   // Formas editáveis
   var formasList = document.getElementById('fechFormasList');
@@ -2801,16 +2823,26 @@ function recalcFech() {
   var totalSaques = 0;
   (window._fechSaquesSelecionados || []).forEach(function(s){ totalSaques += s.valor; });
 
-  // Para ingresso: base = loja virtual + PDV físico (digital fica c/ produtor como dinheiro)
+  // Base repasse = valor líquido loja virtual (já descontado cupons e digital)
   var baseRepasse = d.totalGeral - d.dinheiro;
   var valorFinal = baseRepasse - totalCobranças - totalSaques;
 
   var resumoEl = document.getElementById('fechResumoLinhas');
   if (resumoEl) {
-    var html =
-      '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
-      '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Dinheiro produtor</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' +
-      '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cobranças / despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>';
+    var html = '';
+    if (d.tipo === 'ingresso' && d.totalBruto && d.totalBruto !== d.totalGeral) {
+      html +=
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto evento</span><span>'+formatMoney(d.totalBruto)+'</span></div>' +
+        (d.totalDesconto > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cupons/descontos</span><span>- '+formatMoney(d.totalDesconto)+'</span></div>' : '') +
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">= Valor líquido</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Digital (produtor)</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px"><span style="opacity:.8">= Base repasse (Loja Virtual)</span><span>'+formatMoney(baseRepasse)+'</span></div>';
+    } else {
+      html +=
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Dinheiro produtor</span><span>- '+formatMoney(d.dinheiro)+'</span></div>';
+    }
+    html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cobranças / despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>';
     if (totalSaques > 0) {
       html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Saques antecipados</span><span>- '+formatMoney(totalSaques)+'</span></div>';
     }
@@ -2981,10 +3013,18 @@ function gerarFechamento() {
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
 
   txt += '📊 VENDAS\n';
-  txt += 'Total bruto: ' + formatMoney(d.totalGeral) + '\n';
-  Object.keys(d.formas).forEach(function(f){
-    txt += '  ' + f + ': ' + formatMoney(d.formas[f].valor) + ' (' + d.formas[f].qtd + ' vend.)\n';
-  });
+  if (d.tipo === 'ingresso' && d.totalBruto && d.totalBruto !== d.totalGeral) {
+    txt += 'Total bruto evento: ' + formatMoney(d.totalBruto) + '\n';
+    if (d.totalDesconto > 0) txt += '(-) Cupons/descontos: - ' + formatMoney(d.totalDesconto) + '\n';
+    txt += '= Valor liquido total: ' + formatMoney(d.totalGeral) + '\n';
+    txt += '  Loja Virtual: ' + formatMoney(d.totalLoja||0) + '\n';
+    txt += '  Digital (ficou c/ produtor): ' + formatMoney(d.totalDigital||0) + '\n';
+  } else {
+    txt += 'Total bruto: ' + formatMoney(d.totalGeral) + '\n';
+    Object.keys(d.formas).forEach(function(f){
+      txt += '  ' + f + ': ' + formatMoney(d.formas[f].valor) + ' (' + d.formas[f].qtd + ' vend.)\n';
+    });
+  }
   txt += '\n';
 
   if (Object.keys(d.pdvs).length > 0) {
@@ -3015,8 +3055,16 @@ function gerarFechamento() {
   }
 
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  txt += '  Total bruto:          ' + formatMoney(d.totalGeral) + '\n';
-  txt += '  (-) Dinheiro produtor: ' + formatMoney(d.dinheiro) + '\n';
+  if (d.tipo === 'ingresso' && d.totalBruto && d.totalBruto !== d.totalGeral) {
+    txt += '  Total bruto evento:    ' + formatMoney(d.totalBruto) + '\n';
+    if (d.totalDesconto > 0) txt += '  (-) Cupons/descontos:  - ' + formatMoney(d.totalDesconto) + '\n';
+    txt += '  = Valor liquido:       ' + formatMoney(d.totalGeral) + '\n';
+    txt += '  (-) Digital (produtor):' + formatMoney(d.dinheiro) + '\n';
+    txt += '  = Base repasse (LV):   ' + formatMoney(d.totalGeral - d.dinheiro) + '\n';
+  } else {
+    txt += '  Total bruto:          ' + formatMoney(d.totalGeral) + '\n';
+    txt += '  (-) Dinheiro produtor: ' + formatMoney(d.dinheiro) + '\n';
+  }
   txt += '  (-) Cobranças:         ' + formatMoney(window._fechTotalCobranças) + '\n';
   if ((window._fechTotalSaques||0) > 0) {
     txt += '  (-) Saques antecip.:   ' + formatMoney(window._fechTotalSaques) + '\n';
