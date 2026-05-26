@@ -3130,6 +3130,10 @@ function baixarImagemFechamento() {
   var hoje = new Date().toLocaleDateString('pt-BR');
   var tipoLabel = d.tipo === 'ficha' ? 'Fechamento fichas' : 'Fechamento ingressos';
 
+  function fmtImg(v) {
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   // Cobranças ativas
   var cobrancasAtivas = [];
   linhas.forEach(function(l) {
@@ -3146,142 +3150,138 @@ function baixarImagemFechamento() {
     if (l.tipo === 'qtd_unit') {
       var qEl = document.getElementById('fq-'+l.id);
       var uEl = document.getElementById('fu-'+l.id);
-      if (qEl && uEl && parseFloat(qEl.value) > 0) qtdLabel = ' — ' + parseFloat(qEl.value) + ' x R$ ' + parseFloat(uEl.value).toFixed(2);
+      if (qEl && uEl && parseFloat(qEl.value) > 0) qtdLabel = ' — ' + parseFloat(qEl.value) + ' x R$ ' + Number(parseFloat(uEl.value)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
     cobrancasAtivas.push({ label: l.label + extra + qtdLabel, valor: v });
   });
 
   var saques = window._fechSaquesSelecionados || [];
 
-  // Monta as linhas de composição
+  // Linhas de composição
   var compLinhas = [];
   if (d.tipo === 'ficha') {
-    compLinhas.push({ label: 'Total bruto do evento', valor: formatMoney(d.totalGeral), red: false });
-    if (d.dinheiro > 0) compLinhas.push({ label: '(-) Dinheiro (ficou com o produtor)', valor: '- ' + formatMoney(d.dinheiro), red: true });
+    compLinhas.push({ label: 'Total bruto do evento', valor: fmtImg(d.totalGeral), red: false });
+    if (d.dinheiro > 0) compLinhas.push({ label: '(-) Dinheiro (ficou com o produtor)', valor: '- ' + fmtImg(d.dinheiro), red: true });
   } else {
     var tbEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
-    compLinhas.push({ label: 'Total geral do evento', valor: formatMoney(tbEvt), red: false });
-    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + formatMoney(d.totalDigital), red: true });
-    compLinhas.push({ label: '(=) Loja virtual bruto', valor: formatMoney(d.totalBruto||d.totalLoja||0), red: false });
-    if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + formatMoney(d.totalDesconto), red: true });
+    compLinhas.push({ label: 'Total geral do evento', valor: fmtImg(tbEvt), red: false });
+    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + fmtImg(d.totalDigital), red: true });
+    compLinhas.push({ label: '(=) Loja virtual bruto', valor: fmtImg(d.totalBruto||d.totalLoja||0), red: false });
+    if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + fmtImg(d.totalDesconto), red: true });
   }
 
   var baseVal = d.tipo === 'ficha' ? (d.totalGeral - d.dinheiro) : (d.totalLoja||0);
   var baseLabel = d.tipo === 'ficha' ? 'Base do repasse (total cartão)' : 'Base do repasse — loja virtual líquido';
   var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
 
-  // ── GERA HTML DO RELATÓRIO ──
+  var F = "font-family:'Segoe UI',Arial,sans-serif;";
+
   function row(label, valor, red, last) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;' +
-      (!last ? 'border-bottom:1px dashed #e5e7eb;' : '') + '">' +
-      '<span style="font-size:14px;color:' + (red ? '#92400e' : '#475569') + ';font-family:Arial,sans-serif;">' + label + '</span>' +
-      '<span style="font-size:14px;font-weight:600;color:' + (red ? '#b45309' : '#1e293b') + ';font-family:Arial,sans-serif;">' + valor + '</span>' +
+    var lc = red ? '#92400e' : '#475569';
+    var vc = red ? '#b45309' : '#1e293b';
+    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(last?'':'border-bottom:1px dashed #dde3ed;')+'">' +
+      '<span style="font-size:14px;color:'+lc+';font-weight:'+(red?'500':'400')+';">'+label+'</span>' +
+      '<span style="font-size:14px;font-weight:600;color:'+vc+';">'+valor+'</span>' +
       '</div>';
   }
   function dedRow(label, valor, last) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;' +
-      (!last ? 'border-bottom:1px dashed #e5e7eb;' : '') + '">' +
-      '<span style="font-size:14px;color:#475569;font-family:Arial,sans-serif;">' + label + '</span>' +
-      '<span style="font-size:14px;font-weight:600;color:#dc2626;font-family:Arial,sans-serif;">' + valor + '</span>' +
+    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(last?'':'border-bottom:1px dashed #dde3ed;')+'">' +
+      '<span style="font-size:14px;color:#475569;">'+label+'</span>' +
+      '<span style="font-size:14px;font-weight:600;color:#dc2626;">'+valor+'</span>' +
       '</div>';
   }
   function secLabel(title) {
-    return '<div style="font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.08em;font-family:Arial,sans-serif;text-transform:uppercase;padding:10px 0 4px;">' + title + '</div>';
+    return '<div style="'+F+'font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:0.07em;text-transform:uppercase;padding:12px 0 2px;">'+title+'</div>';
   }
 
-  var compHTML = compLinhas.map(function(c, i) {
-    return row(c.label, c.valor, c.red, i === compLinhas.length-1);
-  }).join('');
+  var compHTML = compLinhas.map(function(c,i){ return row(c.label, c.valor, c.red, i===compLinhas.length-1); }).join('');
 
   var cobHTML = cobrancasAtivas.length > 0
     ? secLabel('Cobranças / despesas') +
-      cobrancasAtivas.map(function(c, i) {
-        return dedRow('(-) ' + c.label, '- ' + formatMoney(c.valor), i === cobrancasAtivas.length-1 && saques.length === 0);
-      }).join('')
+      cobrancasAtivas.map(function(c,i){ return dedRow('(-) '+c.label, '- '+fmtImg(c.valor), i===cobrancasAtivas.length-1 && saques.length===0); }).join('')
     : '';
 
   var saqHTML = saques.length > 0
     ? secLabel('Saques antecipados') +
-      saques.map(function(s, i) {
-        var dataStr = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
-        var label = '(-) ' + (s.nome||'-') + (dataStr ? ' — ' + dataStr : '');
-        return dedRow(label, '- ' + formatMoney(s.valor), i === saques.length-1);
+      saques.map(function(s,i){
+        var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
+        return dedRow('(-) '+(s.nome||'-')+(ds?' — '+ds:''), '- '+fmtImg(s.valor), i===saques.length-1);
       }).join('')
     : '';
 
-  var html = '<div id="fech-img-wrap" style="width:720px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;font-family:Arial,sans-serif;">' +
+  var html =
+    '<div id="fech-img-wrap" style="'+F+'width:700px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">' +
 
-    // Header
-    '<div style="background:#1a3a6b;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">' +
-      '<img src="' + EASYTICK_LOGO + '" style="height:36px;object-fit:contain;" />' +
+    // ── HEADER ──
+    '<div style="background:#1a3a6b;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<img src="'+EASYTICK_LOGO+'" style="height:34px;object-fit:contain;" />' +
       '<div style="text-align:right;">' +
-        '<div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;">Fechamento de evento</div>' +
-        '<div style="font-size:18px;font-weight:600;color:#fff;margin-top:2px;">' + evento + '</div>' +
-        '<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">' + tipoLabel + ' &nbsp;•&nbsp; ' + hoje + '</div>' +
+        '<div style="'+F+'font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Fechamento de evento</div>' +
+        '<div style="'+F+'font-size:17px;font-weight:700;color:#fff;letter-spacing:0.01em;">'+evento+'</div>' +
+        '<div style="'+F+'font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+tipoLabel+'&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>' +
       '</div>' +
     '</div>' +
-    '<div style="height:4px;background:#2563eb;"></div>' +
+    '<div style="height:3px;background:#2563eb;"></div>' +
 
-    // Composição
-    '<div style="padding:16px 28px 8px;background:#f1f5f9;">' +
-      '<div style="font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Composição do total</div>' +
+    // ── COMPOSIÇÃO ──
+    '<div style="padding:14px 28px 6px;background:#f8fafc;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.08em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">Composição do total</div>' +
       compHTML +
     '</div>' +
     '<div style="height:1px;background:#e2e8f0;"></div>' +
 
-    // Base do repasse
-    '<div style="padding:14px 28px;background:#e6f1fb;border-left:4px solid #185fa5;">' +
-      '<div style="font-size:11px;font-weight:600;color:#185fa5;letter-spacing:0.08em;text-transform:uppercase;">' + baseLabel.toUpperCase() + '</div>' +
-      '<div style="font-size:24px;font-weight:700;color:#185fa5;margin-top:4px;">' + formatMoney(baseVal) + '</div>' +
+    // ── BASE REPASSE ──
+    '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;">'+baseLabel.toUpperCase()+'</div>' +
+      '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;letter-spacing:-0.01em;">'+fmtImg(baseVal)+'</div>' +
     '</div>' +
     '<div style="height:1px;background:#b5d4f4;"></div>' +
 
-    // Deduções
-    '<div style="padding:8px 28px 0;">' +
+    // ── DEDUÇÕES ──
+    '<div style="padding:4px 28px 0;background:#fff;">' +
       cobHTML + saqHTML +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;background:#fef2f2;margin:8px -28px 0;padding-left:28px;padding-right:28px;border-top:1px solid #fca5a5;">' +
-        '<span style="font-size:14px;font-weight:600;color:#374151;font-family:Arial,sans-serif;">Total deduções</span>' +
-        '<span style="font-size:14px;font-weight:600;color:#dc2626;font-family:Arial,sans-serif;">- ' + formatMoney(totalDed) + '</span>' +
+      '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1.5px solid #fca5a5;margin-top:6px;background:#fff5f5;margin-left:-28px;margin-right:-28px;padding-left:28px;padding-right:28px;">' +
+        '<span style="'+F+'font-size:14px;font-weight:600;color:#374151;">Total deduções</span>' +
+        '<span style="'+F+'font-size:14px;font-weight:700;color:#dc2626;">- '+fmtImg(totalDed)+'</span>' +
       '</div>' +
     '</div>' +
 
-    // Repasse final
+    // ── REPASSE FINAL ──
     '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
       '<div>' +
-        '<div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.1em;">Repasse ao produtor</div>' +
-        '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;">' + evento + ' — ' + hoje + '</div>' +
+        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:0.08em;">Repasse ao produtor</div>' +
+        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
       '</div>' +
-      '<div style="font-size:28px;font-weight:700;color:#fff;">' + formatMoney(window._fechValorFinal) + '</div>' +
+      '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.01em;">'+fmtImg(window._fechValorFinal)+'</div>' +
     '</div>' +
 
-    // Rodapé
-    '<div style="padding:10px 28px;text-align:center;border-top:1px solid #e2e8f0;">' +
-      '<span style="font-size:11px;color:#9ca3af;">Easytick &nbsp;•&nbsp; easytick.com.br &nbsp;•&nbsp; Gerado em ' + hoje + '</span>' +
+    // ── RODAPÉ ──
+    '<div style="padding:10px 28px;text-align:center;">' +
+      '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>' +
     '</div>' +
-  '</div>';
+    '</div>';
 
-  // ── INJETA NA PÁGINA E CAPTURA ──
   var wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
 
-  // Carrega html2canvas se ainda não carregado
   function capturar() {
     html2canvas(wrapper.querySelector('#fech-img-wrap'), {
-      scale: 2,
+      scale: 2.5,
       useCORS: true,
       backgroundColor: '#ffffff',
-      logging: false
+      logging: false,
+      windowWidth: 760
     }).then(function(canvas) {
       document.body.removeChild(wrapper);
       var link = document.createElement('a');
-      link.download = 'fechamento-' + evento.toLowerCase().replace(/[^a-z0-9]/g,'-') + '-' + hoje.replace(/\//g,'-') + '.png';
+      link.download = 'fechamento-'+evento.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+hoje.replace(/\//g,'-')+'.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }).catch(function(e) {
       document.body.removeChild(wrapper);
-      alert('Erro ao gerar imagem: ' + e.message);
+      alert('Erro ao gerar imagem: '+e.message);
     });
   }
 
@@ -3291,7 +3291,7 @@ function baixarImagemFechamento() {
     var script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     script.onload = capturar;
-    script.onerror = function() { alert('Erro ao carregar html2canvas. Verifique a conexão.'); document.body.removeChild(wrapper); };
+    script.onerror = function(){ alert('Erro ao carregar html2canvas.'); document.body.removeChild(wrapper); };
     document.head.appendChild(script);
   }
 }
