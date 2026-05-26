@@ -3153,208 +3153,147 @@ function baixarImagemFechamento() {
 
   var saques = window._fechSaquesSelecionados || [];
 
-  // ── DIMENSÕES ──
-  var W = 760;
-  var PAD = 32;
-  var ROW_H = 36;
-  var HEADER_H = 96;
-  var R = 14; // border radius
-
-  // Conta linhas para altura total
-  var composicaoRows = d.tipo === 'ficha' ? 2 : 4;
-  if (d.tipo === 'ingresso' && !(d.totalDesconto > 0)) composicaoRows--;
-  var totalRows = composicaoRows + cobrancasAtivas.length + saques.length + 6;
-  var H = HEADER_H + totalRows * ROW_H + 280;
-
-  var canvas = document.createElement('canvas');
-  canvas.width = W * 2; canvas.height = H * 2;
-  var ctx = canvas.getContext('2d');
-  ctx.scale(2, 2);
-
-  // ── HELPERS ──
-  function rr(x, y, w, h, r, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-    ctx.closePath(); ctx.fill();
-  }
-  function rrTop(x, y, w, h, r, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-    ctx.lineTo(x+w, y+h); ctx.lineTo(x, y+h);
-    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-    ctx.closePath(); ctx.fill();
-  }
-  function rrBot(x, y, w, h, r, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x+w, y);
-    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-    ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
-  }
-  function rect(x, y, w, h, color) {
-    ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
-  }
-  function txt(t, x, y, size, color, align, weight) {
-    ctx.font = (weight||'400') + ' ' + size + 'px "Segoe UI",Arial,sans-serif';
-    ctx.fillStyle = color; ctx.textAlign = align||'left';
-    ctx.fillText(t, x, y); ctx.textAlign = 'left';
-  }
-  function dashedLine(y) {
-    ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 0.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  function solidLine(y, color) {
-    ctx.strokeStyle = color||'#e5e7eb'; ctx.lineWidth = 0.5;
-    ctx.setLineDash([]);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-  function sectionLabel(title, y) {
-    txt(title.toUpperCase(), PAD, y+14, 10, '#9ca3af', 'left', '500');
-    return y + 22;
-  }
-  function rowItem(label, valor, y, valorColor, last) {
-    txt(label, PAD, y+24, 13, '#6b7280', 'left', '400');
-    txt(valor, W-PAD, y+24, 13, valorColor||'#dc2626', 'right', '500');
-    if (!last) dashedLine(y + ROW_H);
-    return y + ROW_H;
+  // Monta as linhas de composição
+  var compLinhas = [];
+  if (d.tipo === 'ficha') {
+    compLinhas.push({ label: 'Total bruto do evento', valor: formatMoney(d.totalGeral), red: false });
+    if (d.dinheiro > 0) compLinhas.push({ label: '(-) Dinheiro (ficou com o produtor)', valor: '- ' + formatMoney(d.dinheiro), red: true });
+  } else {
+    var tbEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
+    compLinhas.push({ label: 'Total geral do evento', valor: formatMoney(tbEvt), red: false });
+    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + formatMoney(d.totalDigital), red: true });
+    compLinhas.push({ label: '(=) Loja virtual bruto', valor: formatMoney(d.totalBruto||d.totalLoja||0), red: false });
+    if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + formatMoney(d.totalDesconto), red: true });
   }
 
-  // ── FUNDO BRANCO ARREDONDADO ──
-  rr(0, 0, W, H, R, '#ffffff');
-  // Borda sutil
-  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 0.5;
-  ctx.beginPath();
-  ctx.moveTo(R, 0); ctx.lineTo(W-R, 0); ctx.quadraticCurveTo(W, 0, W, R);
-  ctx.lineTo(W, H-R); ctx.quadraticCurveTo(W, H, W-R, H);
-  ctx.lineTo(R, H); ctx.quadraticCurveTo(0, H, 0, H-R);
-  ctx.lineTo(0, R); ctx.quadraticCurveTo(0, 0, R, 0);
-  ctx.closePath(); ctx.stroke();
+  var baseVal = d.tipo === 'ficha' ? (d.totalGeral - d.dinheiro) : (d.totalLoja||0);
+  var baseLabel = d.tipo === 'ficha' ? 'Base do repasse (total cartão)' : 'Base do repasse — loja virtual líquido';
+  var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
 
-  var img = new Image();
-  img.src = EASYTICK_LOGO;
-  img.onload = function() {
-    var y = 0;
+  // ── GERA HTML DO RELATÓRIO ──
+  function row(label, valor, red, last) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;' +
+      (!last ? 'border-bottom:1px dashed #e5e7eb;' : '') + '">' +
+      '<span style="font-size:14px;color:' + (red ? '#92400e' : '#475569') + ';font-family:Arial,sans-serif;">' + label + '</span>' +
+      '<span style="font-size:14px;font-weight:600;color:' + (red ? '#b45309' : '#1e293b') + ';font-family:Arial,sans-serif;">' + valor + '</span>' +
+      '</div>';
+  }
+  function dedRow(label, valor, last) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;' +
+      (!last ? 'border-bottom:1px dashed #e5e7eb;' : '') + '">' +
+      '<span style="font-size:14px;color:#475569;font-family:Arial,sans-serif;">' + label + '</span>' +
+      '<span style="font-size:14px;font-weight:600;color:#dc2626;font-family:Arial,sans-serif;">' + valor + '</span>' +
+      '</div>';
+  }
+  function secLabel(title) {
+    return '<div style="font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.08em;font-family:Arial,sans-serif;text-transform:uppercase;padding:10px 0 4px;">' + title + '</div>';
+  }
 
-    // ── HEADER (arredondado em cima) ──
-    rrTop(0, 0, W, HEADER_H, R, '#1a3a6b');
-    // Faixa azul viva na base do header
-    rect(0, HEADER_H-4, W, 4, '#2563eb');
-    // Logo
-    var lw = 140, lh = 35;
-    var scale = Math.min(lw/img.naturalWidth, lh/img.naturalHeight);
-    ctx.drawImage(img, PAD, (HEADER_H-img.naturalHeight*scale)/2, img.naturalWidth*scale, img.naturalHeight*scale);
-    // Textos header
-    txt('Fechamento de evento', W-PAD, 28, 10, 'rgba(255,255,255,0.6)', 'right', '400');
-    txt(evento, W-PAD, 52, 17, '#ffffff', 'right', '500');
-    txt(tipoLabel + '   •   ' + hoje, W-PAD, 72, 10, 'rgba(255,255,255,0.6)', 'right', '400');
-    y = HEADER_H;
+  var compHTML = compLinhas.map(function(c, i) {
+    return row(c.label, c.valor, c.red, i === compLinhas.length-1);
+  }).join('');
 
-    // ── ZONA 1: COMPOSIÇÃO (fundo cinza claro) ──
-    var zona1H = 0;
-    var composicaoLinhas = [];
-    if (d.tipo === 'ficha') {
-      composicaoLinhas.push({ label: 'Total bruto do evento', valor: formatMoney(d.totalGeral), color: '#374151' });
-      if (d.dinheiro > 0) composicaoLinhas.push({ label: '(-) Dinheiro (ficou com o produtor)', valor: '- ' + formatMoney(d.dinheiro), color: '#b45309' });
-    } else {
-      var tbEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
-      composicaoLinhas.push({ label: 'Total geral do evento', valor: formatMoney(tbEvt), color: '#374151' });
-      if ((d.totalDigital||0) > 0) composicaoLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + formatMoney(d.totalDigital), color: '#b45309' });
-      composicaoLinhas.push({ label: '(=) Loja virtual bruto', valor: formatMoney(d.totalBruto||d.totalLoja||0), color: '#374151' });
-      if ((d.totalDesconto||0) > 0) composicaoLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + formatMoney(d.totalDesconto), color: '#b45309' });
-    }
-    zona1H = 26 + composicaoLinhas.length * ROW_H + 10;
-    rect(0, y, W, zona1H, '#f1f5f9');
-    solidLine(y + zona1H, '#e2e8f0');
-    var zy = y + 10;
-    txt('COMPOSIÇÃO DO TOTAL', PAD, zy + 14, 10, '#9ca3af', 'left', '500');
-    zy += 22;
-    composicaoLinhas.forEach(function(c, i) {
-      txt(c.label, PAD, zy+24, 13, c.color === '#374151' ? '#475569' : c.color, 'left', '400');
-      txt(c.valor, W-PAD, zy+24, 13, c.color, 'right', '500');
-      if (i < composicaoLinhas.length-1) dashedLine(zy+ROW_H);
-      zy += ROW_H;
-    });
-    y += zona1H;
+  var cobHTML = cobrancasAtivas.length > 0
+    ? secLabel('Cobranças / despesas') +
+      cobrancasAtivas.map(function(c, i) {
+        return dedRow('(-) ' + c.label, '- ' + formatMoney(c.valor), i === cobrancasAtivas.length-1 && saques.length === 0);
+      }).join('')
+    : '';
 
-    // ── ZONA 2: BASE DO REPASSE (azul) ──
-    var baseVal = d.tipo === 'ficha' ? (d.totalGeral - d.dinheiro) : (d.totalLoja||0);
-    var baseLabel = d.tipo === 'ficha' ? 'Base do repasse (total cartão)' : 'Base do repasse — loja virtual líquido';
-    rect(0, y, W, 58, '#e6f1fb');
-    rect(0, y, 4, 58, '#185fa5');
-    solidLine(y+58, '#b5d4f4');
-    txt(baseLabel.toUpperCase(), PAD+12, y+20, 10, '#185fa5', 'left', '500');
-    txt(formatMoney(baseVal), W-PAD, y+46, 22, '#185fa5', 'right', '500');
-    y += 58;
-
-    // ── ZONA 3: DEDUÇÕES ──
-    rect(0, y, W, 1, '#e5e7eb');
-    var dy = y + 12;
-
-    // Cobranças
-    if (cobrancasAtivas.length > 0) {
-      dy = sectionLabel('Cobranças / despesas', dy);
-      cobrancasAtivas.forEach(function(c, i) {
-        var last = i === cobrancasAtivas.length - 1 && saques.length === 0;
-        dy = rowItem('(-) ' + c.label, '- ' + formatMoney(c.valor), dy, '#dc2626', last);
-      });
-      dy += 8;
-    }
-
-    // Saques
-    if (saques.length > 0) {
-      dy = sectionLabel('Saques antecipados', dy);
-      saques.forEach(function(s, i) {
+  var saqHTML = saques.length > 0
+    ? secLabel('Saques antecipados') +
+      saques.map(function(s, i) {
         var dataStr = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
         var label = '(-) ' + (s.nome||'-') + (dataStr ? ' — ' + dataStr : '');
-        dy = rowItem(label, '- ' + formatMoney(s.valor), dy, '#dc2626', i === saques.length-1);
-      });
-    }
+        return dedRow(label, '- ' + formatMoney(s.valor), i === saques.length-1);
+      }).join('')
+    : '';
 
-    // Total deduções
-    dy += 4;
-    var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
-    rect(0, dy, W, ROW_H+2, '#fef2f2');
-    solidLine(dy, '#fca5a5');
-    solidLine(dy+ROW_H+2, '#fca5a5');
-    txt('Total deduções', PAD, dy+24, 13, '#374151', 'left', '500');
-    txt('- ' + formatMoney(totalDed), W-PAD, dy+24, 13, '#dc2626', 'right', '500');
-    dy += ROW_H + 14;
+  var html = '<div id="fech-img-wrap" style="width:720px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;font-family:Arial,sans-serif;">' +
 
-    // ── ZONA 4: REPASSE FINAL (verde, arredondado em baixo) ──
-    var repH = 64;
-    rrBot(0, dy, W, repH, R, '#166534');
-    txt('Repasse ao produtor', PAD, dy+24, 10, 'rgba(255,255,255,0.7)', 'left', '400');
-    txt(evento, PAD, dy+44, 11, 'rgba(255,255,255,0.5)', 'left', '400');
-    txt(formatMoney(window._fechValorFinal), W-PAD, dy+46, 26, '#ffffff', 'right', '500');
-    dy += repH;
+    // Header
+    '<div style="background:#1a3a6b;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<img src="' + EASYTICK_LOGO + '" style="height:36px;object-fit:contain;" />' +
+      '<div style="text-align:right;">' +
+        '<div style="font-size:10px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;">Fechamento de evento</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#fff;margin-top:2px;">' + evento + '</div>' +
+        '<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">' + tipoLabel + ' &nbsp;•&nbsp; ' + hoje + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="height:4px;background:#2563eb;"></div>' +
 
-    // ── RODAPÉ ──
-    dy += 8;
-    txt('Easytick  •  easytick.com.br  •  Gerado em ' + hoje, W/2, dy+14, 10, '#9ca3af', 'center', '400');
-    dy += 26;
+    // Composição
+    '<div style="padding:16px 28px 8px;background:#f1f5f9;">' +
+      '<div style="font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Composição do total</div>' +
+      compHTML +
+    '</div>' +
+    '<div style="height:1px;background:#e2e8f0;"></div>' +
 
-    // ── RECORTA E BAIXA ──
-    var cropped = document.createElement('canvas');
-    cropped.width = W * 2; cropped.height = dy * 2;
-    var ctx2 = cropped.getContext('2d');
-    ctx2.drawImage(canvas, 0, 0);
+    // Base do repasse
+    '<div style="padding:14px 28px;background:#e6f1fb;border-left:4px solid #185fa5;">' +
+      '<div style="font-size:11px;font-weight:600;color:#185fa5;letter-spacing:0.08em;text-transform:uppercase;">' + baseLabel.toUpperCase() + '</div>' +
+      '<div style="font-size:24px;font-weight:700;color:#185fa5;margin-top:4px;">' + formatMoney(baseVal) + '</div>' +
+    '</div>' +
+    '<div style="height:1px;background:#b5d4f4;"></div>' +
 
-    var link = document.createElement('a');
-    link.download = 'fechamento-' + evento.toLowerCase().replace(/[^a-z0-9]/g,'-') + '-' + hoje.replace(/\//g,'-') + '.png';
-    link.href = cropped.toDataURL('image/png');
-    link.click();
-  };
+    // Deduções
+    '<div style="padding:8px 28px 0;">' +
+      cobHTML + saqHTML +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;background:#fef2f2;margin:8px -28px 0;padding-left:28px;padding-right:28px;border-top:1px solid #fca5a5;">' +
+        '<span style="font-size:14px;font-weight:600;color:#374151;font-family:Arial,sans-serif;">Total deduções</span>' +
+        '<span style="font-size:14px;font-weight:600;color:#dc2626;font-family:Arial,sans-serif;">- ' + formatMoney(totalDed) + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    // Repasse final
+    '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.1em;">Repasse ao produtor</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;">' + evento + ' — ' + hoje + '</div>' +
+      '</div>' +
+      '<div style="font-size:28px;font-weight:700;color:#fff;">' + formatMoney(window._fechValorFinal) + '</div>' +
+    '</div>' +
+
+    // Rodapé
+    '<div style="padding:10px 28px;text-align:center;border-top:1px solid #e2e8f0;">' +
+      '<span style="font-size:11px;color:#9ca3af;">Easytick &nbsp;•&nbsp; easytick.com.br &nbsp;•&nbsp; Gerado em ' + hoje + '</span>' +
+    '</div>' +
+  '</div>';
+
+  // ── INJETA NA PÁGINA E CAPTURA ──
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  // Carrega html2canvas se ainda não carregado
+  function capturar() {
+    html2canvas(wrapper.querySelector('#fech-img-wrap'), {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    }).then(function(canvas) {
+      document.body.removeChild(wrapper);
+      var link = document.createElement('a');
+      link.download = 'fechamento-' + evento.toLowerCase().replace(/[^a-z0-9]/g,'-') + '-' + hoje.replace(/\//g,'-') + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(e) {
+      document.body.removeChild(wrapper);
+      alert('Erro ao gerar imagem: ' + e.message);
+    });
+  }
+
+  if (typeof html2canvas !== 'undefined') {
+    capturar();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = capturar;
+    script.onerror = function() { alert('Erro ao carregar html2canvas. Verifique a conexão.'); document.body.removeChild(wrapper); };
+    document.head.appendChild(script);
+  }
 }
 
 
