@@ -2224,13 +2224,20 @@ function limparEstadoFechamento() {
 
 function matchTotalLinha(linha) {
   // Aceita qtd com ponto de milhar: "1.566", "3.695"
-  // Aceita valor com milhar: "R$ 83.559,00"
-  // Aceita ingresso: "25  R$ 1.000,00  0  R$ 0,00"
-  var m = linha.trim().match(/^([\d.]+)\s+R\$\s*([\d.,]+)/);
+  // Para ingresso COM desconto: qtd  R$ValorIngresso  R$Desconto  R$ValorLiq  ...
+  //   → pega ValorLiq (3° R$) que é o valor real após cupons
+  // Para ingresso SEM desconto: qtd  R$Valor  qtd2  R$Valor2
+  //   → pega 1° R$
+  // Para ficha: qtd  R$Valor
+  //   → pega 1° R$
+  var l = linha.trim();
+  // Tenta formato com desconto (3 valores R$ antes do qtd validado)
+  var mDesc = l.match(/^([\d.]+)\s+R\$\s*[\d.,]+\s+R\$\s*[\d.,]+\s+R\$\s*([\d.,]+)/);
+  if (mDesc) return { qtd: parseInt(mDesc[1].replace(/\./g,'')), valor: parseMoney(mDesc[2]) };
+  // Formato padrao
+  var m = l.match(/^([\d.]+)\s+R\$\s*([\d.,]+)/);
   if (!m) return null;
-  var qtd = parseInt(m[1].replace(/\./g,""));
-  var valor = parseMoney(m[2]);
-  return { qtd: qtd, valor: valor };
+  return { qtd: parseInt(m[1].replace(/\./g,'')), valor: parseMoney(m[2]) };
 }
 
 function setFechTipoRelatorio(tipo) {
