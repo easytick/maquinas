@@ -3015,11 +3015,13 @@ function gerarFechamento() {
 
   txt += '📊 VENDAS\n';
   if (d.tipo === 'ingresso') {
-    txt += 'Total liquido evento: ' + formatMoney(d.totalGeral) + '\n';
-    txt += '  Loja Virtual (base repasse): ' + formatMoney(d.totalLoja||0) + '\n';
-    if (d.totalDesconto > 0) txt += '  (cupons descontados: - ' + formatMoney(d.totalDesconto) + ')\n';
-    if ((d.totalDigital||0) > 0) txt += '  Digital/App (ficou c/ produtor): ' + formatMoney(d.totalDigital||0) + '\n';
-    if ((d.totalPdv||0) > 0) txt += '  PDV fisico: ' + formatMoney(d.totalPdv||0) + '\n';
+    var totalBrutoEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
+    txt += 'Total geral do evento: ' + formatMoney(totalBrutoEvt) + '\n';
+    if ((d.totalDigital||0) > 0) txt += '(-) Digital/App (produtor): - ' + formatMoney(d.totalDigital||0) + '\n';
+    txt += '(=) Loja Virtual bruto: ' + formatMoney(d.totalBruto||d.totalLoja||0) + '\n';
+    if ((d.totalDesconto||0) > 0) txt += '(-) Cupons/descontos: - ' + formatMoney(d.totalDesconto||0) + '\n';
+    txt += '(=) Loja Virtual liquido (base): ' + formatMoney(d.totalLoja||0) + '\n';
+    if ((d.totalPdv||0) > 0) txt += '(+) PDV fisico: ' + formatMoney(d.totalPdv||0) + '\n';
   } else {
     txt += 'Total bruto: ' + formatMoney(d.totalGeral) + '\n';
     Object.keys(d.formas).forEach(function(f){
@@ -3057,10 +3059,10 @@ function gerarFechamento() {
 
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   if (d.tipo === 'ingresso') {
-    txt += '  Loja Virtual (base):   ' + formatMoney(d.totalLoja||0) + '\n';
-    if ((d.totalDigital||0) > 0) txt += '  (-) Digital (produtor): ' + formatMoney(d.dinheiro) + '\n';
-    if ((d.totalPdv||0) > 0)     txt += '  PDV fisico:             ' + formatMoney(d.totalPdv||0) + '\n';
-    txt += '  = Base repasse:        ' + formatMoney(d.totalGeral - d.dinheiro) + '\n';
+    txt += '  Loja Virtual bruto:    ' + formatMoney(d.totalBruto||d.totalLoja||0) + '\n';
+    if ((d.totalDesconto||0) > 0) txt += '  (-) Cupons/descontos:  - ' + formatMoney(d.totalDesconto||0) + '\n';
+    txt += '  (=) Loja Virtual liq.: ' + formatMoney(d.totalLoja||0) + '\n';
+    if ((d.totalPdv||0) > 0) txt += '  (+) PDV fisico:         ' + formatMoney(d.totalPdv||0) + '\n';
   } else {
     txt += '  Total bruto:          ' + formatMoney(d.totalGeral) + '\n';
     txt += '  (-) Dinheiro produtor: ' + formatMoney(d.dinheiro) + '\n';
@@ -3172,7 +3174,7 @@ function baixarImagemFechamento() {
   // Conta linhas totais para altura (inclui saques)
   var totalRows = 0;
   totalRows += Object.keys(d.formas).length + 1; // vendas + total
-  if (d.tipo === 'ingresso') totalRows += 2; // entrada loja + entrada maquinas
+  if (d.tipo === 'ingresso') totalRows += 5; // total geral + cupons + loja liq + digital + pdv
   totalRows += cobrancasAtivas.length;
   totalRows += (window._fechSaquesSelecionados||[]).length; // saques antecipados
   totalRows += 3; // total final + box vermelha + rodapé
@@ -3263,14 +3265,34 @@ function baixarImagemFechamento() {
     y += ROW_H;
 
     // ── ENTRADAS ──
-    // Para ingresso: Loja Virtual + Máquinas separado
     if (d.tipo === 'ingresso') {
-      var lojaVal = d.pdvs['Loja Virtual'] ? d.pdvs['Loja Virtual'].valor : 0;
-      var lojaImgVal = d.totalLoja || lojaVal;
-      tableRow('(+) ENTRADA LOJA VIRTUAL', formatMoney(lojaImgVal), '1', formatMoney(lojaImgVal), y, '#86efac', '#14532d', '#14532d', true);
+      // Linha 1: Total geral do evento (loja bruto + digital)
+      var totalBrutoImg = (d.totalBruto || d.totalLoja || 0) + (d.totalDigital || 0);
+      tableRow('(+) TOTAL GERAL DO EVENTO', formatMoney(totalBrutoImg), '1', formatMoney(totalBrutoImg), y, '#86efac', '#14532d', '#14532d', true);
       y += ROW_H;
-      tableRow('(+) ENTRADA MAQUINAS (PDVs)', formatMoney(totalMaquinas), '1', formatMoney(totalMaquinas), y, '#86efac', '#14532d', '#14532d', true);
+      // Linha 2: Digital (ficou com produtor)
+      if ((d.totalDigital||0) > 0) {
+        tableRow('(-) DIGITAL / APP (FICOU C/ PRODUTOR)', formatMoney(d.totalDigital), '1', '- ' + formatMoney(d.totalDigital), y, '#fef9c3', '#92400e', '#92400e', false);
+        y += ROW_H;
+      }
+      // Linha 3: Loja Virtual bruto
+      var lojaBruto = d.totalBruto || d.totalLoja || 0;
+      tableRow('(=) LOJA VIRTUAL BRUTO', formatMoney(lojaBruto), '1', formatMoney(lojaBruto), y, '#86efac', '#14532d', '#14532d', false);
       y += ROW_H;
+      // Linha 4: Cupons/descontos (se houver)
+      if ((d.totalDesconto||0) > 0) {
+        tableRow('(-) CUPONS / DESCONTOS', formatMoney(d.totalDesconto), '1', '- ' + formatMoney(d.totalDesconto), y, '#fef9c3', '#92400e', '#dc2626', false);
+        y += ROW_H;
+      }
+      // Linha 5: Loja Virtual liquido (base repasse)
+      var lojaLiq = d.totalLoja || 0;
+      tableRow('(=) LOJA VIRTUAL LIQUIDO (BASE REPASSE)', formatMoney(lojaLiq), '1', formatMoney(lojaLiq), y, '#dbeafe', '#1e40af', '#1e40af', true);
+      y += ROW_H;
+      // Linha 5: PDV fisico (se houver)
+      if ((d.totalPdv||0) > 0) {
+        tableRow('(+) PDV FISICO', formatMoney(d.totalPdv), '1', formatMoney(d.totalPdv), y, '#86efac', '#14532d', '#14532d', false);
+        y += ROW_H;
+      }
     } else {
       // Ficha: linha por forma
       Object.keys(d.formas).forEach(function(f) {
@@ -3291,12 +3313,6 @@ function baixarImagemFechamento() {
       tableRow('(-) ' + c.label.toUpperCase(), c.qtd ? '' : '', c.qtd||'1', '- ' + formatMoney(c.valor), y, '#bbf7d0', '#1a1a1a', '#dc2626', false);
       y += ROW_H;
     });
-
-    // ── LINHA DINHEIRO (ingresso) ──
-    if (d.tipo === 'ingresso' && d.dinheiro > 0) {
-      tableRow('(-) DINHEIRO (FICOU COM PRODUTOR)', formatMoney(d.dinheiro), '1', '- ' + formatMoney(d.dinheiro), y, '#fef9c3', '#92400e', '#92400e', false);
-      y += ROW_H;
-    }
 
     // ── SAQUES ANTECIPADOS ──
     var saques = window._fechSaquesSelecionados || [];
