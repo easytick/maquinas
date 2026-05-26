@@ -3128,7 +3128,7 @@ function baixarImagemFechamento() {
 
   var evento = (document.getElementById('fechEvento').value || 'Evento').toUpperCase();
   var hoje = new Date().toLocaleDateString('pt-BR');
-  var tipoLabel = d.tipo === 'ficha' ? 'FECHAMENTO FICHAS' : 'FECHAMENTO INGRESSOS';
+  var tipoLabel = d.tipo === 'ficha' ? 'Fechamento fichas' : 'Fechamento ingressos';
 
   // Cobranças ativas
   var cobrancasAtivas = [];
@@ -3146,220 +3146,177 @@ function baixarImagemFechamento() {
     if (l.tipo === 'qtd_unit') {
       var qEl = document.getElementById('fq-'+l.id);
       var uEl = document.getElementById('fu-'+l.id);
-      if (qEl && uEl) qtdLabel = parseFloat(qEl.value) + ' x R$ ' + parseFloat(uEl.value).toFixed(2);
+      if (qEl && uEl && parseFloat(qEl.value) > 0) qtdLabel = parseFloat(qEl.value) + ' x R$ ' + parseFloat(uEl.value).toFixed(2);
     }
     cobrancasAtivas.push({ label: l.label + extra, valor: v, qtd: qtdLabel });
   });
 
-  // Entrada loja virtual e PDV físico
-  var totalMaquinas = d.totalPdv || 0;
-  if (!d.totalLoja && !d.totalPdv) {
-    // fallback para modelo antigo
-    Object.keys(d.formas).forEach(function(f){
-      if (!/dinheiro/i.test(f) && !d.formas[f]._isDigital) totalMaquinas += d.formas[f].valor;
-    });
-  }
-  var totalLojaImg = d.totalLoja || (d.pdvs && d.pdvs['Loja Virtual'] ? d.pdvs['Loja Virtual'].valor : 0);
+  var saques = window._fechSaquesSelecionados || [];
 
   // ── DIMENSÕES ──
-  var W = 900;
-  var PAD = 40;
-  var COL1 = PAD;
-  var COL2 = PAD + 320; // Valor
-  var COL3 = PAD + 520; // Quantidade
-  var COL4 = W - PAD;   // Total (right-align)
-  var ROW_H = 38;
-  var HEADER_H = 130;
+  var W = 760;
+  var PAD = 32;
+  var ROW_H = 34;
+  var HEADER_H = 100;
+  var SEC_PAD = 14;
 
-  // Conta linhas totais para altura (inclui saques)
-  var totalRows = 0;
-  totalRows += Object.keys(d.formas).length + 1; // vendas + total
-  if (d.tipo === 'ingresso') totalRows += 5; // total geral + cupons + loja liq + digital + pdv
-  totalRows += cobrancasAtivas.length;
-  totalRows += (window._fechSaquesSelecionados||[]).length; // saques antecipados
-  totalRows += 3; // total final + box vermelha + rodapé
-  var H = HEADER_H + 80 + (totalRows + 10) * ROW_H + 160;
+  // Estima altura
+  var linhasComposicao = d.tipo === 'ingresso' ? 3 : 2; // total + digital/dinheiro + (cupom se houver)
+  if (d.tipo === 'ingresso' && (d.totalDesconto||0) > 0) linhasComposicao++;
+  var totalRows = linhasComposicao + cobrancasAtivas.length + saques.length + 8;
+  var H = HEADER_H + totalRows * ROW_H + 300;
 
   var canvas = document.createElement('canvas');
   canvas.width = W * 2; canvas.height = H * 2;
   var ctx = canvas.getContext('2d');
   ctx.scale(2, 2);
 
-  // helpers
-  function fillRoundRect(x, y, w, h, r, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-    ctx.lineTo(x+w,y+h-r);
-    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-    ctx.lineTo(x+r,y+h);
-    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-    ctx.lineTo(x,y+r);
-    ctx.quadraticCurveTo(x,y,x+r,y);
-    ctx.closePath(); ctx.fill();
+  // ── HELPERS ──
+  function rect(x, y, w, h, color) {
+    ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
   }
-  function text(t, x, y, font, color, align) {
-    ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align||'left';
+  function txt(t, x, y, size, color, align, weight) {
+    ctx.font = (weight||'400') + ' ' + size + 'px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = color; ctx.textAlign = align||'left';
     ctx.fillText(t, x, y); ctx.textAlign = 'left';
   }
-  function line(x1,y1,x2,y2,color,width) {
-    ctx.strokeStyle=color; ctx.lineWidth=width||1;
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  function line(y, color, thickness) {
+    ctx.strokeStyle = color||'#e5e7eb'; ctx.lineWidth = thickness||0.5;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
-  function tableRow(label, val, qtd, total, y, bgColor, labelColor, totalColor, bold) {
-    if (bgColor) { ctx.fillStyle = bgColor; ctx.fillRect(0, y, W, ROW_H); }
-    var fw = bold ? 'bold ' : '';
-    var fs = bold ? '15px' : '14px';
-    text(label, COL1+8, y+24, fw+fs+' "Segoe UI",Arial,sans-serif', labelColor||'#1a1a1a', 'left');
-    if (val)  text(val,   COL2+8,  y+24, fw+fs+' "Segoe UI",Arial,sans-serif', labelColor||'#555', 'left');
-    if (qtd)  text(qtd,   COL3+8,  y+24, fw+fs+' "Segoe UI",Arial,sans-serif', labelColor||'#555', 'left');
-    if (total) text(total, COL4-8, y+24, fw+'bold '+fs+' "Segoe UI",Arial,sans-serif', totalColor||'#1a1a1a', 'right');
-    line(0, y+ROW_H, W, y+ROW_H, '#e5e7eb', 0.5);
+  function rowDuo(label, valor, y, bgColor, labelColor, valorColor, bold) {
+    if (bgColor) rect(0, y, W, ROW_H, bgColor);
+    txt(label, PAD, y+22, 13, labelColor||'#374151', 'left', bold?'500':'400');
+    txt(valor, W-PAD, y+22, 13, valorColor||'#1f2937', 'right', '500');
+    line(y+ROW_H, '#e5e7eb', 0.3);
+  }
+  function sectionHeader(title, y, bgColor) {
+    rect(0, y, W, 26, bgColor||'#f3f4f6');
+    txt(title.toUpperCase(), PAD, y+17, 10, '#6b7280', 'left', '500');
+    return y + 26;
   }
 
   // ── FUNDO ──
-  ctx.fillStyle = '#f4f6f9';
-  ctx.fillRect(0,0,W,H);
+  rect(0, 0, W, H, '#f9fafb');
 
-  // ── HEADER ──
-  fillRoundRect(0, 0, W, HEADER_H, 0, '#1a3a6b');
-  // Faixa decorativa
-  ctx.fillStyle = '#2563eb';
-  ctx.fillRect(0, HEADER_H-6, W, 6);
-
-  // Logo (proporção correta)
   var img = new Image();
   img.src = EASYTICK_LOGO;
   img.onload = function() {
-    // Logo com proporção original — max 200px wide, 50px tall
+    var y = 0;
+
+    // ── HEADER ──
+    rect(0, 0, W, HEADER_H, '#1a3a6b');
+    // Logo
     var origW = img.naturalWidth, origH = img.naturalHeight;
-    var maxW = 200, maxH = 52;
-    var scale = Math.min(maxW/origW, maxH/origH);
-    var lw = origW * scale, lh = origH * scale;
-    var ly = (HEADER_H - lh) / 2;
+    var scale = Math.min(160/origW, 40/origH);
+    ctx.drawImage(img, PAD, (HEADER_H-origH*scale)/2, origW*scale, origH*scale);
+    // Texto header
+    txt('Fechamento de evento', W-PAD, 30, 10, 'rgba(255,255,255,0.6)', 'right', '400');
+    txt(evento, W-PAD, 55, 18, '#ffffff', 'right', '500');
+    txt(tipoLabel + '   •   ' + hoje, W-PAD, 76, 10, 'rgba(255,255,255,0.6)', 'right', '400');
+    // Linha decorativa
+    rect(0, HEADER_H, W, 4, '#2563eb');
+    y = HEADER_H + 4;
 
-    // Desenha logo colorida original (sem filtro)
-    ctx.drawImage(img, PAD, ly, lw, lh);
+    // ── ZONA 1: COMPOSIÇÃO ──
+    var zona1Bg = '#f1f5f9';
+    y = sectionHeader('Composição do total', y, zona1Bg);
 
-    // Título direita
-    text('FECHAMENTO DE EVENTO', W-PAD, 38, '500 12px "Segoe UI",Arial,sans-serif', 'rgba(255,255,255,0.65)', 'right');
-    text(evento, W-PAD, 68, 'bold 24px "Segoe UI",Arial,sans-serif', '#ffffff', 'right');
-    text(tipoLabel + '   •   ' + hoje, W-PAD, 94, '12px "Segoe UI",Arial,sans-serif', 'rgba(255,255,255,0.75)', 'right');
-
-    var y = HEADER_H + 18;
-
-    // ── CABEÇALHO TABELA TIPO ──
-    ctx.fillStyle = '#111827';
-    ctx.fillRect(0, y, W, 36);
-    text(tipoLabel, W/2, y+23, 'bold 13px "Segoe UI",Arial,sans-serif', '#ffffff', 'center');
-    y += 36;
-
-    // ── CABEÇALHO COLUNAS ──
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(0, y, W, ROW_H);
-    text('DESCRICAO', COL1+8, y+24, 'bold 12px "Segoe UI",Arial,sans-serif', '#0c1a2e', 'left');
-    text('VALOR', COL2+8, y+24, 'bold 12px "Segoe UI",Arial,sans-serif', '#0c1a2e', 'left');
-    text('QUANTIDADE', COL3+8, y+24, 'bold 12px "Segoe UI",Arial,sans-serif', '#0c1a2e', 'left');
-    text('TOTAL', COL4-8, y+24, 'bold 12px "Segoe UI",Arial,sans-serif', '#0c1a2e', 'right');
-    y += ROW_H;
-
-    // ── ENTRADAS ──
-    if (d.tipo === 'ingresso') {
-      // Linha 1: Total geral do evento (loja bruto + digital)
-      var totalBrutoImg = (d.totalBruto || d.totalLoja || 0) + (d.totalDigital || 0);
-      tableRow('(+) TOTAL GERAL DO EVENTO', formatMoney(totalBrutoImg), '1', formatMoney(totalBrutoImg), y, '#86efac', '#14532d', '#14532d', true);
+    if (d.tipo === 'ficha') {
+      // Ficha: total bruto + dinheiro
+      rowDuo('Total bruto do evento', formatMoney(d.totalGeral), y, zona1Bg, '#374151', '#1f2937', false);
       y += ROW_H;
-      // Linha 2: Digital (ficou com produtor)
-      if ((d.totalDigital||0) > 0) {
-        tableRow('(-) DIGITAL / APP (FICOU C/ PRODUTOR)', formatMoney(d.totalDigital), '1', '- ' + formatMoney(d.totalDigital), y, '#fef9c3', '#92400e', '#92400e', false);
-        y += ROW_H;
-      }
-      // Linha 3: Loja Virtual bruto
-      var lojaBruto = d.totalBruto || d.totalLoja || 0;
-      tableRow('(=) LOJA VIRTUAL BRUTO', formatMoney(lojaBruto), '1', formatMoney(lojaBruto), y, '#86efac', '#14532d', '#14532d', false);
-      y += ROW_H;
-      // Linha 4: Cupons/descontos (se houver)
-      if ((d.totalDesconto||0) > 0) {
-        tableRow('(-) CUPONS / DESCONTOS', formatMoney(d.totalDesconto), '1', '- ' + formatMoney(d.totalDesconto), y, '#fef9c3', '#92400e', '#dc2626', false);
-        y += ROW_H;
-      }
-      // Linha 5: Loja Virtual liquido (base repasse)
-      var lojaLiq = d.totalLoja || 0;
-      tableRow('(=) LOJA VIRTUAL LIQUIDO (BASE REPASSE)', formatMoney(lojaLiq), '1', formatMoney(lojaLiq), y, '#dbeafe', '#1e40af', '#1e40af', true);
-      y += ROW_H;
-      // Linha 5: PDV fisico (se houver)
-      if ((d.totalPdv||0) > 0) {
-        tableRow('(+) PDV FISICO', formatMoney(d.totalPdv), '1', formatMoney(d.totalPdv), y, '#86efac', '#14532d', '#14532d', false);
+      if (d.dinheiro > 0) {
+        rowDuo('(-) Dinheiro (ficou com o produtor)', '- ' + formatMoney(d.dinheiro), y, zona1Bg, '#92400e', '#92400e', false);
         y += ROW_H;
       }
     } else {
-      // Ficha: linha por forma
-      Object.keys(d.formas).forEach(function(f) {
-        var v = d.formas[f].valor;
-        var isDin = /dinheiro/i.test(f);
-        var bg = isDin ? '#fef9c3' : '#bbf7d0';
-        var col = isDin ? '#92400e' : '#14532d';
-        tableRow('(+) ' + f.toUpperCase(), formatMoney(v), '1', formatMoney(v), y, bg, col, col, false);
+      // Ingresso: total geral + digital + cupom
+      var totalBrutoEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
+      rowDuo('Total geral do evento', formatMoney(totalBrutoEvt), y, zona1Bg, '#374151', '#1f2937', false);
+      y += ROW_H;
+      if ((d.totalDigital||0) > 0) {
+        rowDuo('(-) Digital / App (ficou c/ produtor)', '- ' + formatMoney(d.totalDigital), y, zona1Bg, '#92400e', '#b45309', false);
+        y += ROW_H;
+      }
+      var lojaBruto = d.totalBruto || d.totalLoja || 0;
+      rowDuo('(=) Loja virtual bruto', formatMoney(lojaBruto), y, zona1Bg, '#374151', '#1f2937', false);
+      y += ROW_H;
+      if ((d.totalDesconto||0) > 0) {
+        rowDuo('(-) Cupons / descontos', '- ' + formatMoney(d.totalDesconto), y, zona1Bg, '#92400e', '#b45309', false);
+        y += ROW_H;
+      }
+    }
+
+    // ── ZONA 2: BASE DO REPASSE ──
+    var baseVal = d.tipo === 'ficha' ? (d.totalGeral - d.dinheiro) : (d.totalLoja||0);
+    var baseLabel = d.tipo === 'ficha' ? 'Base do repasse (total cartao)' : 'Base do repasse — loja virtual liquido';
+    // Faixa azul com borda esquerda
+    rect(0, y, W, 48, '#e6f1fb');
+    rect(0, y, 4, 48, '#185fa5');
+    txt(baseLabel.toUpperCase(), PAD+12, y+17, 10, '#185fa5', 'left', '500');
+    txt(formatMoney(baseVal), W-PAD, y+34, 20, '#185fa5', 'right', '500');
+    line(y+48, '#b5d4f4', 1);
+    y += 48;
+
+    // ── ZONA 3: DEDUÇÕES ──
+    var temCobrancas = cobrancasAtivas.length > 0;
+    var temSaques = saques.length > 0;
+
+    if (temCobrancas) {
+      y = sectionHeader('Cobranças / despesas', y, '#fff');
+      cobrancasAtivas.forEach(function(c) {
+        rowDuo('(-) ' + c.label + (c.qtd ? '  —  ' + c.qtd : ''), '- ' + formatMoney(c.valor), y, '#fff', '#374151', '#dc2626', false);
         y += ROW_H;
       });
     }
 
-    // Linha separadora visual
-    ctx.fillStyle = '#e5e7eb'; ctx.fillRect(0, y, W, 2); y += 2;
-
-    // ── COBRANÇAS ──
-    cobrancasAtivas.forEach(function(c) {
-      tableRow('(-) ' + c.label.toUpperCase(), c.qtd ? '' : '', c.qtd||'1', '- ' + formatMoney(c.valor), y, '#bbf7d0', '#1a1a1a', '#dc2626', false);
-      y += ROW_H;
-    });
-
-    // ── SAQUES ANTECIPADOS ──
-    var saques = window._fechSaquesSelecionados || [];
-    if (saques.length > 0) {
+    if (temSaques) {
+      y = sectionHeader('Saques antecipados', y, '#fff');
       saques.forEach(function(s) {
         var dataStr = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
-        var label = '(-) SAQUE: ' + (s.nome||'-').toUpperCase() + (dataStr ? ' (' + dataStr + ')' : '');
-        tableRow(label, '', '1', '- ' + formatMoney(s.valor), y, '#fef3c7', '#92400e', '#dc2626', false);
+        var label = '(-) ' + (s.nome||'-') + (dataStr ? '  —  ' + dataStr : '');
+        rowDuo(label, '- ' + formatMoney(s.valor), y, '#fff', '#374151', '#dc2626', false);
         y += ROW_H;
       });
     }
 
-    // ── TOTAL A REPASSAR ──
-    ctx.fillStyle = '#16a34a';
-    ctx.fillRect(0, y, W, ROW_H+4);
-    text('TOTAL A REPASSAR PARA O CONTRATANTE', COL1+8, y+26, 'bold 14px "Segoe UI",Arial,sans-serif', '#ffffff', 'left');
-    text(formatMoney(window._fechValorFinal), COL4-8, y+26, 'bold 18px "Segoe UI",Arial,sans-serif', '#ffffff', 'right');
-    y += ROW_H + 4;
+    // Total deduções
+    var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
+    rect(0, y, W, ROW_H+2, '#fef2f2');
+    txt('Total deduções', PAD, y+22, 13, '#374151', 'left', '500');
+    txt('- ' + formatMoney(totalDed), W-PAD, y+22, 13, '#dc2626', 'right', '500');
+    line(y+ROW_H+2, '#fca5a5', 0.5);
+    y += ROW_H + 2;
 
-    // ── BOX VALOR FINAL ──
     y += 12;
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(0, y, W, ROW_H+10);
-    text('VALOR FINAL A REPASSAR', COL1+8, y+28, 'bold 15px "Segoe UI",Arial,sans-serif', '#ffffff', 'left');
-    text(formatMoney(window._fechValorFinal), COL4-8, y+28, 'bold 20px "Segoe UI",Arial,sans-serif', '#ffffff', 'right');
-    y += ROW_H + 10;
+
+    // ── ZONA 4: REPASSE FINAL ──
+    rect(0, y, W, 64, '#166534');
+    txt('Repasse ao produtor', PAD, y+24, 11, 'rgba(255,255,255,0.7)', 'left', '400');
+    txt(evento, PAD, y+44, 12, 'rgba(255,255,255,0.5)', 'left', '400');
+    txt(formatMoney(window._fechValorFinal), W-PAD, y+46, 26, '#ffffff', 'right', '500');
+    y += 64;
 
     // ── RODAPÉ ──
-    y += 16;
-    line(PAD, y, W-PAD, y, '#cbd5e1', 1);
-    y += 14;
-    text('Easytick  •  easytick.com.br  •  Gerado em ' + hoje, W/2, y+14, '11px "Segoe UI",Arial,sans-serif', '#94a3b8', 'center');
+    rect(0, y, W, 36, '#f9fafb');
+    line(y, '#e5e7eb', 0.5);
+    txt('Easytick  •  easytick.com.br  •  Gerado em ' + hoje, W/2, y+22, 10, '#9ca3af', 'center', '400');
+    y += 36;
 
-    // ── RECORTA CANVAS NA ALTURA REAL ──
-    var finalH = y + 40;
+    // ── RECORTA E BAIXA ──
     var cropped = document.createElement('canvas');
-    cropped.width = W * 2; cropped.height = finalH * 2;
+    cropped.width = W * 2; cropped.height = y * 2;
     var ctx2 = cropped.getContext('2d');
     ctx2.drawImage(canvas, 0, 0);
 
-    // Download
     var link = document.createElement('a');
     link.download = 'fechamento-' + evento.toLowerCase().replace(/[^a-z0-9]/g,'-') + '-' + hoje.replace(/\//g,'-') + '.png';
     link.href = cropped.toDataURL('image/png');
     link.click();
   };
 }
+
 
 
 // ═══════════════════════════════════════════
