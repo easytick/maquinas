@@ -1447,12 +1447,7 @@ function getReservationsByRange(s,e){
     m.reservations.forEach(function(r){
       if(hasDateOverlap(r.startDate,r.endDate,s,e)){
         var st=getRealStatus(m);
-        if(st==='Em uso'&&!showEmUso){
-          var lastSaida=null;
-          for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}
-          var pertenceAoEvento=lastSaida&&lastSaida.event===r.event;
-          if(!pertenceAoEvento)return;
-        }
+        if(st==='Em uso'&&!showEmUso)return;
         l.push(Object.assign({},r,{serial:m.serial,brand:m.brand,status:st}));
       }
     });
@@ -3139,13 +3134,17 @@ function baixarImagemFechamento() {
     return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // Cobranças ativas
-  var cobrancasAtivas = [];
+  // Cobranças ativas separadas por tipo
+  var taxasCartao = []; // pct — débito, crédito, pix
+  var despesas   = []; // fixo, qtd_unit, livre — pdv, técnico, deslocamento etc
+  var saques     = window._fechSaquesSelecionados || [];
+
   linhas.forEach(function(l) {
     var div = document.getElementById('fech-linha-'+l.id);
     if (div && div.getAttribute('data-na') === '1') return;
     var v = getLinhaValor(l);
     if (v === 0) return;
+
     var extra = '';
     if (l.tipo === 'pct' || l.tipo === 'pct_toggle') {
       var pEl = document.getElementById('fp-'+l.id);
@@ -3157,114 +3156,223 @@ function baixarImagemFechamento() {
       var uEl = document.getElementById('fu-'+l.id);
       if (qEl && uEl && parseFloat(qEl.value) > 0) qtdLabel = ' — ' + parseFloat(qEl.value) + ' x R$ ' + Number(parseFloat(uEl.value)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
-    cobrancasAtivas.push({ label: l.label + extra + qtdLabel, valor: v });
+
+    // Separa taxas de cartão (pct sobre formas débito/crédito/pix) das despesas gerais
+    var isTaxa = (l.tipo === 'pct' || l.tipo === 'pct_toggle') &&
+                 /debito|credito|pix/i.test(l.id);
+
+    if (d.tipo === 'ficha' && isTaxa) {
+      // Pega a base da forma
+      var base = 0;
+      Object.keys(d.formas).forEach(function(f){
+        if (f.toLowerCase().indexOf(l.forma||l.id) >= 0) base = d.formas[f].valor;
+      });
+      var pct = parseFloat((document.getElementById('fp-'+l.id)||{}).value||0);
+      taxasCartao.push({ label: l.label + extra, base: base, pct: pct, valor: v });
+    } else {
+      despesas.push({ label: l.label + extra + qtdLabel, valor: v });
+    }
   });
 
-  var saques = window._fechSaquesSelecionados || [];
+  var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
+  var F = "font-family:'Segoe UI',Arial,sans-serif;";
 
-  // Linhas de composição
-  var compLinhas = [];
+  // ── HELPERS HTML ──
+  function secLabel(t) {
+    return '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">'+t+'</div>';
+  }
+  function dashedRow(label, val, red, last) {
+    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'">' +
+      '<span style="font-size:13px;color:#475569;">'+label+'</span>' +
+      '<span style="font-size:13px;font-weight:600;color:'+(red?'#dc2626':'#1e293b')+';">'+val+'</span>' +
+      '</div>';
+  }
+
+  var html = '<div id="fech-img-wrap" style="'+F+'width:700px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">' +
+
+  // ── HEADER ──
+  '<div style="background:#1a3a6b;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+    '<img src="'+EASYTICK_LOGO+'" style="height:34px;object-fit:contain;" />' +
+    '<div style="text-align:right;">' +
+      '<div style="'+F+'font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Fechamento de evento</div>' +
+      '<div style="'+F+'font-size:17px;font-weight:700;color:#fff;">'+evento+'</div>' +
+      '<div style="'+F+'font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+tipoLabel+'&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>' +
+    '</div>' +
+  '</div>' +
+  '<div style="height:3px;background:#2563eb;"></div>';
+
   if (d.tipo === 'ficha') {
-    compLinhas.push({ label: 'Total bruto do evento', valor: fmtImg(d.totalGeral), red: false });
-    if (d.dinheiro > 0) compLinhas.push({ label: '(-) Dinheiro (ficou com o produtor)', valor: '- ' + fmtImg(d.dinheiro), red: true });
+    // ── ZONA 1: TABELA DE FORMAS ──
+    var linhasFormas = '';
+    var totalQtdFormas = 0;
+    Object.keys(d.formas).forEach(function(f) {
+      var v = d.formas[f];
+      var isDin = /dinheiro/i.test(f);
+      totalQtdFormas += v.qtd;
+      var bg = isDin ? '#fffbeb' : '#fff';
+      var tc = isDin ? '#92400e' : '#475569';
+      var vc = isDin ? '#b45309' : '#1e293b';
+      linhasFormas +=
+        '<tr style="background:'+bg+'">' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;color:'+tc+';">'+(isDin?'💵 ':'')+f+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;text-align:center;color:'+tc+';">'+v.qtd+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;text-align:right;font-weight:600;color:'+vc+';">'+fmtImg(v.valor)+'</td>' +
+        '</tr>';
+    });
+    // Linha total
+    linhasFormas +=
+      '<tr style="background:#f1f5f9;">' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;font-weight:700;color:#374151;">Total bruto</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:center;font-weight:700;color:#374151;">'+totalQtdFormas+'</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#1e293b;">'+fmtImg(d.totalGeral)+'</td>' +
+      '</tr>';
+
+    html +=
+      '<div style="padding:14px 28px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">' +
+        secLabel('Total máquinas — pontos de venda') +
+        '<table style="width:100%;border-collapse:collapse;margin-bottom:4px;">' +
+          '<thead>' +
+            '<tr style="background:#f1f5f9;">' +
+              '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:left;">Forma de pagamento</th>' +
+              '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:center;">Vendas</th>' +
+              '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Valor</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>'+linhasFormas+'</tbody>' +
+        '</table>' +
+      '</div>';
+
+    // ── ZONA 2: BASE (total cartão) ──
+    var baseVal = d.totalGeral - d.dinheiro;
+    html +=
+      '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;border-bottom:1px solid #b5d4f4;">' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Total entrada cartão (base do repasse)</div>' +
+        '<div style="'+F+'font-size:11px;color:#378add;margin-bottom:6px;">Total bruto &nbsp;−&nbsp; Dinheiro (ficou com o produtor)</div>' +
+        '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;">'+fmtImg(baseVal)+'</div>' +
+      '</div>';
+
+    // ── ZONA 3: TAXAS CARTÃO ──
+    if (taxasCartao.length > 0) {
+      var linhasTaxas = '';
+      taxasCartao.forEach(function(t, i) {
+        var last = i === taxasCartao.length - 1;
+        linhasTaxas +=
+          '<tr>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'color:#475569;">(-) '+t.label+'</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'text-align:right;color:#374151;">'+fmtImg(t.base||0)+'</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'text-align:right;color:#374151;">'+(t.pct||0).toFixed(1)+'%</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'text-align:right;font-weight:600;color:#dc2626;">- '+fmtImg(t.valor)+'</td>' +
+          '</tr>';
+      });
+      html +=
+        '<div style="padding:4px 28px 8px;background:#fff;border-bottom:1px solid #f1f5f9;">' +
+          secLabel('Descontos taxas cartão') +
+          '<table style="width:100%;border-collapse:collapse;">' +
+            '<thead>' +
+              '<tr style="background:#fafafa;">' +
+                '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:left;">Modalidade</th>' +
+                '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:right;">Total bruto</th>' +
+                '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:right;">Taxa</th>' +
+                '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:right;">Desconto</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>'+linhasTaxas+'</tbody>' +
+          '</table>' +
+        '</div>';
+    }
+
+    // ── ZONA 4: DESPESAS ──
+    if (despesas.length > 0 || saques.length > 0) {
+      html += '<div style="padding:4px 28px 0;background:#fff;">';
+      if (despesas.length > 0) {
+        html += secLabel('Despesas / cobranças');
+        despesas.forEach(function(c, i) {
+          html += dashedRow('(-) '+c.label, '- '+fmtImg(c.valor), true, i===despesas.length-1 && saques.length===0);
+        });
+      }
+      if (saques.length > 0) {
+        html += secLabel('Saques antecipados');
+        saques.forEach(function(s, i) {
+          var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
+          html += dashedRow('(-) '+(s.nome||'-')+(ds?' — '+ds:''), '- '+fmtImg(s.valor), true, i===saques.length-1);
+        });
+      }
+      html += '</div>';
+    }
+
   } else {
+    // ── INGRESSO: layout existente ──
+    var compLinhas = [];
     var tbEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
     compLinhas.push({ label: 'Total geral do evento', valor: fmtImg(tbEvt), red: false });
     if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + fmtImg(d.totalDigital), red: true });
     compLinhas.push({ label: '(=) Loja virtual bruto', valor: fmtImg(d.totalBruto||d.totalLoja||0), red: false });
     if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + fmtImg(d.totalDesconto), red: true });
-  }
 
-  var baseVal = d.tipo === 'ficha' ? (d.totalGeral - d.dinheiro) : (d.totalLoja||0);
-  var baseLabel = d.tipo === 'ficha' ? 'Base do repasse (total cartão)' : 'Base do repasse — loja virtual líquido';
-  var totalDed = (window._fechTotalCobranças||0) + (window._fechTotalSaques||0);
+    var compHTML = compLinhas.map(function(c,i) {
+      return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(i===compLinhas.length-1?'':'border-bottom:1px dashed #dde3ed;')+'">' +
+        '<span style="font-size:14px;color:'+(c.red?'#92400e':'#475569')+';font-weight:'+(c.red?'500':'400')+';">'+c.label+'</span>' +
+        '<span style="font-size:14px;font-weight:600;color:'+(c.red?'#b45309':'#1e293b')+';">'+c.valor+'</span></div>';
+    }).join('');
 
-  var F = "font-family:'Segoe UI',Arial,sans-serif;";
+    var baseVal = d.totalLoja||0;
+    var baseLabel = 'Base do repasse — loja virtual líquido';
 
-  function row(label, valor, red, last) {
-    var lc = red ? '#92400e' : '#475569';
-    var vc = red ? '#b45309' : '#1e293b';
-    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(last?'':'border-bottom:1px dashed #dde3ed;')+'">' +
-      '<span style="font-size:14px;color:'+lc+';font-weight:'+(red?'500':'400')+';">'+label+'</span>' +
-      '<span style="font-size:14px;font-weight:600;color:'+vc+';">'+valor+'</span>' +
+    var cobHTML = '', saqHTML = '';
+    linhas.forEach(function(l) {
+      var div = document.getElementById('fech-linha-'+l.id);
+      if (div && div.getAttribute('data-na') === '1') return;
+      var v = getLinhaValor(l); if (v === 0) return;
+      var extra = '';
+      if (l.tipo === 'pct'||l.tipo === 'pct_toggle') { var pEl = document.getElementById('fp-'+l.id); if (pEl) extra = ' ('+parseFloat(pEl.value).toFixed(1)+'%)'; }
+      var qtdLabel = '';
+      if (l.tipo === 'qtd_unit') { var qEl = document.getElementById('fq-'+l.id); var uEl = document.getElementById('fu-'+l.id); if (qEl&&uEl&&parseFloat(qEl.value)>0) qtdLabel = ' — '+parseFloat(qEl.value)+' x R$ '+Number(parseFloat(uEl.value)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+      cobHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+l.label+extra+qtdLabel+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(v)+'</span></div>';
+    });
+    saques.forEach(function(s,i) {
+      var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
+      var last = i===saques.length-1;
+      saqHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;'+(last?'':'border-bottom:1px dashed #e5e7eb;')+'"><span style="font-size:13px;color:#475569;">(-) '+(s.nome||'-')+(ds?' — '+ds:'')+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(s.valor)+'</span></div>';
+    });
+
+    html +=
+      '<div style="padding:14px 28px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">Composição do total</div>' +
+        compHTML +
+      '</div>' +
+      '<div style="height:1px;background:#e2e8f0;"></div>' +
+      '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;">' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;">'+baseLabel.toUpperCase()+'</div>' +
+        '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;">'+fmtImg(baseVal)+'</div>' +
+      '</div>' +
+      '<div style="height:1px;background:#b5d4f4;"></div>' +
+      '<div style="padding:4px 28px 0;background:#fff;">' +
+        (cobHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Cobranças / despesas</div>'+cobHTML : '') +
+        (saqHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Saques antecipados</div>'+saqHTML : '') +
       '</div>';
   }
-  function dedRow(label, valor, last) {
-    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(last?'':'border-bottom:1px dashed #dde3ed;')+'">' +
-      '<span style="font-size:14px;color:#475569;">'+label+'</span>' +
-      '<span style="font-size:14px;font-weight:600;color:#dc2626;">'+valor+'</span>' +
-      '</div>';
-  }
-  function secLabel(title) {
-    return '<div style="'+F+'font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:0.07em;text-transform:uppercase;padding:12px 0 2px;">'+title+'</div>';
-  }
 
-  var compHTML = compLinhas.map(function(c,i){ return row(c.label, c.valor, c.red, i===compLinhas.length-1); }).join('');
-
-  var cobHTML = cobrancasAtivas.length > 0
-    ? secLabel('Cobranças / despesas') +
-      cobrancasAtivas.map(function(c,i){ return dedRow('(-) '+c.label, '- '+fmtImg(c.valor), i===cobrancasAtivas.length-1 && saques.length===0); }).join('')
-    : '';
-
-  var saqHTML = saques.length > 0
-    ? secLabel('Saques antecipados') +
-      saques.map(function(s,i){
-        var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
-        return dedRow('(-) '+(s.nome||'-')+(ds?' — '+ds:''), '- '+fmtImg(s.valor), i===saques.length-1);
-      }).join('')
-    : '';
-
-  var html =
-    '<div id="fech-img-wrap" style="'+F+'width:700px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">' +
-
-    // ── HEADER ──
-    '<div style="background:#1a3a6b;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">' +
-      '<img src="'+EASYTICK_LOGO+'" style="height:34px;object-fit:contain;" />' +
-      '<div style="text-align:right;">' +
-        '<div style="'+F+'font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px;">Fechamento de evento</div>' +
-        '<div style="'+F+'font-size:17px;font-weight:700;color:#fff;letter-spacing:0.01em;">'+evento+'</div>' +
-        '<div style="'+F+'font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+tipoLabel+'&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>' +
-      '</div>' +
-    '</div>' +
-    '<div style="height:3px;background:#2563eb;"></div>' +
-
-    // ── COMPOSIÇÃO ──
-    '<div style="padding:14px 28px 6px;background:#f8fafc;">' +
-      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.08em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">Composição do total</div>' +
-      compHTML +
-    '</div>' +
-    '<div style="height:1px;background:#e2e8f0;"></div>' +
-
-    // ── BASE REPASSE ──
-    '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;">' +
-      '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;">'+baseLabel.toUpperCase()+'</div>' +
-      '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;letter-spacing:-0.01em;">'+fmtImg(baseVal)+'</div>' +
-    '</div>' +
-    '<div style="height:1px;background:#b5d4f4;"></div>' +
-
-    // ── DEDUÇÕES ──
-    '<div style="padding:4px 28px 0;background:#fff;">' +
-      cobHTML + saqHTML +
-      '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1.5px solid #fca5a5;margin-top:6px;background:#fff5f5;margin-left:-28px;margin-right:-28px;padding-left:28px;padding-right:28px;">' +
-        '<span style="'+F+'font-size:14px;font-weight:600;color:#374151;">Total deduções</span>' +
-        '<span style="'+F+'font-size:14px;font-weight:700;color:#dc2626;">- '+fmtImg(totalDed)+'</span>' +
-      '</div>' +
+  // ── TOTAL DEDUÇÕES (ambos) ──
+  html +=
+    '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">' +
+      '<span style="font-size:14px;font-weight:600;color:#374151;">Total deduções</span>' +
+      '<span style="font-size:14px;font-weight:700;color:#dc2626;">- '+fmtImg(totalDed)+'</span>' +
     '</div>' +
 
-    // ── REPASSE FINAL ──
-    '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
-      '<div>' +
-        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:0.08em;">Repasse ao produtor</div>' +
-        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
-      '</div>' +
-      '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.01em;">'+fmtImg(window._fechValorFinal)+'</div>' +
+  // ── REPASSE FINAL ──
+  '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+    '<div>' +
+      '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Repasse ao produtor</div>' +
+      '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
     '</div>' +
+    '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmtImg(window._fechValorFinal)+'</div>' +
+  '</div>' +
 
-    // ── RODAPÉ ──
-    '<div style="padding:10px 28px;text-align:center;">' +
-      '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>' +
-    '</div>' +
-    '</div>';
+  // ── RODAPÉ ──
+  '<div style="padding:10px 28px;text-align:center;">' +
+    '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>' +
+  '</div>' +
+  '</div>';
 
   var wrapper = document.createElement('div');
   wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
@@ -3273,11 +3381,7 @@ function baixarImagemFechamento() {
 
   function capturar() {
     html2canvas(wrapper.querySelector('#fech-img-wrap'), {
-      scale: 2.5,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: 760
+      scale: 2.5, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 760
     }).then(function(canvas) {
       document.body.removeChild(wrapper);
       var link = document.createElement('a');
