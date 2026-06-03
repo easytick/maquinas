@@ -3162,10 +3162,19 @@ function baixarImagemFechamento() {
                  /debito|credito|pix/i.test(l.id);
 
     if (d.tipo === 'ficha' && isTaxa) {
-      // Pega a base da forma
+      // Busca a base da forma pelo nome da linha (debito, credito, pix)
       var base = 0;
+      var lidLower = l.id.toLowerCase();
       Object.keys(d.formas).forEach(function(f){
-        if (f.toLowerCase().indexOf(l.forma||l.id) >= 0) base = d.formas[f].valor;
+        var fLower = f.toLowerCase()
+          .normalize('NFD').replace(/[̀-ͯ]/g,'') // remove acentos
+          .replace(/\s+/g,'');
+        // debito → debito, credito → credito/creditoavista, pix → pix
+        var match = false;
+        if (/debito/.test(lidLower) && /debito/.test(fLower)) match = true;
+        if (/credito/.test(lidLower) && /credito/.test(fLower)) match = true;
+        if (/pix/.test(lidLower) && /pix/.test(fLower)) match = true;
+        if (match) base = d.formas[f].valor;
       });
       var pct = parseFloat((document.getElementById('fp-'+l.id)||{}).value||0);
       taxasCartao.push({ label: l.label + extra, base: base, pct: pct, valor: v });
