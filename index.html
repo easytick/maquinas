@@ -98,18 +98,23 @@
     .atraso-group h3 button{font-size:11px;padding:4px 10px;width:auto}
 
     /* MACHINE CARDS */
-    .machine-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
-    .machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
-    .machine-serial{font-size:16px;font-weight:bold;color:#111827}
-    .machine-brand{font-size:12px;color:#6b7280;margin-top:1px}
-    .status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
+    .machine-item{background:#fff;border-radius:12px;margin-bottom:7px;box-shadow:var(--shadow);overflow:hidden}
+    .machine-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px;cursor:pointer;user-select:none}
+    .machine-row:active{background:#f9fafb}
+    .machine-serial{font-size:14px;font-weight:bold;color:#111827}
+    .machine-brand{font-size:11px;color:#6b7280;margin-top:1px}
+    .machine-chevron{font-size:11px;color:#9ca3af;flex-shrink:0;transition:transform .2s}
+    .machine-item.expanded .machine-chevron{transform:rotate(180deg)}
+    .machine-detail{display:none;border-top:1px solid var(--border);padding:11px 14px;background:#f9fafb}
+    .machine-item.expanded .machine-detail{display:block}
+    .machine-info{font-size:12px;color:#374151;line-height:1.7;margin-bottom:9px}
+    .machine-info p{margin:0}
+    .status{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
     .disponivel{background:#dcfce7;color:#166534}
     .em-uso{background:#fee2e2;color:#991b1b}
     .manutencao{background:#e5e7eb;color:#374151}
     .reservada-hoje{background:#fef3c7;color:#92400e}
     .em-atraso{background:#fce7f3;color:#9d174d}
-    .machine-info{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:12px;color:#374151;line-height:1.6}
-    .machine-info p{margin:2px 0}
     .alert-reservada{margin-top:7px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
     .alert-atraso-card{margin-top:7px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}
 
@@ -2044,7 +2049,21 @@ function deleteMachine(serial){var m=machines.find(function(m){return m.serial==
 // ═══════════════════════════════════════════
 // HISTORICO
 // ═══════════════════════════════════════════
-function toggleHistory(serial){var m=machines.find(function(m){return m.serial===serial;});if(m){m.showHistory=!m.showHistory;render();}}
+function toggleHistory(serial){
+  var m=machines.find(function(m){return m.serial===serial;});
+  if(!m) return;
+  m.showHistory=!m.showHistory;
+  // Re-render só o detalhe do card expandido, sem fechar
+  renderMachines();
+  // Garantir que o card continue expandido apos re-render
+  setTimeout(function(){
+    var items=document.querySelectorAll('#machineList .machine-item');
+    items.forEach(function(item){
+      var s=item.querySelector('.machine-serial');
+      if(s&&s.textContent===serial) item.classList.add('expanded');
+    });
+  },0);
+}
 
 // ═══════════════════════════════════════════
 // FILTROS
@@ -2065,33 +2084,7 @@ function getNextReservation(m){var today=getToday();return m.reservations.filter
 // ═══════════════════════════════════════════
 function render(){
   updateDashboard();renderDayAlerts();
-  var selEv=document.getElementById('eventFilter').value;refreshEventFilter(selEv);
-  var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=currentStatusFilter,evFilt=document.getElementById('eventFilter').value;
-  var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||machineIsInEvent(m,evFilt));});
-  var rc=document.getElementById('resultsCount');
-  if(search||brand||status||evFilt){rc.style.display='block';rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
-  else rc.style.display='none';
-  var list=document.getElementById('machineList');list.innerHTML='';
-  if(!filtered.length){list.innerHTML="<p style='color:#9ca3af'>Nenhuma maquina encontrada.</p>";return;}
-  filtered.forEach(function(m){
-    var rs=getRealStatus(m),nextRes=getNextReservation(m),today=getToday();
-    var resHoje=rs==='Reservada hoje'?m.reservations.find(function(r){return hasDateOverlap(r.startDate,r.endDate,today,today);}):null;
-    var lastSaida=null;if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
-    var infoHtml='';
-    if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
-    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.responsible?'<p><b>Responsavel:</b> '+resHoje.responsible+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
-    if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'! Retorno era '+formatDate(lastSaida.endDate)+'</div>':'');
-    if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
-    var acoesHtml='';
-    if(rs==='Disponivel') acoesHtml='<div class="actions-row"><button onclick="openExitModal(\''+m.serial+'\')">Saida</button><button onclick="openReserveModal(\''+m.serial+'\')">Reservar</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-gray" onclick="sendToMaintenance(\''+m.serial+'\')">Manutencao</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
-    if(rs==='Reservada hoje') acoesHtml='<div class="actions-row"><button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva(\''+m.serial+'\')">Confirmar saida</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
-    if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
-    if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
-    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.responsible?'<br>Responsavel: '+h.responsible:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
-    var div=document.createElement('div');div.className='machine-item';
-    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
-    list.appendChild(div);
-  });
+  if(currentPage==='maquinas') renderMachines();
 }
 
 // ═══════════════════════════════════════════
@@ -2181,7 +2174,7 @@ function renderMachines() {
     var lastSaida=null; if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
     var infoHtml='';
     if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
-    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
+    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.responsible?'<p><b>Responsavel:</b> '+resHoje.responsible+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
     if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'!</div>':'');
     if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
     var acoesHtml='';
@@ -2190,9 +2183,35 @@ function renderMachines() {
     if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
     if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
     var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
-    var div=document.createElement('div'); div.className='machine-item';
-    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    var div=document.createElement('div');
+    div.className='machine-item'+(m.showHistory?' expanded':'');
+    var rowHtml='<div class="machine-row" onclick="toggleMachineExpand(\''+m.serial+'\')">'+
+      '<div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<span class="status '+getStatusClass(rs)+'">'+rs+'</span>'+
+        '<span class="machine-chevron">▼</span>'+
+      '</div>'+
+    '</div>';
+    var detailHtml='<div class="machine-detail">'+
+      '<div class="machine-info">'+infoHtml+'</div>'+
+      '<div class="actions">'+acoesHtml+'</div>'+
+      historyHtml+
+    '</div>';
+    div.innerHTML=rowHtml+detailHtml;
     list.appendChild(div);
+  });
+}
+
+function toggleMachineExpand(serial) {
+  var m = machines.find(function(m){ return m.serial===serial; });
+  if(m){ m.showHistory = false; } // reset historico ao fechar
+  var list = document.getElementById('machineList');
+  var items = list.querySelectorAll('.machine-item');
+  items.forEach(function(item){
+    var s = item.querySelector('.machine-serial');
+    if(s && s.textContent===serial){
+      item.classList.toggle('expanded');
+    }
   });
 }
 
