@@ -1442,7 +1442,8 @@ function setReserveMode(mode){
 
 function getIntencoesPendentesNoPeriodo(brand, startDate, endDate) {
   return reservasIntencao.filter(function(r){
-    return r.status==='pendente' && r.marca===brand && hasDateOverlap(r.startDate, r.endDate, startDate, endDate);
+    var marcas = r.marcas || (r.marca ? [r.marca] : []);
+    return r.status==='pendente' && marcas.indexOf(brand)>-1 && hasDateOverlap(r.startDate, r.endDate, startDate, endDate);
   }).reduce(function(sum, r){ return sum + (r.quantidade||0); }, 0);
 }
 
@@ -1510,20 +1511,20 @@ function submitReservaLote(e){
   if(reserveMode==='quantidade'){
     var qty=Number(document.getElementById('batchQtyIntencao').value);
     if(!qty||qty<=0){alert('Informe a quantidade.');return;}
-    if(brands.length>1){alert('No modo Quantidade selecione apenas uma marca por vez.');return;}
-    var brand=brands[0];
-    var disponiveis=getDisponiveisPorMarca(brand,startDate,endDate);
-    if(disponiveis<qty){
+    // Disponibilidade total considerando todas as marcas selecionadas
+    var dispTotal=brands.reduce(function(sum,b){ return sum+getDisponiveisPorMarca(b,startDate,endDate); },0);
+    if(dispTotal<qty){
       result.className='batch-result show error';
-      result.innerHTML='<b>Reserva nao realizada.</b><br>Solicitado: '+qty+' '+brand+' - Disponivel no periodo: '+disponiveis;
+      result.innerHTML='<b>Reserva nao realizada.</b><br>Solicitado: '+qty+' maquina'+(qty>1?'s':'')+' - Disponivel no periodo: '+dispTotal;
       return;
     }
     var id='int_'+Date.now();
-    var intencao={id:id,evento:eventName,cidade:city,responsavel:responsible,endereco:address,marca:brand,quantidade:qty,startDate:startDate,endDate:endDate,status:'pendente',criadoEm:new Date().toISOString(),criadoPor:un,criadoPorEmail:ue};
+    var marcasLabel=brands.length===1?brands[0]:brands.join(', ');
+    var intencao={id:id,evento:eventName,cidade:city,responsavel:responsible,endereco:address,marcas:brands,marcasLabel:marcasLabel,quantidade:qty,startDate:startDate,endDate:endDate,status:'pendente',criadoEm:new Date().toISOString(),criadoPor:un,criadoPorEmail:ue};
     reservasIntencao.push(intencao);
     saveReservasIntencao();
     result.className='batch-result show';
-    result.innerHTML='<span class="batch-total">Reserva de intencao criada!</span><b>'+eventName+'</b> - '+qty+'x '+brand+'<br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br><small style="color:#6b7280">Os seriais sao escolhidos na hora da saida.</small>';
+    result.innerHTML='<span class="batch-total">Reserva de intencao criada!</span><b>'+eventName+'</b> - '+qty+'x '+marcasLabel+'<br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br><small style="color:#6b7280">Os seriais sao escolhidos na hora da saida.</small>';
     document.getElementById('batchQtyIntencao').value='';
     atualizarQtyDisponivel();
     return;
@@ -1572,11 +1573,15 @@ function renderReservasIntencao() {
     if(r.status==='pendente') statusBadge='<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Pendente</span>';
     if(r.status==='concluida') statusBadge='<span style="background:#dcfce7;color:#166534;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Concluida</span>';
     if(r.status==='cancelada') statusBadge='<span style="background:#e5e7eb;color:#374151;border-radius:6px;padding:2px 7px;font-size:11px">Cancelada</span>';
-    var dispAtual = r.status==='pendente' ? getDisponiveisPorMarca(r.marca, r.startDate, r.endDate) : null;
+    var dispAtual = r.status==='pendente' ? (function(){
+      var marcas = r.marcas || (r.marca ? [r.marca] : []);
+      return marcas.reduce(function(sum,b){ return sum+getDisponiveisPorMarca(b,r.startDate,r.endDate); },0);
+    })() : null;
     var dispHtml='';
     if(r.status==='pendente' && dispAtual!==null){
       var suficiente = dispAtual >= r.quantidade;
-      dispHtml='<div style="font-size:12px;margin-top:4px;color:'+(suficiente?'#166534':'#991b1b')+'">'+(suficiente?'✓ ':'⚠ ')+dispAtual+' '+r.marca+' disponivel'+(dispAtual!==1?'is':'')+' no periodo'+(suficiente?'':' (reservou '+r.quantidade+')')+'</div>';
+      var marcasLabel = r.marcasLabel || r.marca || '';
+      dispHtml='<div style="font-size:12px;margin-top:4px;color:'+(suficiente?'#166534':'#991b1b')+'">'+(suficiente?'✓ ':'⚠ ')+dispAtual+' disponivel'+(dispAtual!==1?'is':'')+' no periodo'+(suficiente?'':' (reservou '+r.quantidade+')')+'</div>';
     }
     var div=document.createElement('div');
     div.className='card';
@@ -1587,7 +1592,7 @@ function renderReservasIntencao() {
           '<b style="font-size:14px">'+r.evento+'</b>'+
           '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+formatDate(r.startDate)+' ate '+formatDate(r.endDate)+(r.cidade?' · '+r.cidade:'')+'</div>'+
           '<div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">'+
-            '<span style="background:#eef6ff;color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:bold">'+r.quantidade+'x '+r.marca+'</span>'+
+            '<span style="background:#eef6ff;color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:bold">'+r.quantidade+'x '+(r.marcasLabel||r.marca||'')+'</span>'+
             statusBadge+' '+urgencia+
           '</div>'+
           dispHtml+
@@ -1614,9 +1619,10 @@ function cancelarIntencao(id) {
 function abrirSaidaIntencao(id) {
   var r = reservasIntencao.find(function(r){ return r.id===id; });
   if(!r) return;
+  var marcas = r.marcas || (r.marca ? [r.marca] : []);
   var disponiveis = machines.filter(function(m){
     var rs=getRealStatus(m);
-    return m.brand===r.marca && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,r.startDate,r.endDate);
+    return marcas.indexOf(m.brand)>-1 && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,r.startDate,r.endDate);
   }).sort(function(a,b){ return a.history.filter(function(h){return h.type==='saida';}).length - b.history.filter(function(h){return h.type==='saida';}).length; });
   document.getElementById('saidaIntencaoModal').dataset.id = id;
   document.getElementById('saidaIntencaoInfo').innerHTML =
