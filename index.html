@@ -98,20 +98,25 @@
     .atraso-group h3 button{font-size:11px;padding:4px 10px;width:auto}
 
     /* MACHINE CARDS */
-    .machine-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
-    .machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
-    .machine-serial{font-size:16px;font-weight:bold;color:#111827}
-    .machine-brand{font-size:12px;color:#6b7280;margin-top:1px}
-    .status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
+    .machine-item{background:#fff;border-radius:12px;margin-bottom:7px;box-shadow:var(--shadow);overflow:hidden}
+    .machine-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px;cursor:pointer;user-select:none}
+    .machine-row:active{background:#f9fafb}
+    .machine-serial{font-size:14px;font-weight:bold;color:#111827}
+    .machine-brand{font-size:11px;color:#6b7280;margin-top:1px}
+    .machine-chevron{font-size:11px;color:#9ca3af;flex-shrink:0;transition:transform .2s}
+    .machine-item.expanded .machine-chevron{transform:rotate(180deg)}
+    .machine-detail{display:none;border-top:1px solid var(--border);padding:11px 14px;background:#f9fafb}
+    .machine-item.expanded .machine-detail{display:block}
+    .machine-info{font-size:12px;color:#374151;line-height:1.7;margin-bottom:9px}
+    .machine-info p{margin:0}
+    .status{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
     .disponivel{background:#dcfce7;color:#166534}
     .em-uso{background:#fee2e2;color:#991b1b}
     .manutencao{background:#e5e7eb;color:#374151}
     .reservada-hoje{background:#fef3c7;color:#92400e}
     .em-atraso{background:#fce7f3;color:#9d174d}
-    .machine-info{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:12px;color:#374151;line-height:1.6}
-    .machine-info p{margin:2px 0}
-    .alert-reservada{margin-top:7px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
-    .alert-atraso-card{margin-top:7px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}
+    .alert-reservada{margin-bottom:8px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
+    .alert-atraso-card{margin-bottom:8px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}
 
     /* FILTER CHIPS */
     .filter-chips{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
@@ -239,24 +244,6 @@
     .autocomplete-item:last-child{border-bottom:none}
     .autocomplete-item:hover,.autocomplete-item.selected{background:#eef6ff;color:var(--blue)}
 
-    /* FECHAMENTO */
-    .fech-tabs{display:grid;grid-template-columns:repeat(2,1fr);border-bottom:1px solid var(--border);margin:-14px -14px 14px;position:sticky;top:52px;z-index:90;background:#fff}
-    .fech-tab-btn{padding:11px 4px;font-size:11px;border:none;border-right:1px solid var(--border);background:#f9fafb;color:#6b7280;cursor:pointer;font-family:Arial,sans-serif;width:100%;line-height:1.4;transition:all .15s}
-    .fech-tab-btn:last-child{border-right:none}
-    .fech-tab-btn.active{background:#eef6ff;color:var(--blue);font-weight:bold}
-    .fech-tab-content{display:none}.fech-tab-content.active{display:block}
-    .fech-step{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
-    .fech-step h3{font-size:14px;font-weight:bold;color:var(--blue);margin-bottom:10px}
-    .fech-resultado{background:#f8fafc;border-radius:12px;padding:13px;margin-top:8px;font-size:13px;line-height:1.8;white-space:pre-wrap;font-family:monospace;border:1px solid var(--border)}
-    .fech-saque-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:6px;font-size:13px}
-    .fech-saque-item.selected{background:#eef6ff;border-color:var(--blue)}
-    .fech-saque-item input[type=checkbox]{width:auto;flex-shrink:0}
-    .fech-cobranca-row{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center;margin-bottom:6px}
-    .fech-cobranca-row input{margin:0}
-    .fech-cobranca-row button{width:auto;padding:8px 12px;background:var(--red);font-size:13px}
-    .taxa-row{display:grid;grid-template-columns:1fr 80px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
-    .taxa-row input{margin:0}
-
     @media(min-width:700px){
       .dash-grid{grid-template-columns:repeat(5,1fr)}
       .day-tabs{grid-template-columns:repeat(4,1fr)}
@@ -304,7 +291,6 @@
     <div id="alertaAtraso" style="display:none"></div>
     <div id="alertaFinanceiro" style="display:none"></div>
     <div id="alertaRecorrentes" style="display:none"></div>
-    <div id="alertaIntencoes" style="display:none"></div>
 
     <div class="dash-grid">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
@@ -374,7 +360,6 @@
         <button class="lote-tab-btn" onclick="setLoteAba('renovar')">🔄 Renovar</button>
         <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">❌ Cancelar</button>
         <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">🔧 Manutencao</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('intencoes')">🗓️ Reservas</button>
       </div>
 
       <!-- RESERVAR -->
@@ -400,17 +385,11 @@
           <label>Data final<input type="date" id="batchEndDate" required/></label>
           <div class="mode-selector">
             <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
               <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn mode-btn-active">🤖 Automatico</button>
               <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Manual</button>
-              <button type="button" id="reserveQtyBtn" onclick="setReserveMode('quantidade')" class="mode-btn">📦 Quantidade</button>
             </div>
             <div id="reserveAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" placeholder="Quantidade" min="1"/></div>
-            <div id="reserveQtySection" style="display:none">
-              <p class="mode-info">Reserve por quantidade — os seriais sao escolhidos na hora da saida.</p>
-              <input type="number" id="batchQtyIntencao" placeholder="Quantidade de maquinas" min="1"/>
-              <div id="batchQtyDisponivel" style="margin-top:6px;font-size:12px;color:#6b7280"></div>
-            </div>
             <div id="reserveManualSection" style="display:none">
               <div class="machine-select-box">
                 <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar serial..." oninput="filterSelectList('reserveMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('reserveMachineList','')">✕</button></div></div>
@@ -542,27 +521,6 @@
           <button onclick="confirmarManutencaoLote()" style="background:var(--gray);color:#fff">🔧 Enviar para manutencao</button>
         </div>
         <div id="manutResult" class="batch-result"></div>
-      </div>
-
-      <!-- INTENCOES -->
-      <div id="lote-intencoes" class="lote-tab-content">
-        <p class="helper-text">Reservas por quantidade — aguardando definicao de seriais na saida.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <select id="intencaoFiltroData" onchange="renderReservasIntencao()" style="font-size:12px">
-            <option value="todas">Todas as datas</option>
-            <option value="hoje">Saindo hoje</option>
-            <option value="3dias">Proximos 3 dias</option>
-            <option value="7dias">Proximos 7 dias</option>
-            <option value="15dias">Proximos 15 dias</option>
-          </select>
-          <select id="intencaoFiltroStatus" onchange="renderReservasIntencao()" style="font-size:12px">
-            <option value="todas">Todos os status</option>
-            <option value="pendente">Pendentes</option>
-            <option value="concluida">Concluidas</option>
-            <option value="cancelada">Canceladas</option>
-          </select>
-        </div>
-        <div id="intencoesList"></div>
       </div>
     </div>
   </div>
@@ -698,109 +656,8 @@
     </div>
   </div>
 
-  <!-- PAGE FECHAMENTO -->
-  <div id="page-fechamento" class="page">
-
-    <div class="fech-tabs">
-      <button class="fech-tab-btn active" id="ftab-ficha" onclick="setFechTab('ficha')">🍺 Ficha</button>
-      <button class="fech-tab-btn" id="ftab-ingresso" onclick="setFechTab('ingresso')">🎟️ Ingresso</button>
-    </div>
-
-    <!-- ═══ FICHA ═══ -->
-    <div id="fech-ficha" class="fech-tab-content active">
-      <div class="fech-step">
-        <h3>1️⃣ Dados do evento</h3>
-        <div class="autocomplete-wrap">
-          <input type="text" id="fechFichaEvento" placeholder="Nome do evento" autocomplete="off"
-            oninput="showAutocomplete(this,'fechFichaEvento-list');renderSaquesParaFicha(this.value)"
-            onkeydown="handleAutocompleteKey(event,'fechFichaEvento-list')"
-            onblur="setTimeout(function(){hideAutocomplete('fechFichaEvento-list')},200)"/>
-          <div id="fechFichaEvento-list" class="autocomplete-list"></div>
-        </div>
-      </div>
-      <div class="fech-step">
-        <h3>2️⃣ Cole o relatório de vendas (ficha)</h3>
-        <p class="helper-text">Cole o texto completo do relatório exportado do sistema de ficha.</p>
-        <textarea id="fechFichaRelatorio" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório aqui..."></textarea>
-      </div>
-      <div class="fech-step">
-        <h3>3️⃣ Taxas de cartão (%)</h3>
-        <p class="helper-text">Informe as taxas cobradas por modalidade.</p>
-        <div class="taxa-row"><span>Débito</span><input type="number" id="taxa-debito" value="2" min="0" step="0.01" placeholder="%"/></div>
-        <div class="taxa-row"><span>Crédito À Vista</span><input type="number" id="taxa-credito" value="4" min="0" step="0.01" placeholder="%"/></div>
-        <div class="taxa-row"><span>Crédito Parcelado</span><input type="number" id="taxa-credito-parc" value="6" min="0" step="0.01" placeholder="%"/></div>
-        <div class="taxa-row"><span>Pix</span><input type="number" id="taxa-pix" value="1" min="0" step="0.01" placeholder="%"/></div>
-      </div>
-      <div class="fech-step">
-        <h3>4️⃣ Cobranças / despesas adicionais</h3>
-        <div id="fechFichaCobrancas"></div>
-        <button onclick="fichaCobAdd()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px;margin-top:4px">+ Adicionar cobrança</button>
-      </div>
-      <div class="fech-step">
-        <h3>5️⃣ Saques antecipados do evento</h3>
-        <div id="fechFichaSaqueList"><p class="helper-text">Nenhum saque encontrado para este evento.</p></div>
-      </div>
-      <button onclick="gerarFechamentoFicha()" style="background:var(--blue);margin-bottom:8px">📊 Gerar fechamento</button>
-      <div id="fechFichaResultadoWrap" style="display:none">
-        <div class="fech-step">
-          <h3>📋 Resultado</h3>
-          <div id="fechFichaResultado" class="fech-resultado"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button onclick="copiarFechamento('fichaTxt')" style="background:#374151;font-size:13px">📋 Copiar texto</button>
-            <button onclick="baixarImagemFechamento('ficha')" style="background:var(--green);font-size:13px">📥 Baixar imagem</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ INGRESSO ═══ -->
-    <div id="fech-ingresso" class="fech-tab-content">
-      <div class="fech-step">
-        <h3>1️⃣ Dados do evento</h3>
-        <div class="autocomplete-wrap">
-          <input type="text" id="fechIngressoEvento" placeholder="Nome do evento" autocomplete="off"
-            oninput="showAutocomplete(this,'fechIngressoEvento-list');renderSaquesParaIngresso(this.value)"
-            onkeydown="handleAutocompleteKey(event,'fechIngressoEvento-list')"
-            onblur="setTimeout(function(){hideAutocomplete('fechIngressoEvento-list')},200)"/>
-          <div id="fechIngressoEvento-list" class="autocomplete-list"></div>
-        </div>
-      </div>
-      <div class="fech-step">
-        <h3>2️⃣ Relatório — Loja Virtual</h3>
-        <p class="helper-text">Cole o relatório filtrado por <b>Origem: Loja Virtual</b>.</p>
-        <textarea id="fechIngressoLojaVirtual" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório Loja Virtual aqui..."></textarea>
-      </div>
-      <div class="fech-step">
-        <h3>3️⃣ Relatório — Aplicativo <span style="font-size:11px;font-weight:normal;color:#6b7280">(opcional)</span></h3>
-        <p class="helper-text">Cole o relatório filtrado por <b>Origem: Aplicativo</b>. As vendas "Não informado" ficam com o produtor; Débito/Crédito/Pix são das máquinas.</p>
-        <textarea id="fechIngressoApp" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório App aqui (opcional)..."></textarea>
-      </div>
-      <div class="fech-step">
-        <h3>4️⃣ Cobranças / despesas adicionais</h3>
-        <div id="fechIngressoCobrancas"></div>
-        <button onclick="ingressoCobAdd()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px;margin-top:4px">+ Adicionar cobrança</button>
-      </div>
-      <div class="fech-step">
-        <h3>5️⃣ Saques antecipados do evento</h3>
-        <div id="fechIngressoSaqueList"><p class="helper-text">Nenhum saque encontrado para este evento.</p></div>
-      </div>
-      <button onclick="gerarFechamentoIngresso()" style="background:var(--blue);margin-bottom:8px">📊 Gerar fechamento</button>
-      <div id="fechIngressoResultadoWrap" style="display:none">
-        <div class="fech-step">
-          <h3>📋 Resultado</h3>
-          <div id="fechIngressoResultado" class="fech-resultado"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-            <button onclick="copiarFechamento('ingressoTxt')" style="background:#374151;font-size:13px">📋 Copiar texto</button>
-            <button onclick="baixarImagemFechamento('ingresso')" style="background:var(--green);font-size:13px">📥 Baixar imagem</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
   <!-- BOTTOM NAV -->
-  <nav class="bottom-nav" style="grid-template-columns:repeat(6,1fr)">
+  <nav class="bottom-nav">
     <button class="nav-btn active" onclick="setPage('inicio')">
       <span class="n-icon">🏠</span>
       <div class="n-dot"></div>
@@ -825,11 +682,6 @@
       <span class="n-icon">🔄</span>
       <div class="n-dot"></div>
       <span class="n-label">Recorrentes</span>
-    </button>
-    <button class="nav-btn" onclick="setPage('fechamento')">
-      <span class="n-icon">📊</span>
-      <div class="n-dot"></div>
-      <span class="n-label">Fechamento</span>
     </button>
   </nav>
 
@@ -942,23 +794,6 @@
     <div class="modal-actions" style="margin-top:12px">
       <button onclick="confirmarAtualizarSaldo()" style="background:var(--blue)">Atualizar</button>
       <button class="btn-secundario" onclick="closeAtualizarSaldoModal()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL SAIDA INTENCAO -->
-<div id="saidaIntencaoModal" class="modal">
-  <div class="modal-content" style="max-width:440px">
-    <h2>🚀 Dar saida — Reserva por quantidade</h2>
-    <div id="saidaIntencaoInfo" style="font-size:13px;line-height:1.6;margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:9px"></div>
-    <div style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px">Selecione as maquinas que vao sair:</div>
-    <div class="machine-select-box">
-      <div class="machine-select-header"><span id="saidaIntencaoCounter">0 selecionadas</span></div>
-      <div id="saidaIntencaoMachineList" style="max-height:220px;overflow-y:auto"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:12px">
-      <button id="btnConfirmarSaidaIntencao" onclick="confirmarSaidaIntencao()" style="background:var(--green)" disabled>Confirmar saida (0)</button>
-      <button class="btn-secundario" onclick="closeSaidaIntencaoModal()">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1240,24 +1075,6 @@ function startFinanceiroListener() {
     renderDayAlerts();
   });
 }
-
-// ═══════════════════════════════════════════
-// RESERVAS DE INTENCAO
-// ═══════════════════════════════════════════
-var reservasIntencao = [];
-function startReservasIntencaoListener() {
-  db.ref('reservasIntencao').on('value', function(snap) {
-    var d = snap.val();
-    reservasIntencao = d ? Object.values(d) : [];
-    renderDayAlerts();
-    if(currentPage==='acoes') renderReservasIntencao();
-  });
-}
-function saveReservasIntencao() {
-  var obj = {};
-  reservasIntencao.forEach(function(r){ obj[r.id] = r; });
-  db.ref('reservasIntencao').set(obj);
-}
 function save() {
   var obj={};
   machines.forEach(function(m){var k=m.serial.replace(/[.#$\/\[\]]/g,'_');obj[k]={serial:m.serial,brand:m.brand,status:normalizeStatus(m.status),history:m.history||[],reservations:m.reservations||[]};});
@@ -1286,17 +1103,19 @@ function getTipoLabel(tipo){
 function hasDateOverlap(sA,eA,sB,eB){return sA<=eB&&eA>=sB;}
 function machineIsInEvent(m, evFilt) {
   if (!evFilt) return true;
-  // Check active reservations
-  if (m.reservations.some(function(r){ return r.event===evFilt; })) return true;
-  // Check if currently in use for this event (last saida)
   var rs = getRealStatus(m);
+  // Maquina em uso ou atraso: verifica apenas a ultima saida ativa
   if (rs==='Em uso' || rs==='Em atraso') {
     for (var i=m.history.length-1; i>=0; i--) {
       if (m.history[i].type==='saida') {
         return m.history[i].event===evFilt;
       }
     }
+    return false;
   }
+  // Maquina disponivel ou reservada: verifica apenas reservas com datas ativas (hoje ou futuras)
+  var today = getToday();
+  if (m.reservations.some(function(r){ return r.event===evFilt && r.endDate >= today; })) return true;
   return false;
 }
 function scrollToMachines(){setTimeout(function(){var el=document.getElementById('machineList');if(el)el.scrollIntoView({behavior:'smooth'});},300);}
@@ -1414,19 +1233,6 @@ function renderDayAlerts(){
     if(fp.length>0){makeAlert('alertaFinanceiro','financeiro',fp.length+' pagamento'+(fp.length>1?'s':'')+' pendente'+(fp.length>1?'s':''),fp.map(function(f){return f.evento+': '+formatMoney(f.valor);}).join(' / '),'Ver pendentes',function(){setPage('financeiro');setFinTab('pendentes');});}
     else hideAlert('alertaFinanceiro');
   }
-
-  // Alerta reservas de intencao
-  var elI=document.getElementById('alertaIntencoes');
-  if(elI){
-    var hoje=getToday(),proxDias=addDays(hoje,3);
-    var intProximas=reservasIntencao.filter(function(r){return r.status==='pendente'&&r.startDate>=hoje&&r.startDate<=proxDias;});
-    if(intProximas.length>0){
-      makeAlert('alertaIntencoes','saida',
-        intProximas.length+' reserva'+(intProximas.length>1?'s':'')+' de intencao com saida em ate 3 dias',
-        intProximas.map(function(r){return r.evento+' ('+r.quantidade+'x '+r.marca+')';}).join(', '),
-        'Ver reservas',function(){setPage('acoes');setLoteAba('intencoes');});
-    } else hideAlert('alertaIntencoes');
-  }
 }
 
 
@@ -1516,7 +1322,7 @@ function filterEventSelect(selectId, query) {
 // ═══════════════════════════════════════════
 // ABAS LOTE
 // ═══════════════════════════════════════════
-var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao','intencoes'];
+var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao'];
 function setLoteAba(aba){
   LOTE_ABAS.forEach(function(a){document.getElementById('lote-'+a).classList.toggle('active',a===aba);});
   document.querySelectorAll('.lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',LOTE_ABAS[i]===aba);});
@@ -1528,7 +1334,6 @@ function setLoteAba(aba){
   if(aba==='renovar')   refreshRenovarEventos();
   if(aba==='cancelar')  refreshCancelarEventos();
   if(aba==='manutencao')refreshManutList();
-  if(aba==='intencoes') renderReservasIntencao();
 }
 
 // ═══════════════════════════════════════════
@@ -1547,52 +1352,7 @@ function cadastrarMaquina(e){
 // MODO SELECAO
 // ═══════════════════════════════════════════
 var reserveMode='auto',exitMode='auto',reserveSelected=new Set(),exitSelected=new Set();
-function setReserveMode(mode){
-  reserveMode=mode;
-  document.getElementById('reserveAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';
-  document.getElementById('reserveManualBtn').className=mode==='manual'?'mode-btn mode-btn-active':'mode-btn';
-  document.getElementById('reserveQtyBtn').className=mode==='quantidade'?'mode-btn mode-btn-active':'mode-btn';
-  document.getElementById('reserveAutoSection').style.display=mode==='auto'?'block':'none';
-  document.getElementById('reserveManualSection').style.display=mode==='manual'?'block':'none';
-  document.getElementById('reserveQtySection').style.display=mode==='quantidade'?'block':'none';
-  if(mode==='manual') refreshReserveMachineList();
-  if(mode==='quantidade') atualizarQtyDisponivel();
-}
-
-function getIntencoesPendentesNoPeriodo(brand, startDate, endDate) {
-  return reservasIntencao.filter(function(r){
-    return r.status==='pendente' && r.marca===brand && hasDateOverlap(r.startDate, r.endDate, startDate, endDate);
-  }).reduce(function(sum, r){ return sum + (r.quantidade||0); }, 0);
-}
-
-function getDisponiveisPorMarca(brand, startDate, endDate) {
-  if(!startDate||!endDate) {
-    return machines.filter(function(m){
-      var rs=getRealStatus(m);
-      return m.brand===brand && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao';
-    }).length;
-  }
-  var maqDisponiveis = machines.filter(function(m){
-    var rs=getRealStatus(m);
-    return m.brand===brand && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,startDate,endDate);
-  }).length;
-  var comprometidas = getIntencoesPendentesNoPeriodo(brand, startDate, endDate);
-  return Math.max(0, maqDisponiveis - comprometidas);
-}
-
-function atualizarQtyDisponivel() {
-  var el = document.getElementById('batchQtyDisponivel');
-  if(!el) return;
-  var brands = getSelectedBrands('batchBrands');
-  var s = document.getElementById('batchStartDate').value;
-  var e = document.getElementById('batchEndDate').value;
-  if(!brands.length){ el.textContent=''; return; }
-  var linhas = brands.map(function(b){
-    var d = getDisponiveisPorMarca(b, s, e);
-    return b+': <b style="color:'+(d>0?'#166534':'#991b1b')+'">'+d+' disponivel'+(d!==1?'is':'')+'</b>';
-  });
-  el.innerHTML = (s&&e?'Disponibilidade em '+formatDate(s)+' ate '+formatDate(e)+': ':'Disponibilidade atual: ')+'<br>'+linhas.join(' &nbsp;|&nbsp; ');
-}
+function setReserveMode(mode){reserveMode=mode;document.getElementById('reserveAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('reserveManualBtn').className=mode==='manual'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('reserveAutoSection').style.display=mode==='auto'?'block':'none';document.getElementById('reserveManualSection').style.display=mode==='manual'?'block':'none';if(mode==='manual')refreshReserveMachineList();}
 function setExitMode(mode){exitMode=mode;document.getElementById('exitAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('exitManualBtn').className=mode==='manual'?'mode-btn mode-btn-active':'mode-btn';document.getElementById('exitAutoSection').style.display=mode==='auto'?'block':'none';document.getElementById('exitManualSection').style.display=mode==='manual'?'block':'none';if(mode==='manual')refreshExitMachineList();}
 
 function getEligibleForReserve(){var brands=getSelectedBrands('batchBrands'),s=document.getElementById('batchStartDate').value,e=document.getElementById('batchEndDate').value;return machines.filter(function(m){var rs=getRealStatus(m);return brands.indexOf(m.brand)>-1&&rs!=='Em uso'&&rs!=='Em atraso'&&rs!=='Manutencao'&&(!s||!e||!hasReservationConflict(m,s,e));}).sort(function(a,b){return(a.reservations.length-b.reservations.length)||(a.history.length-b.history.length);});}
@@ -1623,187 +1383,13 @@ function submitReservaLote(e){
   if(!eventName||!city||!responsible||!startDate||!endDate){alert('Preencha todos os dados.');return;}
   if(!brands.length){alert('Selecione ao menos uma marca.');return;}
   if(endDate<startDate){alert('Data final nao pode ser menor.');return;}
-  var un=getCurrentUserName(),ue=getCurrentUserEmail();
-
-  // ── MODO QUANTIDADE (Intencao) ──
-  if(reserveMode==='quantidade'){
-    var qty=Number(document.getElementById('batchQtyIntencao').value);
-    if(!qty||qty<=0){alert('Informe a quantidade.');return;}
-    if(brands.length>1){alert('No modo Quantidade selecione apenas uma marca por vez.');return;}
-    var brand=brands[0];
-    var disponiveis=getDisponiveisPorMarca(brand,startDate,endDate);
-    if(disponiveis<qty){
-      result.className='batch-result show error';
-      result.innerHTML='<b>Reserva nao realizada.</b><br>Solicitado: '+qty+' '+brand+' - Disponivel no periodo: '+disponiveis;
-      return;
-    }
-    var id='int_'+Date.now();
-    var intencao={id:id,evento:eventName,cidade:city,responsavel:responsible,endereco:address,marca:brand,quantidade:qty,startDate:startDate,endDate:endDate,status:'pendente',criadoEm:new Date().toISOString(),criadoPor:un,criadoPorEmail:ue};
-    reservasIntencao.push(intencao);
-    saveReservasIntencao();
-    result.className='batch-result show';
-    result.innerHTML='<span class="batch-total">Reserva de intencao criada!</span><b>'+eventName+'</b> - '+qty+'x '+brand+'<br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br><small style="color:#6b7280">Os seriais sao escolhidos na hora da saida.</small>';
-    document.getElementById('batchQtyIntencao').value='';
-    atualizarQtyDisponivel();
-    return;
-  }
-
-  // ── MODOS AUTO E MANUAL (comportamento original) ──
-  var selected=[];
+  var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=[];
   if(reserveMode==='auto'){var qty=Number(document.getElementById('batchQuantity').value);if(!qty||qty<=0){alert('Informe a quantidade.');return;}var el=getEligibleForReserve();if(el.length<qty){result.className='batch-result show error';result.innerHTML='<b>Reserva nao realizada.</b><br>Pedido: '+qty+' - Disponiveis: '+el.length;return;}selected=el.slice(0,qty);}
   else{if(!reserveSelected.size){alert('Selecione ao menos uma maquina.');return;}selected=machines.filter(function(m){return reserveSelected.has(m.serial);});}
   selected.forEach(function(m){m.reservations.push({event:eventName,city:city,responsible:responsible,address:address,startDate:startDate,endDate:endDate,createdAt:new Date().toISOString(),batch:true,createdBy:un,createdByEmail:ue});m.history.push({type:'reserva',event:eventName,city:city,responsible:responsible,address:address,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue});});
   result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+' reservada'+(selected.length>1?'s':'')+'!</span><b>Evento: '+eventName+'</b><br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br>'+selected.map(function(m){return m.serial;}).join(', ');
   document.querySelectorAll('input[name="batchBrands"]').forEach(function(i){i.checked=true;});reserveSelected.clear();save();
 }
-
-// ═══════════════════════════════════════════
-// RENDER RESERVAS DE INTENCAO
-// ═══════════════════════════════════════════
-function renderReservasIntencao() {
-  var list = document.getElementById('intencoesList');
-  if(!list) return;
-  var filtroData = (document.getElementById('intencaoFiltroData')||{}).value || 'todas';
-  var filtroStatus = (document.getElementById('intencaoFiltroStatus')||{}).value || 'todas';
-  var today = getToday();
-  var filtered = reservasIntencao.filter(function(r){
-    if(filtroStatus!=='todas' && r.status!==filtroStatus) return false;
-    if(filtroData==='hoje') return r.startDate===today;
-    if(filtroData==='3dias') return r.startDate>=today && r.startDate<=addDays(today,3);
-    if(filtroData==='7dias') return r.startDate>=today && r.startDate<=addDays(today,7);
-    if(filtroData==='15dias') return r.startDate>=today && r.startDate<=addDays(today,15);
-    return true;
-  }).sort(function(a,b){ return a.startDate.localeCompare(b.startDate); });
-  if(!filtered.length){
-    list.innerHTML='<p style="color:#9ca3af;font-size:13px;padding:10px 0">Nenhuma reserva de intencao encontrada.</p>';
-    return;
-  }
-  list.innerHTML='';
-  filtered.forEach(function(r){
-    var diasAte = Math.ceil((new Date(r.startDate+'T00:00:00')-new Date(today+'T00:00:00'))/(1000*60*60*24));
-    var urgencia='';
-    if(r.status==='pendente'){
-      if(diasAte<=0) urgencia='<span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">HOJE</span>';
-      else if(diasAte<=3) urgencia='<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">'+diasAte+' dia'+(diasAte>1?'s':'')+'</span>';
-      else urgencia='<span style="background:#eef6ff;color:#1e40af;border-radius:6px;padding:2px 7px;font-size:11px">'+diasAte+' dias</span>';
-    }
-    var statusBadge='';
-    if(r.status==='pendente') statusBadge='<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Pendente</span>';
-    if(r.status==='concluida') statusBadge='<span style="background:#dcfce7;color:#166534;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Concluida</span>';
-    if(r.status==='cancelada') statusBadge='<span style="background:#e5e7eb;color:#374151;border-radius:6px;padding:2px 7px;font-size:11px">Cancelada</span>';
-    var dispAtual = r.status==='pendente' ? getDisponiveisPorMarca(r.marca, r.startDate, r.endDate) : null;
-    var dispHtml='';
-    if(r.status==='pendente' && dispAtual!==null){
-      var suficiente = dispAtual >= r.quantidade;
-      dispHtml='<div style="font-size:12px;margin-top:4px;color:'+(suficiente?'#166534':'#991b1b')+'">'+(suficiente?'✓ ':'⚠ ')+dispAtual+' '+r.marca+' disponivel'+(dispAtual!==1?'is':'')+' no periodo'+(suficiente?'':' (reservou '+r.quantidade+')')+'</div>';
-    }
-    var div=document.createElement('div');
-    div.className='card';
-    div.style.cssText='margin-bottom:10px;border-left:3px solid '+(r.status==='pendente'?'#fcd34d':r.status==='concluida'?'#86efac':'#e5e7eb');
-    div.innerHTML=
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
-        '<div style="flex:1">'+
-          '<b style="font-size:14px">'+r.evento+'</b>'+
-          '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+formatDate(r.startDate)+' ate '+formatDate(r.endDate)+(r.cidade?' · '+r.cidade:'')+'</div>'+
-          '<div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">'+
-            '<span style="background:#eef6ff;color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:bold">'+r.quantidade+'x '+r.marca+'</span>'+
-            statusBadge+' '+urgencia+
-          '</div>'+
-          dispHtml+
-          (r.criadoPor?'<div style="font-size:11px;color:#9ca3af;margin-top:3px">por '+r.criadoPor+'</div>':'')+
-        '</div>'+
-        (r.status==='pendente'?
-          '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'+
-            '<button onclick="abrirSaidaIntencao(\''+r.id+'\')" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:11px;padding:5px 9px;width:auto;font-weight:bold">Dar saida</button>'+
-            '<button onclick="cancelarIntencao(\''+r.id+'\')" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:11px;padding:5px 9px;width:auto">Cancelar</button>'+
-          '</div>':'')+
-      '</div>';
-    list.appendChild(div);
-  });
-}
-
-function cancelarIntencao(id) {
-  var r = reservasIntencao.find(function(r){ return r.id===id; });
-  if(!r) return;
-  if(!confirm('Cancelar a reserva de intencao "'+r.evento+'" ('+r.quantidade+'x '+r.marca+')?')) return;
-  r.status='cancelada';
-  saveReservasIntencao();
-}
-
-function abrirSaidaIntencao(id) {
-  var r = reservasIntencao.find(function(r){ return r.id===id; });
-  if(!r) return;
-  var disponiveis = machines.filter(function(m){
-    var rs=getRealStatus(m);
-    return m.brand===r.marca && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,r.startDate,r.endDate);
-  }).sort(function(a,b){ return a.history.filter(function(h){return h.type==='saida';}).length - b.history.filter(function(h){return h.type==='saida';}).length; });
-  document.getElementById('saidaIntencaoModal').dataset.id = id;
-  document.getElementById('saidaIntencaoInfo').innerHTML =
-    '<b>'+r.evento+'</b> · '+r.quantidade+'x '+r.marca+'<br>'+
-    formatDate(r.startDate)+' ate '+formatDate(r.endDate)+(r.cidade?' · '+r.cidade:'')+
-    (disponiveis.length < r.quantidade ?
-      '<div style="margin-top:6px;padding:7px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e">⚠ Voce reservou '+r.quantidade+' maquina'+(r.quantidade>1?'s':'')+', mas apenas <b>'+disponiveis.length+'</b> esta'+(disponiveis.length!==1?'o':'')+' disponivel'+(disponiveis.length!==1?'is':'')+' agora.</div>' : '');
-  var selectList = document.getElementById('saidaIntencaoMachineList');
-  selectList.innerHTML='';
-  saidaIntencaoSelected.clear();
-  disponiveis.forEach(function(m){
-    var usos=m.history.filter(function(h){return h.type==='saida';}).length;
-    var label=document.createElement('label');
-    label.className='machine-select-item';
-    label.setAttribute('data-serial', m.serial);
-    label.innerHTML='<input type="checkbox" onclick="event.stopPropagation();toggleSaidaIntencaoSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">- '+m.brand+'</span></div><span style="font-size:12px;color:#6b7280">'+usos+' uso(s)</span>';
-    label.onclick=function(e){ if(e.target.tagName!=='INPUT') toggleSaidaIntencaoSel(m.serial); };
-    selectList.appendChild(label);
-  });
-  atualizarContadorSaidaIntencao(r.quantidade);
-  document.getElementById('saidaIntencaoModal').classList.add('open');
-}
-
-var saidaIntencaoSelected=new Set();
-function toggleSaidaIntencaoSel(serial){
-  var id=document.getElementById('saidaIntencaoModal').dataset.id;
-  var r=reservasIntencao.find(function(r){return r.id===id;});
-  if(!r) return;
-  if(saidaIntencaoSelected.has(serial)) saidaIntencaoSelected.delete(serial);
-  else saidaIntencaoSelected.add(serial);
-  document.querySelectorAll('#saidaIntencaoMachineList .machine-select-item').forEach(function(item){
-    var s=item.getAttribute('data-serial');
-    var cb=item.querySelector('input[type=checkbox]');
-    var sel=saidaIntencaoSelected.has(s);
-    item.classList.toggle('selected',sel);
-    if(cb) cb.checked=sel;
-  });
-  atualizarContadorSaidaIntencao(r.quantidade);
-}
-function atualizarContadorSaidaIntencao(qty){
-  var c=saidaIntencaoSelected.size;
-  var btn=document.getElementById('btnConfirmarSaidaIntencao');
-  var counter=document.getElementById('saidaIntencaoCounter');
-  if(counter) counter.textContent=c+' de '+qty+' selecionada'+(c!==1?'s':'');
-  if(btn){ btn.disabled=(c===0); btn.textContent='Confirmar saida ('+c+')'; }
-}
-function confirmarSaidaIntencao(){
-  var id=document.getElementById('saidaIntencaoModal').dataset.id;
-  var r=reservasIntencao.find(function(r){return r.id===id;});
-  if(!r||!saidaIntencaoSelected.size) return;
-  if(!confirm('Confirmar saida de '+saidaIntencaoSelected.size+' maquina(s) para "'+r.evento+'"?')) return;
-  var un=getCurrentUserName(),ue=getCurrentUserEmail();
-  var serials=Array.from(saidaIntencaoSelected);
-  serials.forEach(function(serial){
-    var m=machines.find(function(m){return m.serial===serial;});
-    if(!m) return;
-    m.status='Em uso';
-    m.history.push({type:'saida',event:r.evento,city:r.cidade||'',responsible:r.responsavel||'',address:r.endereco||'',startDate:r.startDate,endDate:r.endDate,date:new Date().toISOString(),user:un,userEmail:ue,fromIntencao:true,batch:true});
-  });
-  r.status='concluida';
-  r.concluidaEm=new Date().toISOString();
-  r.maquinasVinculadas=serials;
-  save();
-  saveReservasIntencao();
-  closeSaidaIntencaoModal();
-  setLoteAba('intencoes');
-}
-function closeSaidaIntencaoModal(){ document.getElementById('saidaIntencaoModal').classList.remove('open'); saidaIntencaoSelected.clear(); }
 
 // ═══════════════════════════════════════════
 // SAIDA EM LOTE
@@ -2224,6 +1810,11 @@ function render(){
 ['searchInput','brandFilter','eventFilter'].forEach(function(id){var el=document.getElementById(id);if(el){el.addEventListener('input',render);el.addEventListener('change',render);}});
 var _today=getToday();
 ['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
+document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
+document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
+document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
+document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
+document.getElementById('customStartDate').addEventListener('change',function(){document.getElementById('customEndDate').min=this.value;});
 
 
 // ═══════════════════════════════════════════
@@ -2232,18 +1823,17 @@ var _today=getToday();
 var currentPage = 'inicio';
 function setPage(page) {
   currentPage = page;
-  ['inicio','maquinas','acoes','financeiro','recorrentes','fechamento'].forEach(function(p){
+  ['inicio','maquinas','acoes','financeiro','recorrentes'].forEach(function(p){
     document.getElementById('page-'+p).classList.toggle('active', p===page);
   });
   document.querySelectorAll('.nav-btn').forEach(function(btn,i){
-    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes','fechamento'][i]===page);
+    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes'][i]===page);
   });
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
   if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); renderSaldoEventoList(); }
   if(page==='recorrentes') { renderRecPainel(); }
-  if(page==='fechamento') { refreshFechamentoSaques(); }
 }
 
 // ═══════════════════════════════════════════
@@ -2306,8 +1896,8 @@ function renderMachines() {
     var lastSaida=null; if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
     var infoHtml='';
     if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
-    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
-    if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'!</div>':'');
+    if(rs==='Reservada hoje'&&resHoje) infoHtml='<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div><p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'');
+    if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml=(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'!</div>':'')+'<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>';
     if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
     var acoesHtml='';
     if(rs==='Disponivel') acoesHtml='<div class="actions-row"><button onclick="openExitModal(\''+m.serial+'\')">Saida</button><button onclick="openReserveModal(\''+m.serial+'\')">Reservar</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-gray" onclick="sendToMaintenance(\''+m.serial+'\')">Manutencao</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
@@ -2315,10 +1905,31 @@ function renderMachines() {
     if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
     if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
     var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
-    var div=document.createElement('div'); div.className='machine-item';
-    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    var isExpanded = m.showHistory || m._expanded;
+    var div=document.createElement('div');
+    div.className='machine-item'+(isExpanded?' expanded':'');
+    div.innerHTML=
+      '<div class="machine-row" onclick="toggleMachineExpand(\''+m.serial+'\',this)">'
+        +'<div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+          +'<span class="status '+getStatusClass(rs)+'">'+rs+'</span>'
+          +'<span class="machine-chevron">▼</span>'
+        +'</div>'
+      +'</div>'
+      +'<div class="machine-detail">'
+        +'<div class="machine-info">'+infoHtml+'</div>'
+        +acoesHtml
+        +historyHtml
+      +'</div>';
     list.appendChild(div);
   });
+}
+
+function toggleMachineExpand(serial, rowEl) {
+  var item = rowEl.closest('.machine-item');
+  item.classList.toggle('expanded');
+  var m = machines.find(function(m){ return m.serial===serial; });
+  if(m) m._expanded = item.classList.contains('expanded');
 }
 
 // Override render to use renderMachines + update dashboard
@@ -2332,14 +1943,11 @@ document.getElementById('eventFilter').addEventListener('change', renderMachines
 // Date mins
 var _today=getToday();
 ['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
-document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();if(reserveMode==='quantidade')atualizarQtyDisponivel();});
-document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();if(reserveMode==='quantidade')atualizarQtyDisponivel();});
+document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
+document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
 document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
 document.getElementById('customStartDate').addEventListener('change',function(){document.getElementById('customEndDate').min=this.value;});
-document.querySelectorAll('input[name="batchBrands"]').forEach(function(cb){
-  cb.addEventListener('change', function(){ if(reserveMode==='quantidade') atualizarQtyDisponivel(); });
-});
 
 // ═══════════════════════════════════════════
 // RECORRENTES
@@ -3193,475 +2801,7 @@ var _origSFLSaldo = startFirebaseListener;
 startFirebaseListener = function() {
   _origSFLSaldo();
   startSaldoListener();
-  startReservasIntencaoListener();
 };
-
-// ═══════════════════════════════════════════
-// FECHAMENTO DE EVENTOS
-// ═══════════════════════════════════════════
-
-var _fechTab = 'ficha';
-function setFechTab(tab) {
-  _fechTab = tab;
-  ['ficha','ingresso'].forEach(function(t){
-    document.getElementById('fech-'+t).classList.toggle('active', t===tab);
-    document.getElementById('ftab-'+t).classList.toggle('active', t===tab);
-  });
-}
-
-var _fichaCobs = [], _ingressoCobs = [];
-var _fichaSaqSel = new Set(), _ingressoSaqSel = new Set();
-
-function fichaCobAdd() {
-  _fichaCobs.push({ desc: '', val: '' });
-  renderFichaCobs();
-}
-function fichaCobRemove(i) {
-  _fichaCobs.splice(i,1);
-  renderFichaCobs();
-}
-function renderFichaCobs() {
-  var c = document.getElementById('fechFichaCobrancas');
-  if(!c) return;
-  c.innerHTML = _fichaCobs.map(function(item,i){
-    return '<div class="fech-cobranca-row">' +
-      '<input type="text" value="'+item.desc+'" placeholder="Descricao" oninput="_fichaCobs['+i+'].desc=this.value"/>' +
-      '<input type="number" value="'+item.val+'" placeholder="R$" min="0" step="0.01" oninput="_fichaCobs['+i+'].val=this.value"/>' +
-      '<button onclick="fichaCobRemove('+i+')">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function ingressoCobAdd() {
-  _ingressoCobs.push({ desc: '', val: '' });
-  renderIngressoCobs();
-}
-function ingressoCobRemove(i) {
-  _ingressoCobs.splice(i,1);
-  renderIngressoCobs();
-}
-function renderIngressoCobs() {
-  var c = document.getElementById('fechIngressoCobrancas');
-  if(!c) return;
-  c.innerHTML = _ingressoCobs.map(function(item,i){
-    return '<div class="fech-cobranca-row">' +
-      '<input type="text" value="'+item.desc+'" placeholder="Descricao" oninput="_ingressoCobs['+i+'].desc=this.value"/>' +
-      '<input type="number" value="'+item.val+'" placeholder="R$" min="0" step="0.01" oninput="_ingressoCobs['+i+'].val=this.value"/>' +
-      '<button onclick="ingressoCobRemove('+i+')">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function saqueToggle(tipo, id) {
-  var s = tipo==='ficha' ? _fichaSaqSel : _ingressoSaqSel;
-  if(s.has(id)) s.delete(id); else s.add(id);
-}
-
-function refreshFechamentoSaques() {
-  var fichaEv = (document.getElementById('fechFichaEvento')||{}).value||'';
-  var ingEv   = (document.getElementById('fechIngressoEvento')||{}).value||'';
-  if(fichaEv) renderSaquesParaFicha(fichaEv);
-  if(ingEv)   renderSaquesParaIngresso(ingEv);
-}
-
-function renderSaquesParaFicha(evName) {
-  var el = document.getElementById('fechFichaSaqueList');
-  if(!el || !evName || evName.length < 2) return;
-  var lista = (financeiro||[]).filter(function(f){
-    return f.evento===evName && f.tipo==='saque_evento' && f.status==='aprovado';
-  });
-  if(!lista.length) {
-    el.innerHTML = '<p class="helper-text">Nenhum saque encontrado para este evento.</p>';
-    return;
-  }
-  el.innerHTML = lista.map(function(f){
-    var chk = _fichaSaqSel.has(f.id) ? 'checked' : '';
-    var sel = chk ? ' selected' : '';
-    return '<div class="fech-saque-item'+sel+'">'+
-      '<input type="checkbox" '+chk+' onchange="saqueToggle(\'ficha\',\''+f.id+'\');this.closest(\'.fech-saque-item\').classList.toggle(\'selected\',this.checked)"/>'+
-      '<span style="flex:1">'+f.nome+' — '+formatMoney(f.valor)+'</span>'+
-      '<span style="font-size:11px;color:#6b7280">'+formatDateTime(f.data||f.criadoEm)+'</span>'+
-    '</div>';
-  }).join('');
-}
-
-function renderSaquesParaIngresso(evName) {
-  var el = document.getElementById('fechIngressoSaqueList');
-  if(!el || !evName || evName.length < 2) return;
-  var lista = (financeiro||[]).filter(function(f){
-    return f.evento===evName && f.tipo==='saque_evento' && f.status==='aprovado';
-  });
-  if(!lista.length) {
-    el.innerHTML = '<p class="helper-text">Nenhum saque encontrado para este evento.</p>';
-    return;
-  }
-  el.innerHTML = lista.map(function(f){
-    var chk = _ingressoSaqSel.has(f.id) ? 'checked' : '';
-    var sel = chk ? ' selected' : '';
-    return '<div class="fech-saque-item'+sel+'">'+
-      '<input type="checkbox" '+chk+' onchange="saqueToggle(\'ingresso\',\''+f.id+'\');this.closest(\'.fech-saque-item\').classList.toggle(\'selected\',this.checked)"/>'+
-      '<span style="flex:1">'+f.nome+' — '+formatMoney(f.valor)+'</span>'+
-      '<span style="font-size:11px;color:#6b7280">'+formatDateTime(f.data||f.criadoEm)+'</span>'+
-    '</div>';
-  }).join('');
-}
-
-// ── PARSER FICHA ──
-function parseFichaRelatorio(txt) {
-  var formas = {}, pdvs = [];
-  var lines = txt.split('\n');
-  lines.forEach(function(line){
-    var m = line.match(/^([A-Za-záàâãéèêíóôõúçÁÀÂÃÉÈÊÍÓÔÕÚÇ\s\/À-ú]+?)\s+(\d[\d.]*)\s+R\$\s*([\d.,]+)/);
-    if(m) {
-      var forma = m[1].trim();
-      var qty   = parseInt(m[2].replace(/\./g,''))||0;
-      var valor = parseFloat(m[3].replace(/\./g,'').replace(',','.'));
-      if(!isNaN(valor) && valor>0 && forma.length>1 && forma.length<40) {
-        if(formas[forma]) { formas[forma].qty+=qty; formas[forma].valor+=valor; }
-        else formas[forma] = { qty:qty, valor:valor };
-      }
-    }
-    var p = line.match(/PDV\s+(\S+)\s*[-–]\s*([^:]+?):\s*R\$\s*([\d.,]+)/i);
-    if(p) pdvs.push({ pdv:p[1], evento:p[2].trim(), valor:parseFloat(p[3].replace(/\./g,'').replace(',','.')) });
-  });
-  var total = 0;
-  Object.keys(formas).forEach(function(k){ total += formas[k].valor; });
-  return { formas:formas, pdvs:pdvs, total:total };
-}
-
-// ── GERAR FECHAMENTO FICHA ──
-function gerarFechamentoFicha() {
-  var evName = document.getElementById('fechFichaEvento').value.trim();
-  var relTxt = document.getElementById('fechFichaRelatorio').value.trim();
-  if(!evName) { alert('Informe o nome do evento.'); return; }
-  if(!relTxt) { alert('Cole o relatório de vendas.'); return; }
-
-  var d = parseFichaRelatorio(relTxt);
-  if(!d.total) { alert('Não foi possível ler o relatório. Verifique o formato.'); return; }
-
-  var taxaMap = {
-    debito:        parseFloat(document.getElementById('taxa-debito').value)||0,
-    credito:       parseFloat(document.getElementById('taxa-credito').value)||0,
-    'credito-parc':parseFloat(document.getElementById('taxa-credito-parc').value)||0,
-    pix:           parseFloat(document.getElementById('taxa-pix').value)||0,
-  };
-  function getTaxa(f) {
-    var k = f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if(k.indexOf('debito')>-1) return taxaMap['debito'];
-    if(k.indexOf('parcelado')>-1||k.indexOf('parc')>-1) return taxaMap['credito-parc'];
-    if(k.indexOf('credito')>-1||k.indexOf('vista')>-1) return taxaMap['credito'];
-    if(k.indexOf('pix')>-1) return taxaMap['pix'];
-    return 0;
-  }
-
-  var dinheiro = 0;
-  Object.keys(d.formas).forEach(function(f){ if(f.toLowerCase().indexOf('dinheiro')>-1) dinheiro+=d.formas[f].valor; });
-  var totalCartao = d.total - dinheiro;
-
-  var linhasTaxa = [], totalTaxas = 0;
-  Object.keys(d.formas).forEach(function(f){
-    if(f.toLowerCase().indexOf('dinheiro')>-1) return;
-    var tx = getTaxa(f);
-    if(tx>0) { var vt=d.formas[f].valor*tx/100; totalTaxas+=vt; linhasTaxa.push({forma:f,taxa:tx,valor:d.formas[f].valor,desconto:vt}); }
-  });
-
-  var cobrancas = _fichaCobs.filter(function(c){ return c.desc&&parseFloat(c.val||0)>0; });
-  var totalCob  = cobrancas.reduce(function(s,c){ return s+parseFloat(c.val); },0);
-  var saquesSel = (financeiro||[]).filter(function(f){ return _fichaSaqSel.has(f.id); });
-  var totalSaques = saquesSel.reduce(function(s,f){ return s+f.valor; },0);
-  var cartaoLiq = totalCartao - totalTaxas;
-  var repasse   = cartaoLiq - totalCob - totalSaques;
-
-  var hoje = new Date().toLocaleDateString('pt-BR');
-  var linhas = [];
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  FECHAMENTO DE EVENTO');
-  linhas.push('  '+evName.toUpperCase());
-  linhas.push('  🍺 FICHA  •  '+hoje);
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('');
-  linhas.push('📊 VENDAS');
-  linhas.push('Total bruto: '+formatMoney(d.total));
-  Object.keys(d.formas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(d.formas[f].valor)+(d.formas[f].qty?' ('+d.formas[f].qty+' vend.)':'')); });
-  if(d.pdvs.length){ linhas.push(''); linhas.push('📍 PDVs'); d.pdvs.forEach(function(p){ linhas.push('  PDV '+p.pdv+' - '+p.evento+': '+formatMoney(p.valor)); }); }
-  if(linhasTaxa.length){ linhas.push(''); linhas.push('💼 TAXAS CARTÃO'); linhasTaxa.forEach(function(l){ linhas.push('  Taxa '+l.forma+' '+l.taxa+'%: - '+formatMoney(l.desconto)); }); }
-  if(cobrancas.length){ linhas.push(''); linhas.push('💼 COBRANÇAS'); cobrancas.forEach(function(c){ linhas.push('  '+c.desc+': - '+formatMoney(parseFloat(c.val))); }); }
-  if(saquesSel.length){ linhas.push(''); linhas.push('💸 SAQUES ANTECIPADOS'); saquesSel.forEach(function(f){ linhas.push('  '+f.nome+': - '+formatMoney(f.valor)); }); }
-  linhas.push(''); linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  Total bruto:          '+formatMoney(d.total));
-  linhas.push('  (-) Dinheiro produtor: '+formatMoney(dinheiro));
-  if(totalTaxas>0) linhas.push('  (-) Taxas cartao:      '+formatMoney(totalTaxas));
-  if(totalCob>0)   linhas.push('  (-) Cobrancas:         '+formatMoney(totalCob));
-  if(totalSaques>0)linhas.push('  (-) Saques antecip.:   '+formatMoney(totalSaques));
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  REPASSE AO PRODUTOR: '+formatMoney(repasse));
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('Easytick • '+hoje);
-
-  window._fechTxt = window._fechTxt||{};
-  window._fechTxt.fichaTxt = linhas.join('\n');
-  window._fechDadosFicha = { tipo:'ficha', evento:evName, hoje:hoje, total:d.total, dinheiro:dinheiro, formas:d.formas, pdvs:d.pdvs, linhasTaxa:linhasTaxa, totalTaxas:totalTaxas, cobrancas:cobrancas, totalCob:totalCob, saques:saquesSel, totalSaques:totalSaques, totalCartao:totalCartao, cartaoLiq:cartaoLiq, repasse:repasse };
-
-  document.getElementById('fechFichaResultado').textContent = linhas.join('\n');
-  document.getElementById('fechFichaResultadoWrap').style.display = 'block';
-  document.getElementById('fechFichaResultadoWrap').scrollIntoView({behavior:'smooth'});
-}
-
-// ── PARSER INGRESSO ──
-function extrairDadosRelatorio(txt) {
-  var formas = {}, cupons = 0, totalGeral = 0;
-  var lines = txt.split('\n');
-  lines.forEach(function(line){
-    var tg = line.match(/Total geral[^R]*R\$\s*([\d.,]+)/i);
-    if(tg) { totalGeral = parseFloat(tg[1].replace(/\./g,'').replace(',','.')); return; }
-    var dc = line.match(/Cupom|Desconto|Promo/i);
-    var dcVal = line.match(/R\$\s*([\d.,]+)/);
-    if(dc && dcVal) cupons += parseFloat(dcVal[1].replace(/\./g,'').replace(',','.'));
-    var m = line.match(/^(.+?)\s+(\d[\d.]*)\s+R\$\s*([\d.,]+)(?:\s+R\$\s*([\d.,]+))?(?:\s+R\$\s*([\d.,]+))?/);
-    if(m) {
-      var forma = m[1].trim();
-      if(forma.length<3||forma.length>40) return;
-      var qty   = parseInt(m[2].replace(/\./g,''))||0;
-      var rawVal = m[5]||m[4]||m[3]||'0';
-      var valor  = parseFloat(rawVal.replace(/\./g,'').replace(',','.'));
-      if(!isNaN(valor)&&valor>0) {
-        if(formas[forma]) { formas[forma].qty+=qty; formas[forma].valor+=valor; }
-        else formas[forma] = { qty:qty, valor:valor };
-      }
-    }
-  });
-  return { formas:formas, cupons:cupons, totalGeral:totalGeral };
-}
-
-// ── GERAR FECHAMENTO INGRESSO ──
-function gerarFechamentoIngresso() {
-  var evName = document.getElementById('fechIngressoEvento').value.trim();
-  var txtLV  = document.getElementById('fechIngressoLojaVirtual').value.trim();
-  var txtApp = document.getElementById('fechIngressoApp').value.trim();
-  if(!evName) { alert('Informe o nome do evento.'); return; }
-  if(!txtLV)  { alert('Cole o relatório Loja Virtual.'); return; }
-
-  var dadosLV  = extrairDadosRelatorio(txtLV);
-  var dadosApp = txtApp ? extrairDadosRelatorio(txtApp) : null;
-
-  var totalLVBruto = 0;
-  Object.keys(dadosLV.formas).forEach(function(f){ totalLVBruto+=dadosLV.formas[f].valor; });
-  if(!totalLVBruto&&dadosLV.totalGeral) totalLVBruto=dadosLV.totalGeral;
-  var descontosLV = dadosLV.cupons||0;
-  var totalLVLiq  = totalLVBruto - descontosLV;
-
-  var appDigital = 0, appMaquinas = {};
-  if(dadosApp) {
-    Object.keys(dadosApp.formas).forEach(function(f){
-      var fk = f.toLowerCase();
-      if(fk.indexOf('nao inform')>-1||fk.indexOf('não inform')>-1) appDigital+=dadosApp.formas[f].valor;
-      else appMaquinas[f] = dadosApp.formas[f];
-    });
-  }
-
-  var cobrancas  = _ingressoCobs.filter(function(c){ return c.desc&&parseFloat(c.val||0)>0; });
-  var totalCob   = cobrancas.reduce(function(s,c){ return s+parseFloat(c.val); },0);
-  var saquesSel  = (financeiro||[]).filter(function(f){ return _ingressoSaqSel.has(f.id); });
-  var totalSaques= saquesSel.reduce(function(s,f){ return s+f.valor; },0);
-  var repasse    = totalLVLiq - totalCob - totalSaques;
-
-  var hoje = new Date().toLocaleDateString('pt-BR');
-  var linhas = [];
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  FECHAMENTO DE EVENTO');
-  linhas.push('  '+evName.toUpperCase());
-  linhas.push('  🎟️ INGRESSO  •  '+hoje);
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('');
-  if(dadosApp) { linhas.push('📊 TOTAL GERAL DO EVENTO'); linhas.push('  (-) Digital/App (produtor): - '+formatMoney(appDigital)); linhas.push(''); }
-  linhas.push('🏪 LOJA VIRTUAL');
-  linhas.push('  Bruto:   '+formatMoney(totalLVBruto));
-  Object.keys(dadosLV.formas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(dadosLV.formas[f].valor)+(dadosLV.formas[f].qty?' ('+dadosLV.formas[f].qty+')':'')); });
-  if(descontosLV>0) linhas.push('  (-) Cupons: - '+formatMoney(descontosLV));
-  linhas.push('  Liquido: '+formatMoney(totalLVLiq));
-  if(Object.keys(appMaquinas).length){ linhas.push(''); linhas.push('📱 APP — MAQUINAS PDV'); Object.keys(appMaquinas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(appMaquinas[f].valor)); }); }
-  if(cobrancas.length){ linhas.push(''); linhas.push('💼 COBRANÇAS'); cobrancas.forEach(function(c){ linhas.push('  '+c.desc+': - '+formatMoney(parseFloat(c.val))); }); }
-  if(saquesSel.length){ linhas.push(''); linhas.push('💸 SAQUES ANTECIPADOS'); saquesSel.forEach(function(f){ linhas.push('  '+f.nome+': - '+formatMoney(f.valor)); }); }
-  linhas.push(''); linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  Base (LV liquido):    '+formatMoney(totalLVLiq));
-  if(totalCob>0)    linhas.push('  (-) Cobrancas:       '+formatMoney(totalCob));
-  if(totalSaques>0) linhas.push('  (-) Saques antecip.: '+formatMoney(totalSaques));
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('  REPASSE AO PRODUTOR: '+formatMoney(repasse));
-  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  linhas.push('Easytick • '+hoje);
-
-  window._fechTxt = window._fechTxt||{};
-  window._fechTxt.ingressoTxt = linhas.join('\n');
-  window._fechDadosIngresso = { tipo:'ingresso', evento:evName, hoje:hoje, totalLVBruto:totalLVBruto, descontosLV:descontosLV, totalLVLiq:totalLVLiq, appDigital:appDigital, appMaquinas:appMaquinas, formasLV:dadosLV.formas, cobrancas:cobrancas, totalCob:totalCob, saques:saquesSel, totalSaques:totalSaques, repasse:repasse };
-
-  document.getElementById('fechIngressoResultado').textContent = linhas.join('\n');
-  document.getElementById('fechIngressoResultadoWrap').style.display = 'block';
-  document.getElementById('fechIngressoResultadoWrap').scrollIntoView({behavior:'smooth'});
-}
-
-// ── COPIAR TEXTO ──
-function copiarFechamento(tipo) {
-  var txt = (window._fechTxt||{})[tipo]||'';
-  if(!txt) { alert('Gere o fechamento primeiro.'); return; }
-  if(navigator.clipboard&&navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(txt).then(function(){ alert('Copiado!'); });
-  } else {
-    var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('Copiado!');
-  }
-}
-
-// ── GERAR IMAGEM (html2canvas) ──
-function fmtImg(v) {
-  return 'R$ '+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
-function baixarImagemFechamento(tipo) {
-  var d = tipo==='ficha' ? window._fechDadosFicha : window._fechDadosIngresso;
-  if(!d) { alert('Gere o fechamento antes de baixar a imagem.'); return; }
-
-  var evento = d.evento.toUpperCase(), hoje = d.hoje;
-  var tipoLabel = tipo==='ficha' ? '🍺 FICHA' : '🎟️ INGRESSO';
-  var F = 'font-family:Arial,Helvetica,sans-serif;';
-
-  var html = '<div id="fech-img-wrap" style="'+F+'width:680px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.18)">';
-
-  // Header
-  html += '<div style="background:#1a3a6b;padding:20px 28px 16px;color:#fff;">'+
-    '<div style="'+F+'font-size:11px;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px">Easytick — Fechamento de Evento</div>'+
-    '<div style="'+F+'font-size:20px;font-weight:700;color:#fff;line-height:1.2">'+evento+'</div>'+
-    '<div style="'+F+'font-size:13px;color:rgba(255,255,255,0.7);margin-top:6px">'+tipoLabel+'&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>'+
-  '</div>';
-
-  if(tipo==='ficha') {
-    var fd = d;
-    // Composição — tabela de formas
-    html += '<div style="background:#f8fafc;padding:14px 28px 10px;">';
-    html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px">Composição das vendas</div>';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<tr style="border-bottom:1px solid #e2e8f0"><th style="'+F+'text-align:left;padding:4px 0;color:#64748b;font-size:11px">Forma</th><th style="'+F+'text-align:right;padding:4px 0;color:#64748b;font-size:11px">Qtd</th><th style="'+F+'text-align:right;padding:4px 0;color:#64748b;font-size:11px">Valor</th></tr>';
-    Object.keys(fd.formas).forEach(function(f){
-      var isDin = f.toLowerCase().indexOf('dinheiro')>-1;
-      html += '<tr style="background:'+(isDin?'#fef9c3':'#fff')+';border-bottom:1px dashed #e5e7eb">'+
-        '<td style="'+F+'padding:5px 4px;font-weight:'+(isDin?'600':'400')+'">'+f+'</td>'+
-        '<td style="'+F+'text-align:right;padding:5px 4px;color:#374151">'+(fd.formas[f].qty||'—')+'</td>'+
-        '<td style="'+F+'text-align:right;padding:5px 4px;font-weight:600">'+fmtImg(fd.formas[f].valor)+'</td>'+
-      '</tr>';
-    });
-    html += '<tr style="background:#f1f5f9"><td style="'+F+'padding:6px 4px;font-weight:700" colspan="2">Total bruto</td><td style="'+F+'text-align:right;font-weight:700;padding:6px 4px">'+fmtImg(fd.total)+'</td></tr>';
-    html += '</table></div>';
-    // Base cartão
-    html += '<div style="background:#eef4fd;border-left:4px solid #185fa5;padding:12px 28px;">'+
-      '<div style="'+F+'font-size:11px;font-weight:700;color:#185fa5;letter-spacing:.08em;text-transform:uppercase">Total entrada cartão</div>'+
-      '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;margin-top:3px">'+fmtImg(fd.totalCartao)+'</div>'+
-    '</div>';
-    // Taxas
-    if(fd.linhasTaxa&&fd.linhasTaxa.length) {
-      html += '<div style="padding:10px 28px 4px;">';
-      html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px">Descontos taxas cartão</div>';
-      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-      html += '<tr style="border-bottom:1px solid #e2e8f0"><th style="'+F+'text-align:left;padding:3px 0;color:#64748b">Modalidade</th><th style="'+F+'text-align:right;color:#64748b">Total bruto</th><th style="'+F+'text-align:right;color:#64748b">Taxa%</th><th style="'+F+'text-align:right;color:#64748b">Desconto</th></tr>';
-      fd.linhasTaxa.forEach(function(l){
-        html += '<tr style="border-bottom:1px dashed #e5e7eb">'+
-          '<td style="'+F+'padding:4px 0">'+l.forma+'</td>'+
-          '<td style="'+F+'text-align:right">'+fmtImg(l.valor)+'</td>'+
-          '<td style="'+F+'text-align:right">'+l.taxa+'%</td>'+
-          '<td style="'+F+'text-align:right;color:#dc2626;font-weight:600">- '+fmtImg(l.desconto)+'</td>'+
-        '</tr>';
-      });
-      html += '</table></div>';
-    }
-    // Cobranças + Saques
-    if((fd.cobrancas&&fd.cobrancas.length)||(fd.saques&&fd.saques.length)){
-      html += '<div style="padding:8px 28px 0;">';
-      if(fd.cobrancas&&fd.cobrancas.length){
-        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Cobranças / despesas</div>';
-        fd.cobrancas.forEach(function(c){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+c.desc+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(parseFloat(c.val))+'</span></div>'; });
-      }
-      if(fd.saques&&fd.saques.length){
-        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Saques antecipados</div>';
-        fd.saques.forEach(function(s){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+s.nome+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(s.valor)+'</span></div>'; });
-      }
-      html += '</div>';
-    }
-    html += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">'+
-      '<span style="font-size:14px;font-weight:600;color:#374151">Total deduções</span>'+
-      '<span style="font-size:14px;font-weight:700;color:#dc2626">- '+fmtImg(fd.totalTaxas+fd.totalCob+fd.totalSaques)+'</span>'+
-    '</div>';
-
-  } else {
-    // INGRESSO
-    var id = d;
-    html += '<div style="background:#f8fafc;padding:14px 28px 10px;">';
-    html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:4px">Loja Virtual</div>';
-    Object.keys(id.formasLV).forEach(function(f){
-      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+f+'</span><span style="'+F+'font-weight:600">'+fmtImg(id.formasLV[f].valor)+'</span></div>';
-    });
-    if(id.descontosLV>0) html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'color:#6b7280">(-) Cupons/Descontos</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(id.descontosLV)+'</span></div>';
-    html += '</div>';
-    if(id.appDigital>0) html += '<div style="background:#fef9c3;padding:8px 28px;display:flex;justify-content:space-between;font-size:13px"><span style="'+F+'color:#92400e">App Digital (fica com produtor)</span><span style="'+F+'color:#92400e;font-weight:600">'+fmtImg(id.appDigital)+'</span></div>';
-    html += '<div style="background:#eef4fd;border-left:4px solid #185fa5;padding:12px 28px;">'+
-      '<div style="'+F+'font-size:11px;font-weight:700;color:#185fa5;text-transform:uppercase;letter-spacing:.08em">Base do repasse (LV líquido)</div>'+
-      '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;margin-top:3px">'+fmtImg(id.totalLVLiq)+'</div>'+
-    '</div>';
-    if((id.cobrancas&&id.cobrancas.length)||(id.saques&&id.saques.length)){
-      html += '<div style="padding:8px 28px 0;">';
-      if(id.cobrancas&&id.cobrancas.length){
-        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Cobranças / despesas</div>';
-        id.cobrancas.forEach(function(c){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+c.desc+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(parseFloat(c.val))+'</span></div>'; });
-      }
-      if(id.saques&&id.saques.length){
-        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Saques antecipados</div>';
-        id.saques.forEach(function(s){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+s.nome+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(s.valor)+'</span></div>'; });
-      }
-      html += '</div>';
-    }
-    html += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">'+
-      '<span style="font-size:14px;font-weight:600;color:#374151">Total deduções</span>'+
-      '<span style="font-size:14px;font-weight:700;color:#dc2626">- '+fmtImg(id.totalCob+id.totalSaques)+'</span>'+
-    '</div>';
-  }
-
-  // Repasse final
-  html += '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">'+
-    '<div>'+
-      '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em">Repasse ao produtor</div>'+
-      '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>'+
-    '</div>'+
-    '<div style="'+F+'font-size:28px;font-weight:700;color:#fff">'+fmtImg(d.repasse)+'</div>'+
-  '</div>';
-  html += '<div style="padding:10px 28px;text-align:center;">'+
-    '<span style="'+F+'font-size:11px;color:#94a3b8">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>'+
-  '</div>';
-  html += '</div>';
-
-  var wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
-  wrapper.innerHTML = html;
-  document.body.appendChild(wrapper);
-
-  function capturar() {
-    html2canvas(wrapper.querySelector('#fech-img-wrap'), {
-      scale:2.5, useCORS:true, backgroundColor:'#ffffff', logging:false, windowWidth:760
-    }).then(function(canvas){
-      document.body.removeChild(wrapper);
-      var link = document.createElement('a');
-      link.download = 'fechamento-'+evento.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+hoje.replace(/\//g,'-')+'.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    }).catch(function(e){ document.body.removeChild(wrapper); alert('Erro ao gerar imagem: '+e.message); });
-  }
-
-  if(typeof html2canvas !== 'undefined') {
-    capturar();
-  } else {
-    var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    script.onload = capturar;
-    script.onerror = function(){ alert('Erro ao carregar html2canvas.'); document.body.removeChild(wrapper); };
-    document.head.appendChild(script);
-  }
-}
 
 </script>
 </body>
