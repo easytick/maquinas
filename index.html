@@ -98,23 +98,18 @@
     .atraso-group h3 button{font-size:11px;padding:4px 10px;width:auto}
 
     /* MACHINE CARDS */
-    .machine-item{background:#fff;border-radius:12px;margin-bottom:7px;box-shadow:var(--shadow);overflow:hidden}
-    .machine-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px;cursor:pointer;user-select:none}
-    .machine-row:active{background:#f9fafb}
-    .machine-serial{font-size:14px;font-weight:bold;color:#111827}
-    .machine-brand{font-size:11px;color:#6b7280;margin-top:1px}
-    .machine-chevron{font-size:11px;color:#9ca3af;flex-shrink:0;transition:transform .2s}
-    .machine-item.expanded .machine-chevron{transform:rotate(180deg)}
-    .machine-detail{display:none;border-top:1px solid var(--border);padding:11px 14px;background:#f9fafb}
-    .machine-item.expanded .machine-detail{display:block}
-    .machine-info{font-size:12px;color:#374151;line-height:1.7;margin-bottom:9px}
-    .machine-info p{margin:0}
-    .status{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
+    .machine-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+    .machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+    .machine-serial{font-size:16px;font-weight:bold;color:#111827}
+    .machine-brand{font-size:12px;color:#6b7280;margin-top:1px}
+    .status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
     .disponivel{background:#dcfce7;color:#166534}
     .em-uso{background:#fee2e2;color:#991b1b}
     .manutencao{background:#e5e7eb;color:#374151}
     .reservada-hoje{background:#fef3c7;color:#92400e}
     .em-atraso{background:#fce7f3;color:#9d174d}
+    .machine-info{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:12px;color:#374151;line-height:1.6}
+    .machine-info p{margin:2px 0}
     .alert-reservada{margin-top:7px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
     .alert-atraso-card{margin-top:7px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}
 
@@ -243,6 +238,24 @@
     .autocomplete-item{padding:10px 13px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);color:#1f2937}
     .autocomplete-item:last-child{border-bottom:none}
     .autocomplete-item:hover,.autocomplete-item.selected{background:#eef6ff;color:var(--blue)}
+
+    /* FECHAMENTO */
+    .fech-tabs{display:grid;grid-template-columns:repeat(2,1fr);border-bottom:1px solid var(--border);margin:-14px -14px 14px;position:sticky;top:52px;z-index:90;background:#fff}
+    .fech-tab-btn{padding:11px 4px;font-size:11px;border:none;border-right:1px solid var(--border);background:#f9fafb;color:#6b7280;cursor:pointer;font-family:Arial,sans-serif;width:100%;line-height:1.4;transition:all .15s}
+    .fech-tab-btn:last-child{border-right:none}
+    .fech-tab-btn.active{background:#eef6ff;color:var(--blue);font-weight:bold}
+    .fech-tab-content{display:none}.fech-tab-content.active{display:block}
+    .fech-step{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+    .fech-step h3{font-size:14px;font-weight:bold;color:var(--blue);margin-bottom:10px}
+    .fech-resultado{background:#f8fafc;border-radius:12px;padding:13px;margin-top:8px;font-size:13px;line-height:1.8;white-space:pre-wrap;font-family:monospace;border:1px solid var(--border)}
+    .fech-saque-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;margin-bottom:6px;font-size:13px}
+    .fech-saque-item.selected{background:#eef6ff;border-color:var(--blue)}
+    .fech-saque-item input[type=checkbox]{width:auto;flex-shrink:0}
+    .fech-cobranca-row{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center;margin-bottom:6px}
+    .fech-cobranca-row input{margin:0}
+    .fech-cobranca-row button{width:auto;padding:8px 12px;background:var(--red);font-size:13px}
+    .taxa-row{display:grid;grid-template-columns:1fr 80px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+    .taxa-row input{margin:0}
 
     @media(min-width:700px){
       .dash-grid{grid-template-columns:repeat(5,1fr)}
@@ -685,8 +698,109 @@
     </div>
   </div>
 
+  <!-- PAGE FECHAMENTO -->
+  <div id="page-fechamento" class="page">
+
+    <div class="fech-tabs">
+      <button class="fech-tab-btn active" id="ftab-ficha" onclick="setFechTab('ficha')">🍺 Ficha</button>
+      <button class="fech-tab-btn" id="ftab-ingresso" onclick="setFechTab('ingresso')">🎟️ Ingresso</button>
+    </div>
+
+    <!-- ═══ FICHA ═══ -->
+    <div id="fech-ficha" class="fech-tab-content active">
+      <div class="fech-step">
+        <h3>1️⃣ Dados do evento</h3>
+        <div class="autocomplete-wrap">
+          <input type="text" id="fechFichaEvento" placeholder="Nome do evento" autocomplete="off"
+            oninput="showAutocomplete(this,'fechFichaEvento-list');renderSaquesParaFicha(this.value)"
+            onkeydown="handleAutocompleteKey(event,'fechFichaEvento-list')"
+            onblur="setTimeout(function(){hideAutocomplete('fechFichaEvento-list')},200)"/>
+          <div id="fechFichaEvento-list" class="autocomplete-list"></div>
+        </div>
+      </div>
+      <div class="fech-step">
+        <h3>2️⃣ Cole o relatório de vendas (ficha)</h3>
+        <p class="helper-text">Cole o texto completo do relatório exportado do sistema de ficha.</p>
+        <textarea id="fechFichaRelatorio" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório aqui..."></textarea>
+      </div>
+      <div class="fech-step">
+        <h3>3️⃣ Taxas de cartão (%)</h3>
+        <p class="helper-text">Informe as taxas cobradas por modalidade.</p>
+        <div class="taxa-row"><span>Débito</span><input type="number" id="taxa-debito" value="2" min="0" step="0.01" placeholder="%"/></div>
+        <div class="taxa-row"><span>Crédito À Vista</span><input type="number" id="taxa-credito" value="4" min="0" step="0.01" placeholder="%"/></div>
+        <div class="taxa-row"><span>Crédito Parcelado</span><input type="number" id="taxa-credito-parc" value="6" min="0" step="0.01" placeholder="%"/></div>
+        <div class="taxa-row"><span>Pix</span><input type="number" id="taxa-pix" value="1" min="0" step="0.01" placeholder="%"/></div>
+      </div>
+      <div class="fech-step">
+        <h3>4️⃣ Cobranças / despesas adicionais</h3>
+        <div id="fechFichaCobrancas"></div>
+        <button onclick="fichaCobAdd()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px;margin-top:4px">+ Adicionar cobrança</button>
+      </div>
+      <div class="fech-step">
+        <h3>5️⃣ Saques antecipados do evento</h3>
+        <div id="fechFichaSaqueList"><p class="helper-text">Nenhum saque encontrado para este evento.</p></div>
+      </div>
+      <button onclick="gerarFechamentoFicha()" style="background:var(--blue);margin-bottom:8px">📊 Gerar fechamento</button>
+      <div id="fechFichaResultadoWrap" style="display:none">
+        <div class="fech-step">
+          <h3>📋 Resultado</h3>
+          <div id="fechFichaResultado" class="fech-resultado"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button onclick="copiarFechamento('fichaTxt')" style="background:#374151;font-size:13px">📋 Copiar texto</button>
+            <button onclick="baixarImagemFechamento('ficha')" style="background:var(--green);font-size:13px">📥 Baixar imagem</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INGRESSO ═══ -->
+    <div id="fech-ingresso" class="fech-tab-content">
+      <div class="fech-step">
+        <h3>1️⃣ Dados do evento</h3>
+        <div class="autocomplete-wrap">
+          <input type="text" id="fechIngressoEvento" placeholder="Nome do evento" autocomplete="off"
+            oninput="showAutocomplete(this,'fechIngressoEvento-list');renderSaquesParaIngresso(this.value)"
+            onkeydown="handleAutocompleteKey(event,'fechIngressoEvento-list')"
+            onblur="setTimeout(function(){hideAutocomplete('fechIngressoEvento-list')},200)"/>
+          <div id="fechIngressoEvento-list" class="autocomplete-list"></div>
+        </div>
+      </div>
+      <div class="fech-step">
+        <h3>2️⃣ Relatório — Loja Virtual</h3>
+        <p class="helper-text">Cole o relatório filtrado por <b>Origem: Loja Virtual</b>.</p>
+        <textarea id="fechIngressoLojaVirtual" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório Loja Virtual aqui..."></textarea>
+      </div>
+      <div class="fech-step">
+        <h3>3️⃣ Relatório — Aplicativo <span style="font-size:11px;font-weight:normal;color:#6b7280">(opcional)</span></h3>
+        <p class="helper-text">Cole o relatório filtrado por <b>Origem: Aplicativo</b>. As vendas "Não informado" ficam com o produtor; Débito/Crédito/Pix são das máquinas.</p>
+        <textarea id="fechIngressoApp" rows="6" style="width:100%;padding:10px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;font-family:monospace;resize:vertical" placeholder="Cole o relatório App aqui (opcional)..."></textarea>
+      </div>
+      <div class="fech-step">
+        <h3>4️⃣ Cobranças / despesas adicionais</h3>
+        <div id="fechIngressoCobrancas"></div>
+        <button onclick="ingressoCobAdd()" style="background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:13px;margin-top:4px">+ Adicionar cobrança</button>
+      </div>
+      <div class="fech-step">
+        <h3>5️⃣ Saques antecipados do evento</h3>
+        <div id="fechIngressoSaqueList"><p class="helper-text">Nenhum saque encontrado para este evento.</p></div>
+      </div>
+      <button onclick="gerarFechamentoIngresso()" style="background:var(--blue);margin-bottom:8px">📊 Gerar fechamento</button>
+      <div id="fechIngressoResultadoWrap" style="display:none">
+        <div class="fech-step">
+          <h3>📋 Resultado</h3>
+          <div id="fechIngressoResultado" class="fech-resultado"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <button onclick="copiarFechamento('ingressoTxt')" style="background:#374151;font-size:13px">📋 Copiar texto</button>
+            <button onclick="baixarImagemFechamento('ingresso')" style="background:var(--green);font-size:13px">📥 Baixar imagem</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" style="grid-template-columns:repeat(6,1fr)">
     <button class="nav-btn active" onclick="setPage('inicio')">
       <span class="n-icon">🏠</span>
       <div class="n-dot"></div>
@@ -711,6 +825,11 @@
       <span class="n-icon">🔄</span>
       <div class="n-dot"></div>
       <span class="n-label">Recorrentes</span>
+    </button>
+    <button class="nav-btn" onclick="setPage('fechamento')">
+      <span class="n-icon">📊</span>
+      <div class="n-dot"></div>
+      <span class="n-label">Fechamento</span>
     </button>
   </nav>
 
@@ -1442,8 +1561,7 @@ function setReserveMode(mode){
 
 function getIntencoesPendentesNoPeriodo(brand, startDate, endDate) {
   return reservasIntencao.filter(function(r){
-    var marcas = r.marcas || (r.marca ? [r.marca] : []);
-    return r.status==='pendente' && marcas.indexOf(brand)>-1 && hasDateOverlap(r.startDate, r.endDate, startDate, endDate);
+    return r.status==='pendente' && r.marca===brand && hasDateOverlap(r.startDate, r.endDate, startDate, endDate);
   }).reduce(function(sum, r){ return sum + (r.quantidade||0); }, 0);
 }
 
@@ -1511,20 +1629,20 @@ function submitReservaLote(e){
   if(reserveMode==='quantidade'){
     var qty=Number(document.getElementById('batchQtyIntencao').value);
     if(!qty||qty<=0){alert('Informe a quantidade.');return;}
-    // Disponibilidade total considerando todas as marcas selecionadas
-    var dispTotal=brands.reduce(function(sum,b){ return sum+getDisponiveisPorMarca(b,startDate,endDate); },0);
-    if(dispTotal<qty){
+    if(brands.length>1){alert('No modo Quantidade selecione apenas uma marca por vez.');return;}
+    var brand=brands[0];
+    var disponiveis=getDisponiveisPorMarca(brand,startDate,endDate);
+    if(disponiveis<qty){
       result.className='batch-result show error';
-      result.innerHTML='<b>Reserva nao realizada.</b><br>Solicitado: '+qty+' maquina'+(qty>1?'s':'')+' - Disponivel no periodo: '+dispTotal;
+      result.innerHTML='<b>Reserva nao realizada.</b><br>Solicitado: '+qty+' '+brand+' - Disponivel no periodo: '+disponiveis;
       return;
     }
     var id='int_'+Date.now();
-    var marcasLabel=brands.length===1?brands[0]:brands.join(', ');
-    var intencao={id:id,evento:eventName,cidade:city,responsavel:responsible,endereco:address,marcas:brands,marcasLabel:marcasLabel,quantidade:qty,startDate:startDate,endDate:endDate,status:'pendente',criadoEm:new Date().toISOString(),criadoPor:un,criadoPorEmail:ue};
+    var intencao={id:id,evento:eventName,cidade:city,responsavel:responsible,endereco:address,marca:brand,quantidade:qty,startDate:startDate,endDate:endDate,status:'pendente',criadoEm:new Date().toISOString(),criadoPor:un,criadoPorEmail:ue};
     reservasIntencao.push(intencao);
     saveReservasIntencao();
     result.className='batch-result show';
-    result.innerHTML='<span class="batch-total">Reserva de intencao criada!</span><b>'+eventName+'</b> - '+qty+'x '+marcasLabel+'<br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br><small style="color:#6b7280">Os seriais sao escolhidos na hora da saida.</small>';
+    result.innerHTML='<span class="batch-total">Reserva de intencao criada!</span><b>'+eventName+'</b> - '+qty+'x '+brand+'<br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br><small style="color:#6b7280">Os seriais sao escolhidos na hora da saida.</small>';
     document.getElementById('batchQtyIntencao').value='';
     atualizarQtyDisponivel();
     return;
@@ -1573,15 +1691,11 @@ function renderReservasIntencao() {
     if(r.status==='pendente') statusBadge='<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Pendente</span>';
     if(r.status==='concluida') statusBadge='<span style="background:#dcfce7;color:#166534;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:bold">Concluida</span>';
     if(r.status==='cancelada') statusBadge='<span style="background:#e5e7eb;color:#374151;border-radius:6px;padding:2px 7px;font-size:11px">Cancelada</span>';
-    var dispAtual = r.status==='pendente' ? (function(){
-      var marcas = r.marcas || (r.marca ? [r.marca] : []);
-      return marcas.reduce(function(sum,b){ return sum+getDisponiveisPorMarca(b,r.startDate,r.endDate); },0);
-    })() : null;
+    var dispAtual = r.status==='pendente' ? getDisponiveisPorMarca(r.marca, r.startDate, r.endDate) : null;
     var dispHtml='';
     if(r.status==='pendente' && dispAtual!==null){
       var suficiente = dispAtual >= r.quantidade;
-      var marcasLabel = r.marcasLabel || r.marca || '';
-      dispHtml='<div style="font-size:12px;margin-top:4px;color:'+(suficiente?'#166534':'#991b1b')+'">'+(suficiente?'✓ ':'⚠ ')+dispAtual+' disponivel'+(dispAtual!==1?'is':'')+' no periodo'+(suficiente?'':' (reservou '+r.quantidade+')')+'</div>';
+      dispHtml='<div style="font-size:12px;margin-top:4px;color:'+(suficiente?'#166534':'#991b1b')+'">'+(suficiente?'✓ ':'⚠ ')+dispAtual+' '+r.marca+' disponivel'+(dispAtual!==1?'is':'')+' no periodo'+(suficiente?'':' (reservou '+r.quantidade+')')+'</div>';
     }
     var div=document.createElement('div');
     div.className='card';
@@ -1592,7 +1706,7 @@ function renderReservasIntencao() {
           '<b style="font-size:14px">'+r.evento+'</b>'+
           '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+formatDate(r.startDate)+' ate '+formatDate(r.endDate)+(r.cidade?' · '+r.cidade:'')+'</div>'+
           '<div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">'+
-            '<span style="background:#eef6ff;color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:bold">'+r.quantidade+'x '+(r.marcasLabel||r.marca||'')+'</span>'+
+            '<span style="background:#eef6ff;color:var(--blue);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:bold">'+r.quantidade+'x '+r.marca+'</span>'+
             statusBadge+' '+urgencia+
           '</div>'+
           dispHtml+
@@ -1619,10 +1733,9 @@ function cancelarIntencao(id) {
 function abrirSaidaIntencao(id) {
   var r = reservasIntencao.find(function(r){ return r.id===id; });
   if(!r) return;
-  var marcas = r.marcas || (r.marca ? [r.marca] : []);
   var disponiveis = machines.filter(function(m){
     var rs=getRealStatus(m);
-    return marcas.indexOf(m.brand)>-1 && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,r.startDate,r.endDate);
+    return m.brand===r.marca && rs!=='Em uso' && rs!=='Em atraso' && rs!=='Manutencao' && !hasReservationConflict(m,r.startDate,r.endDate);
   }).sort(function(a,b){ return a.history.filter(function(h){return h.type==='saida';}).length - b.history.filter(function(h){return h.type==='saida';}).length; });
   document.getElementById('saidaIntencaoModal').dataset.id = id;
   document.getElementById('saidaIntencaoInfo').innerHTML =
@@ -2055,21 +2168,7 @@ function deleteMachine(serial){var m=machines.find(function(m){return m.serial==
 // ═══════════════════════════════════════════
 // HISTORICO
 // ═══════════════════════════════════════════
-function toggleHistory(serial){
-  var m=machines.find(function(m){return m.serial===serial;});
-  if(!m) return;
-  m.showHistory=!m.showHistory;
-  // Re-render só o detalhe do card expandido, sem fechar
-  renderMachines();
-  // Garantir que o card continue expandido apos re-render
-  setTimeout(function(){
-    var items=document.querySelectorAll('#machineList .machine-item');
-    items.forEach(function(item){
-      var s=item.querySelector('.machine-serial');
-      if(s&&s.textContent===serial) item.classList.add('expanded');
-    });
-  },0);
-}
+function toggleHistory(serial){var m=machines.find(function(m){return m.serial===serial;});if(m){m.showHistory=!m.showHistory;render();}}
 
 // ═══════════════════════════════════════════
 // FILTROS
@@ -2090,7 +2189,33 @@ function getNextReservation(m){var today=getToday();return m.reservations.filter
 // ═══════════════════════════════════════════
 function render(){
   updateDashboard();renderDayAlerts();
-  if(currentPage==='maquinas') renderMachines();
+  var selEv=document.getElementById('eventFilter').value;refreshEventFilter(selEv);
+  var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=currentStatusFilter,evFilt=document.getElementById('eventFilter').value;
+  var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||machineIsInEvent(m,evFilt));});
+  var rc=document.getElementById('resultsCount');
+  if(search||brand||status||evFilt){rc.style.display='block';rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
+  else rc.style.display='none';
+  var list=document.getElementById('machineList');list.innerHTML='';
+  if(!filtered.length){list.innerHTML="<p style='color:#9ca3af'>Nenhuma maquina encontrada.</p>";return;}
+  filtered.forEach(function(m){
+    var rs=getRealStatus(m),nextRes=getNextReservation(m),today=getToday();
+    var resHoje=rs==='Reservada hoje'?m.reservations.find(function(r){return hasDateOverlap(r.startDate,r.endDate,today,today);}):null;
+    var lastSaida=null;if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
+    var infoHtml='';
+    if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
+    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.responsible?'<p><b>Responsavel:</b> '+resHoje.responsible+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
+    if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'! Retorno era '+formatDate(lastSaida.endDate)+'</div>':'');
+    if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
+    var acoesHtml='';
+    if(rs==='Disponivel') acoesHtml='<div class="actions-row"><button onclick="openExitModal(\''+m.serial+'\')">Saida</button><button onclick="openReserveModal(\''+m.serial+'\')">Reservar</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-gray" onclick="sendToMaintenance(\''+m.serial+'\')">Manutencao</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    if(rs==='Reservada hoje') acoesHtml='<div class="actions-row"><button class="btn-confirmar-saida" onclick="confirmarSaidaDaReserva(\''+m.serial+'\')">Confirmar saida</button><button class="btn-secundario" onclick="openViewReservesModal(\''+m.serial+'\')">Ver reservas</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
+    if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
+    if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
+    var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.responsible?'<br>Responsavel: '+h.responsible:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
+    var div=document.createElement('div');div.className='machine-item';
+    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    list.appendChild(div);
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -2107,17 +2232,18 @@ var _today=getToday();
 var currentPage = 'inicio';
 function setPage(page) {
   currentPage = page;
-  ['inicio','maquinas','acoes','financeiro','recorrentes'].forEach(function(p){
+  ['inicio','maquinas','acoes','financeiro','recorrentes','fechamento'].forEach(function(p){
     document.getElementById('page-'+p).classList.toggle('active', p===page);
   });
   document.querySelectorAll('.nav-btn').forEach(function(btn,i){
-    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes'][i]===page);
+    btn.classList.toggle('active', ['inicio','maquinas','acoes','financeiro','recorrentes','fechamento'][i]===page);
   });
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
   if(page==='maquinas') renderMachines();
   if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); renderSaldoEventoList(); }
   if(page==='recorrentes') { renderRecPainel(); }
+  if(page==='fechamento') { refreshFechamentoSaques(); }
 }
 
 // ═══════════════════════════════════════════
@@ -2180,7 +2306,7 @@ function renderMachines() {
     var lastSaida=null; if(rs==='Em uso'||rs==='Em atraso'){for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){lastSaida=m.history[i];break;}}}
     var infoHtml='';
     if(rs==='Disponivel') infoHtml=nextRes?'<p><b>Proxima reserva:</b> '+nextRes.event+' - '+formatDate(nextRes.startDate)+' ate '+formatDate(nextRes.endDate)+'</p>'+(nextRes.address?'<p><b>Endereco:</b> '+nextRes.address+'</p>':''):'<p style="color:#9ca3af">Sem reservas futuras</p>';
-    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.responsible?'<p><b>Responsavel:</b> '+resHoje.responsible+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
+    if(rs==='Reservada hoje'&&resHoje) infoHtml='<p><b>Evento:</b> '+resHoje.event+'</p><p><b>Periodo:</b> '+formatDate(resHoje.startDate)+' ate '+formatDate(resHoje.endDate)+'</p>'+(resHoje.city?'<p><b>Cidade:</b> '+resHoje.city+'</p>':'')+(resHoje.address?'<p><b>Endereco:</b> '+resHoje.address+'</p>':'')+'<div class="alert-reservada">Sai hoje - clique em Confirmar saida</div>';
     if((rs==='Em uso'||rs==='Em atraso')&&lastSaida) infoHtml='<p><b>Evento:</b> '+(lastSaida.event||'-')+'</p>'+(lastSaida.city?'<p><b>Cidade:</b> '+lastSaida.city+'</p>':'')+(lastSaida.address?'<p><b>Endereco:</b> '+lastSaida.address+'</p>':'')+'<p><b>Retorno previsto:</b> '+formatDate(lastSaida.endDate)+'</p>'+(rs==='Em atraso'?'<div class="alert-atraso-card">ATRASO de '+daysDiff(lastSaida.endDate)+' dia'+(daysDiff(lastSaida.endDate)>1?'s':'')+'!</div>':'');
     if(rs==='Manutencao'){var lM=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='manutencao'){lM=m.history[i];break;}}infoHtml=lM&&lM.observation?'<p><b>Motivo:</b> '+lM.observation+'</p>':'';}
     var acoesHtml='';
@@ -2189,35 +2315,9 @@ function renderMachines() {
     if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
     if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
     var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
-    var div=document.createElement('div');
-    div.className='machine-item'+(m.showHistory?' expanded':'');
-    var rowHtml='<div class="machine-row" onclick="toggleMachineExpand(\''+m.serial+'\')">'+
-      '<div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div>'+
-      '<div style="display:flex;align-items:center;gap:8px">'+
-        '<span class="status '+getStatusClass(rs)+'">'+rs+'</span>'+
-        '<span class="machine-chevron">▼</span>'+
-      '</div>'+
-    '</div>';
-    var detailHtml='<div class="machine-detail">'+
-      '<div class="machine-info">'+infoHtml+'</div>'+
-      '<div class="actions">'+acoesHtml+'</div>'+
-      historyHtml+
-    '</div>';
-    div.innerHTML=rowHtml+detailHtml;
+    var div=document.createElement('div'); div.className='machine-item';
+    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
     list.appendChild(div);
-  });
-}
-
-function toggleMachineExpand(serial) {
-  var m = machines.find(function(m){ return m.serial===serial; });
-  if(m){ m.showHistory = false; } // reset historico ao fechar
-  var list = document.getElementById('machineList');
-  var items = list.querySelectorAll('.machine-item');
-  items.forEach(function(item){
-    var s = item.querySelector('.machine-serial');
-    if(s && s.textContent===serial){
-      item.classList.toggle('expanded');
-    }
   });
 }
 
@@ -3095,6 +3195,473 @@ startFirebaseListener = function() {
   startSaldoListener();
   startReservasIntencaoListener();
 };
+
+// ═══════════════════════════════════════════
+// FECHAMENTO DE EVENTOS
+// ═══════════════════════════════════════════
+
+var _fechTab = 'ficha';
+function setFechTab(tab) {
+  _fechTab = tab;
+  ['ficha','ingresso'].forEach(function(t){
+    document.getElementById('fech-'+t).classList.toggle('active', t===tab);
+    document.getElementById('ftab-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+var _fichaCobs = [], _ingressoCobs = [];
+var _fichaSaqSel = new Set(), _ingressoSaqSel = new Set();
+
+function fichaCobAdd() {
+  _fichaCobs.push({ desc: '', val: '' });
+  renderFichaCobs();
+}
+function fichaCobRemove(i) {
+  _fichaCobs.splice(i,1);
+  renderFichaCobs();
+}
+function renderFichaCobs() {
+  var c = document.getElementById('fechFichaCobrancas');
+  if(!c) return;
+  c.innerHTML = _fichaCobs.map(function(item,i){
+    return '<div class="fech-cobranca-row">' +
+      '<input type="text" value="'+item.desc+'" placeholder="Descricao" oninput="_fichaCobs['+i+'].desc=this.value"/>' +
+      '<input type="number" value="'+item.val+'" placeholder="R$" min="0" step="0.01" oninput="_fichaCobs['+i+'].val=this.value"/>' +
+      '<button onclick="fichaCobRemove('+i+')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function ingressoCobAdd() {
+  _ingressoCobs.push({ desc: '', val: '' });
+  renderIngressoCobs();
+}
+function ingressoCobRemove(i) {
+  _ingressoCobs.splice(i,1);
+  renderIngressoCobs();
+}
+function renderIngressoCobs() {
+  var c = document.getElementById('fechIngressoCobrancas');
+  if(!c) return;
+  c.innerHTML = _ingressoCobs.map(function(item,i){
+    return '<div class="fech-cobranca-row">' +
+      '<input type="text" value="'+item.desc+'" placeholder="Descricao" oninput="_ingressoCobs['+i+'].desc=this.value"/>' +
+      '<input type="number" value="'+item.val+'" placeholder="R$" min="0" step="0.01" oninput="_ingressoCobs['+i+'].val=this.value"/>' +
+      '<button onclick="ingressoCobRemove('+i+')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function saqueToggle(tipo, id) {
+  var s = tipo==='ficha' ? _fichaSaqSel : _ingressoSaqSel;
+  if(s.has(id)) s.delete(id); else s.add(id);
+}
+
+function refreshFechamentoSaques() {
+  var fichaEv = (document.getElementById('fechFichaEvento')||{}).value||'';
+  var ingEv   = (document.getElementById('fechIngressoEvento')||{}).value||'';
+  if(fichaEv) renderSaquesParaFicha(fichaEv);
+  if(ingEv)   renderSaquesParaIngresso(ingEv);
+}
+
+function renderSaquesParaFicha(evName) {
+  var el = document.getElementById('fechFichaSaqueList');
+  if(!el || !evName || evName.length < 2) return;
+  var lista = (financeiro||[]).filter(function(f){
+    return f.evento===evName && f.tipo==='saque_evento' && f.status==='aprovado';
+  });
+  if(!lista.length) {
+    el.innerHTML = '<p class="helper-text">Nenhum saque encontrado para este evento.</p>';
+    return;
+  }
+  el.innerHTML = lista.map(function(f){
+    var chk = _fichaSaqSel.has(f.id) ? 'checked' : '';
+    var sel = chk ? ' selected' : '';
+    return '<div class="fech-saque-item'+sel+'">'+
+      '<input type="checkbox" '+chk+' onchange="saqueToggle(\'ficha\',\''+f.id+'\');this.closest(\'.fech-saque-item\').classList.toggle(\'selected\',this.checked)"/>'+
+      '<span style="flex:1">'+f.nome+' — '+formatMoney(f.valor)+'</span>'+
+      '<span style="font-size:11px;color:#6b7280">'+formatDateTime(f.data||f.criadoEm)+'</span>'+
+    '</div>';
+  }).join('');
+}
+
+function renderSaquesParaIngresso(evName) {
+  var el = document.getElementById('fechIngressoSaqueList');
+  if(!el || !evName || evName.length < 2) return;
+  var lista = (financeiro||[]).filter(function(f){
+    return f.evento===evName && f.tipo==='saque_evento' && f.status==='aprovado';
+  });
+  if(!lista.length) {
+    el.innerHTML = '<p class="helper-text">Nenhum saque encontrado para este evento.</p>';
+    return;
+  }
+  el.innerHTML = lista.map(function(f){
+    var chk = _ingressoSaqSel.has(f.id) ? 'checked' : '';
+    var sel = chk ? ' selected' : '';
+    return '<div class="fech-saque-item'+sel+'">'+
+      '<input type="checkbox" '+chk+' onchange="saqueToggle(\'ingresso\',\''+f.id+'\');this.closest(\'.fech-saque-item\').classList.toggle(\'selected\',this.checked)"/>'+
+      '<span style="flex:1">'+f.nome+' — '+formatMoney(f.valor)+'</span>'+
+      '<span style="font-size:11px;color:#6b7280">'+formatDateTime(f.data||f.criadoEm)+'</span>'+
+    '</div>';
+  }).join('');
+}
+
+// ── PARSER FICHA ──
+function parseFichaRelatorio(txt) {
+  var formas = {}, pdvs = [];
+  var lines = txt.split('\n');
+  lines.forEach(function(line){
+    var m = line.match(/^([A-Za-záàâãéèêíóôõúçÁÀÂÃÉÈÊÍÓÔÕÚÇ\s\/À-ú]+?)\s+(\d[\d.]*)\s+R\$\s*([\d.,]+)/);
+    if(m) {
+      var forma = m[1].trim();
+      var qty   = parseInt(m[2].replace(/\./g,''))||0;
+      var valor = parseFloat(m[3].replace(/\./g,'').replace(',','.'));
+      if(!isNaN(valor) && valor>0 && forma.length>1 && forma.length<40) {
+        if(formas[forma]) { formas[forma].qty+=qty; formas[forma].valor+=valor; }
+        else formas[forma] = { qty:qty, valor:valor };
+      }
+    }
+    var p = line.match(/PDV\s+(\S+)\s*[-–]\s*([^:]+?):\s*R\$\s*([\d.,]+)/i);
+    if(p) pdvs.push({ pdv:p[1], evento:p[2].trim(), valor:parseFloat(p[3].replace(/\./g,'').replace(',','.')) });
+  });
+  var total = 0;
+  Object.keys(formas).forEach(function(k){ total += formas[k].valor; });
+  return { formas:formas, pdvs:pdvs, total:total };
+}
+
+// ── GERAR FECHAMENTO FICHA ──
+function gerarFechamentoFicha() {
+  var evName = document.getElementById('fechFichaEvento').value.trim();
+  var relTxt = document.getElementById('fechFichaRelatorio').value.trim();
+  if(!evName) { alert('Informe o nome do evento.'); return; }
+  if(!relTxt) { alert('Cole o relatório de vendas.'); return; }
+
+  var d = parseFichaRelatorio(relTxt);
+  if(!d.total) { alert('Não foi possível ler o relatório. Verifique o formato.'); return; }
+
+  var taxaMap = {
+    debito:        parseFloat(document.getElementById('taxa-debito').value)||0,
+    credito:       parseFloat(document.getElementById('taxa-credito').value)||0,
+    'credito-parc':parseFloat(document.getElementById('taxa-credito-parc').value)||0,
+    pix:           parseFloat(document.getElementById('taxa-pix').value)||0,
+  };
+  function getTaxa(f) {
+    var k = f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(k.indexOf('debito')>-1) return taxaMap['debito'];
+    if(k.indexOf('parcelado')>-1||k.indexOf('parc')>-1) return taxaMap['credito-parc'];
+    if(k.indexOf('credito')>-1||k.indexOf('vista')>-1) return taxaMap['credito'];
+    if(k.indexOf('pix')>-1) return taxaMap['pix'];
+    return 0;
+  }
+
+  var dinheiro = 0;
+  Object.keys(d.formas).forEach(function(f){ if(f.toLowerCase().indexOf('dinheiro')>-1) dinheiro+=d.formas[f].valor; });
+  var totalCartao = d.total - dinheiro;
+
+  var linhasTaxa = [], totalTaxas = 0;
+  Object.keys(d.formas).forEach(function(f){
+    if(f.toLowerCase().indexOf('dinheiro')>-1) return;
+    var tx = getTaxa(f);
+    if(tx>0) { var vt=d.formas[f].valor*tx/100; totalTaxas+=vt; linhasTaxa.push({forma:f,taxa:tx,valor:d.formas[f].valor,desconto:vt}); }
+  });
+
+  var cobrancas = _fichaCobs.filter(function(c){ return c.desc&&parseFloat(c.val||0)>0; });
+  var totalCob  = cobrancas.reduce(function(s,c){ return s+parseFloat(c.val); },0);
+  var saquesSel = (financeiro||[]).filter(function(f){ return _fichaSaqSel.has(f.id); });
+  var totalSaques = saquesSel.reduce(function(s,f){ return s+f.valor; },0);
+  var cartaoLiq = totalCartao - totalTaxas;
+  var repasse   = cartaoLiq - totalCob - totalSaques;
+
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var linhas = [];
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  FECHAMENTO DE EVENTO');
+  linhas.push('  '+evName.toUpperCase());
+  linhas.push('  🍺 FICHA  •  '+hoje);
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('');
+  linhas.push('📊 VENDAS');
+  linhas.push('Total bruto: '+formatMoney(d.total));
+  Object.keys(d.formas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(d.formas[f].valor)+(d.formas[f].qty?' ('+d.formas[f].qty+' vend.)':'')); });
+  if(d.pdvs.length){ linhas.push(''); linhas.push('📍 PDVs'); d.pdvs.forEach(function(p){ linhas.push('  PDV '+p.pdv+' - '+p.evento+': '+formatMoney(p.valor)); }); }
+  if(linhasTaxa.length){ linhas.push(''); linhas.push('💼 TAXAS CARTÃO'); linhasTaxa.forEach(function(l){ linhas.push('  Taxa '+l.forma+' '+l.taxa+'%: - '+formatMoney(l.desconto)); }); }
+  if(cobrancas.length){ linhas.push(''); linhas.push('💼 COBRANÇAS'); cobrancas.forEach(function(c){ linhas.push('  '+c.desc+': - '+formatMoney(parseFloat(c.val))); }); }
+  if(saquesSel.length){ linhas.push(''); linhas.push('💸 SAQUES ANTECIPADOS'); saquesSel.forEach(function(f){ linhas.push('  '+f.nome+': - '+formatMoney(f.valor)); }); }
+  linhas.push(''); linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  Total bruto:          '+formatMoney(d.total));
+  linhas.push('  (-) Dinheiro produtor: '+formatMoney(dinheiro));
+  if(totalTaxas>0) linhas.push('  (-) Taxas cartao:      '+formatMoney(totalTaxas));
+  if(totalCob>0)   linhas.push('  (-) Cobrancas:         '+formatMoney(totalCob));
+  if(totalSaques>0)linhas.push('  (-) Saques antecip.:   '+formatMoney(totalSaques));
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  REPASSE AO PRODUTOR: '+formatMoney(repasse));
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('Easytick • '+hoje);
+
+  window._fechTxt = window._fechTxt||{};
+  window._fechTxt.fichaTxt = linhas.join('\n');
+  window._fechDadosFicha = { tipo:'ficha', evento:evName, hoje:hoje, total:d.total, dinheiro:dinheiro, formas:d.formas, pdvs:d.pdvs, linhasTaxa:linhasTaxa, totalTaxas:totalTaxas, cobrancas:cobrancas, totalCob:totalCob, saques:saquesSel, totalSaques:totalSaques, totalCartao:totalCartao, cartaoLiq:cartaoLiq, repasse:repasse };
+
+  document.getElementById('fechFichaResultado').textContent = linhas.join('\n');
+  document.getElementById('fechFichaResultadoWrap').style.display = 'block';
+  document.getElementById('fechFichaResultadoWrap').scrollIntoView({behavior:'smooth'});
+}
+
+// ── PARSER INGRESSO ──
+function extrairDadosRelatorio(txt) {
+  var formas = {}, cupons = 0, totalGeral = 0;
+  var lines = txt.split('\n');
+  lines.forEach(function(line){
+    var tg = line.match(/Total geral[^R]*R\$\s*([\d.,]+)/i);
+    if(tg) { totalGeral = parseFloat(tg[1].replace(/\./g,'').replace(',','.')); return; }
+    var dc = line.match(/Cupom|Desconto|Promo/i);
+    var dcVal = line.match(/R\$\s*([\d.,]+)/);
+    if(dc && dcVal) cupons += parseFloat(dcVal[1].replace(/\./g,'').replace(',','.'));
+    var m = line.match(/^(.+?)\s+(\d[\d.]*)\s+R\$\s*([\d.,]+)(?:\s+R\$\s*([\d.,]+))?(?:\s+R\$\s*([\d.,]+))?/);
+    if(m) {
+      var forma = m[1].trim();
+      if(forma.length<3||forma.length>40) return;
+      var qty   = parseInt(m[2].replace(/\./g,''))||0;
+      var rawVal = m[5]||m[4]||m[3]||'0';
+      var valor  = parseFloat(rawVal.replace(/\./g,'').replace(',','.'));
+      if(!isNaN(valor)&&valor>0) {
+        if(formas[forma]) { formas[forma].qty+=qty; formas[forma].valor+=valor; }
+        else formas[forma] = { qty:qty, valor:valor };
+      }
+    }
+  });
+  return { formas:formas, cupons:cupons, totalGeral:totalGeral };
+}
+
+// ── GERAR FECHAMENTO INGRESSO ──
+function gerarFechamentoIngresso() {
+  var evName = document.getElementById('fechIngressoEvento').value.trim();
+  var txtLV  = document.getElementById('fechIngressoLojaVirtual').value.trim();
+  var txtApp = document.getElementById('fechIngressoApp').value.trim();
+  if(!evName) { alert('Informe o nome do evento.'); return; }
+  if(!txtLV)  { alert('Cole o relatório Loja Virtual.'); return; }
+
+  var dadosLV  = extrairDadosRelatorio(txtLV);
+  var dadosApp = txtApp ? extrairDadosRelatorio(txtApp) : null;
+
+  var totalLVBruto = 0;
+  Object.keys(dadosLV.formas).forEach(function(f){ totalLVBruto+=dadosLV.formas[f].valor; });
+  if(!totalLVBruto&&dadosLV.totalGeral) totalLVBruto=dadosLV.totalGeral;
+  var descontosLV = dadosLV.cupons||0;
+  var totalLVLiq  = totalLVBruto - descontosLV;
+
+  var appDigital = 0, appMaquinas = {};
+  if(dadosApp) {
+    Object.keys(dadosApp.formas).forEach(function(f){
+      var fk = f.toLowerCase();
+      if(fk.indexOf('nao inform')>-1||fk.indexOf('não inform')>-1) appDigital+=dadosApp.formas[f].valor;
+      else appMaquinas[f] = dadosApp.formas[f];
+    });
+  }
+
+  var cobrancas  = _ingressoCobs.filter(function(c){ return c.desc&&parseFloat(c.val||0)>0; });
+  var totalCob   = cobrancas.reduce(function(s,c){ return s+parseFloat(c.val); },0);
+  var saquesSel  = (financeiro||[]).filter(function(f){ return _ingressoSaqSel.has(f.id); });
+  var totalSaques= saquesSel.reduce(function(s,f){ return s+f.valor; },0);
+  var repasse    = totalLVLiq - totalCob - totalSaques;
+
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var linhas = [];
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  FECHAMENTO DE EVENTO');
+  linhas.push('  '+evName.toUpperCase());
+  linhas.push('  🎟️ INGRESSO  •  '+hoje);
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('');
+  if(dadosApp) { linhas.push('📊 TOTAL GERAL DO EVENTO'); linhas.push('  (-) Digital/App (produtor): - '+formatMoney(appDigital)); linhas.push(''); }
+  linhas.push('🏪 LOJA VIRTUAL');
+  linhas.push('  Bruto:   '+formatMoney(totalLVBruto));
+  Object.keys(dadosLV.formas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(dadosLV.formas[f].valor)+(dadosLV.formas[f].qty?' ('+dadosLV.formas[f].qty+')':'')); });
+  if(descontosLV>0) linhas.push('  (-) Cupons: - '+formatMoney(descontosLV));
+  linhas.push('  Liquido: '+formatMoney(totalLVLiq));
+  if(Object.keys(appMaquinas).length){ linhas.push(''); linhas.push('📱 APP — MAQUINAS PDV'); Object.keys(appMaquinas).forEach(function(f){ linhas.push('  '+f+': '+formatMoney(appMaquinas[f].valor)); }); }
+  if(cobrancas.length){ linhas.push(''); linhas.push('💼 COBRANÇAS'); cobrancas.forEach(function(c){ linhas.push('  '+c.desc+': - '+formatMoney(parseFloat(c.val))); }); }
+  if(saquesSel.length){ linhas.push(''); linhas.push('💸 SAQUES ANTECIPADOS'); saquesSel.forEach(function(f){ linhas.push('  '+f.nome+': - '+formatMoney(f.valor)); }); }
+  linhas.push(''); linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  Base (LV liquido):    '+formatMoney(totalLVLiq));
+  if(totalCob>0)    linhas.push('  (-) Cobrancas:       '+formatMoney(totalCob));
+  if(totalSaques>0) linhas.push('  (-) Saques antecip.: '+formatMoney(totalSaques));
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('  REPASSE AO PRODUTOR: '+formatMoney(repasse));
+  linhas.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  linhas.push('Easytick • '+hoje);
+
+  window._fechTxt = window._fechTxt||{};
+  window._fechTxt.ingressoTxt = linhas.join('\n');
+  window._fechDadosIngresso = { tipo:'ingresso', evento:evName, hoje:hoje, totalLVBruto:totalLVBruto, descontosLV:descontosLV, totalLVLiq:totalLVLiq, appDigital:appDigital, appMaquinas:appMaquinas, formasLV:dadosLV.formas, cobrancas:cobrancas, totalCob:totalCob, saques:saquesSel, totalSaques:totalSaques, repasse:repasse };
+
+  document.getElementById('fechIngressoResultado').textContent = linhas.join('\n');
+  document.getElementById('fechIngressoResultadoWrap').style.display = 'block';
+  document.getElementById('fechIngressoResultadoWrap').scrollIntoView({behavior:'smooth'});
+}
+
+// ── COPIAR TEXTO ──
+function copiarFechamento(tipo) {
+  var txt = (window._fechTxt||{})[tipo]||'';
+  if(!txt) { alert('Gere o fechamento primeiro.'); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){ alert('Copiado!'); });
+  } else {
+    var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('Copiado!');
+  }
+}
+
+// ── GERAR IMAGEM (html2canvas) ──
+function fmtImg(v) {
+  return 'R$ '+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function baixarImagemFechamento(tipo) {
+  var d = tipo==='ficha' ? window._fechDadosFicha : window._fechDadosIngresso;
+  if(!d) { alert('Gere o fechamento antes de baixar a imagem.'); return; }
+
+  var evento = d.evento.toUpperCase(), hoje = d.hoje;
+  var tipoLabel = tipo==='ficha' ? '🍺 FICHA' : '🎟️ INGRESSO';
+  var F = 'font-family:Arial,Helvetica,sans-serif;';
+
+  var html = '<div id="fech-img-wrap" style="'+F+'width:680px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.18)">';
+
+  // Header
+  html += '<div style="background:#1a3a6b;padding:20px 28px 16px;color:#fff;">'+
+    '<div style="'+F+'font-size:11px;font-weight:700;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px">Easytick — Fechamento de Evento</div>'+
+    '<div style="'+F+'font-size:20px;font-weight:700;color:#fff;line-height:1.2">'+evento+'</div>'+
+    '<div style="'+F+'font-size:13px;color:rgba(255,255,255,0.7);margin-top:6px">'+tipoLabel+'&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>'+
+  '</div>';
+
+  if(tipo==='ficha') {
+    var fd = d;
+    // Composição — tabela de formas
+    html += '<div style="background:#f8fafc;padding:14px 28px 10px;">';
+    html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px">Composição das vendas</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<tr style="border-bottom:1px solid #e2e8f0"><th style="'+F+'text-align:left;padding:4px 0;color:#64748b;font-size:11px">Forma</th><th style="'+F+'text-align:right;padding:4px 0;color:#64748b;font-size:11px">Qtd</th><th style="'+F+'text-align:right;padding:4px 0;color:#64748b;font-size:11px">Valor</th></tr>';
+    Object.keys(fd.formas).forEach(function(f){
+      var isDin = f.toLowerCase().indexOf('dinheiro')>-1;
+      html += '<tr style="background:'+(isDin?'#fef9c3':'#fff')+';border-bottom:1px dashed #e5e7eb">'+
+        '<td style="'+F+'padding:5px 4px;font-weight:'+(isDin?'600':'400')+'">'+f+'</td>'+
+        '<td style="'+F+'text-align:right;padding:5px 4px;color:#374151">'+(fd.formas[f].qty||'—')+'</td>'+
+        '<td style="'+F+'text-align:right;padding:5px 4px;font-weight:600">'+fmtImg(fd.formas[f].valor)+'</td>'+
+      '</tr>';
+    });
+    html += '<tr style="background:#f1f5f9"><td style="'+F+'padding:6px 4px;font-weight:700" colspan="2">Total bruto</td><td style="'+F+'text-align:right;font-weight:700;padding:6px 4px">'+fmtImg(fd.total)+'</td></tr>';
+    html += '</table></div>';
+    // Base cartão
+    html += '<div style="background:#eef4fd;border-left:4px solid #185fa5;padding:12px 28px;">'+
+      '<div style="'+F+'font-size:11px;font-weight:700;color:#185fa5;letter-spacing:.08em;text-transform:uppercase">Total entrada cartão</div>'+
+      '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;margin-top:3px">'+fmtImg(fd.totalCartao)+'</div>'+
+    '</div>';
+    // Taxas
+    if(fd.linhasTaxa&&fd.linhasTaxa.length) {
+      html += '<div style="padding:10px 28px 4px;">';
+      html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px">Descontos taxas cartão</div>';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      html += '<tr style="border-bottom:1px solid #e2e8f0"><th style="'+F+'text-align:left;padding:3px 0;color:#64748b">Modalidade</th><th style="'+F+'text-align:right;color:#64748b">Total bruto</th><th style="'+F+'text-align:right;color:#64748b">Taxa%</th><th style="'+F+'text-align:right;color:#64748b">Desconto</th></tr>';
+      fd.linhasTaxa.forEach(function(l){
+        html += '<tr style="border-bottom:1px dashed #e5e7eb">'+
+          '<td style="'+F+'padding:4px 0">'+l.forma+'</td>'+
+          '<td style="'+F+'text-align:right">'+fmtImg(l.valor)+'</td>'+
+          '<td style="'+F+'text-align:right">'+l.taxa+'%</td>'+
+          '<td style="'+F+'text-align:right;color:#dc2626;font-weight:600">- '+fmtImg(l.desconto)+'</td>'+
+        '</tr>';
+      });
+      html += '</table></div>';
+    }
+    // Cobranças + Saques
+    if((fd.cobrancas&&fd.cobrancas.length)||(fd.saques&&fd.saques.length)){
+      html += '<div style="padding:8px 28px 0;">';
+      if(fd.cobrancas&&fd.cobrancas.length){
+        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Cobranças / despesas</div>';
+        fd.cobrancas.forEach(function(c){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+c.desc+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(parseFloat(c.val))+'</span></div>'; });
+      }
+      if(fd.saques&&fd.saques.length){
+        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Saques antecipados</div>';
+        fd.saques.forEach(function(s){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+s.nome+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(s.valor)+'</span></div>'; });
+      }
+      html += '</div>';
+    }
+    html += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">'+
+      '<span style="font-size:14px;font-weight:600;color:#374151">Total deduções</span>'+
+      '<span style="font-size:14px;font-weight:700;color:#dc2626">- '+fmtImg(fd.totalTaxas+fd.totalCob+fd.totalSaques)+'</span>'+
+    '</div>';
+
+  } else {
+    // INGRESSO
+    var id = d;
+    html += '<div style="background:#f8fafc;padding:14px 28px 10px;">';
+    html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:4px">Loja Virtual</div>';
+    Object.keys(id.formasLV).forEach(function(f){
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+f+'</span><span style="'+F+'font-weight:600">'+fmtImg(id.formasLV[f].valor)+'</span></div>';
+    });
+    if(id.descontosLV>0) html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'color:#6b7280">(-) Cupons/Descontos</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(id.descontosLV)+'</span></div>';
+    html += '</div>';
+    if(id.appDigital>0) html += '<div style="background:#fef9c3;padding:8px 28px;display:flex;justify-content:space-between;font-size:13px"><span style="'+F+'color:#92400e">App Digital (fica com produtor)</span><span style="'+F+'color:#92400e;font-weight:600">'+fmtImg(id.appDigital)+'</span></div>';
+    html += '<div style="background:#eef4fd;border-left:4px solid #185fa5;padding:12px 28px;">'+
+      '<div style="'+F+'font-size:11px;font-weight:700;color:#185fa5;text-transform:uppercase;letter-spacing:.08em">Base do repasse (LV líquido)</div>'+
+      '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;margin-top:3px">'+fmtImg(id.totalLVLiq)+'</div>'+
+    '</div>';
+    if((id.cobrancas&&id.cobrancas.length)||(id.saques&&id.saques.length)){
+      html += '<div style="padding:8px 28px 0;">';
+      if(id.cobrancas&&id.cobrancas.length){
+        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Cobranças / despesas</div>';
+        id.cobrancas.forEach(function(c){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+c.desc+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(parseFloat(c.val))+'</span></div>'; });
+      }
+      if(id.saques&&id.saques.length){
+        html += '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:8px 0 2px">Saques antecipados</div>';
+        id.saques.forEach(function(s){ html += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e5e7eb;font-size:13px"><span style="'+F+'">'+s.nome+'</span><span style="'+F+'color:#dc2626;font-weight:600">- '+fmtImg(s.valor)+'</span></div>'; });
+      }
+      html += '</div>';
+    }
+    html += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">'+
+      '<span style="font-size:14px;font-weight:600;color:#374151">Total deduções</span>'+
+      '<span style="font-size:14px;font-weight:700;color:#dc2626">- '+fmtImg(id.totalCob+id.totalSaques)+'</span>'+
+    '</div>';
+  }
+
+  // Repasse final
+  html += '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">'+
+    '<div>'+
+      '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em">Repasse ao produtor</div>'+
+      '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>'+
+    '</div>'+
+    '<div style="'+F+'font-size:28px;font-weight:700;color:#fff">'+fmtImg(d.repasse)+'</div>'+
+  '</div>';
+  html += '<div style="padding:10px 28px;text-align:center;">'+
+    '<span style="'+F+'font-size:11px;color:#94a3b8">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>'+
+  '</div>';
+  html += '</div>';
+
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  function capturar() {
+    html2canvas(wrapper.querySelector('#fech-img-wrap'), {
+      scale:2.5, useCORS:true, backgroundColor:'#ffffff', logging:false, windowWidth:760
+    }).then(function(canvas){
+      document.body.removeChild(wrapper);
+      var link = document.createElement('a');
+      link.download = 'fechamento-'+evento.toLowerCase().replace(/[^a-z0-9]/g,'-')+'-'+hoje.replace(/\//g,'-')+'.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(e){ document.body.removeChild(wrapper); alert('Erro ao gerar imagem: '+e.message); });
+  }
+
+  if(typeof html2canvas !== 'undefined') {
+    capturar();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = capturar;
+    script.onerror = function(){ alert('Erro ao carregar html2canvas.'); document.body.removeChild(wrapper); };
+    document.head.appendChild(script);
+  }
+}
 
 </script>
 </body>
