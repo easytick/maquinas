@@ -3654,15 +3654,23 @@ function getRecStatus(r) {
   }
 
   // MENSAL (default)
+  // Logica: o proximo vencimento esperado e calculado a partir do ultimo pagamento.
+  // Se nao pagou no ciclo atual (mes corrente ou anterior sem pagamento), acumula como pendencia.
   var dd = parseInt(r.diaVenc);
+  var proxVencMensal;
   if (lastPag) {
-    var lastDate = new Date(lastPag.data + 'T00:00:00');
-    if (lastDate.getFullYear() === year && lastDate.getMonth() === month) return 'emdia';
+    var lastDateM = new Date(lastPag.data + 'T00:00:00');
+    // Proximo vencimento = mes seguinte ao do ultimo pagamento, no mesmo dia
+    proxVencMensal = new Date(lastDateM.getFullYear(), lastDateM.getMonth() + 1, dd);
+  } else {
+    // Nunca pagou: vencimento do mes atual (ou passado se ja passou)
+    proxVencMensal = new Date(year, month, dd);
+    // Se o dia de vencimento deste mes ainda nao chegou e nunca houve pagamento,
+    // considera como pendente desde o primeiro mes (nao deixa em "emdia" sem ter pago)
   }
-  var vencThisMonth = new Date(year, month, dd);
-  var diff = Math.floor((now - vencThisMonth) / (1000*60*60*24));
-  if (diff > 0) return 'atrasado';
-  if (diff >= -5) return 'vencendo';
+  var diffM = Math.floor((now - proxVencMensal) / (1000*60*60*24));
+  if (diffM > 0) return 'atrasado';
+  if (diffM >= -5) return 'vencendo';
   return 'emdia';
 }
 
