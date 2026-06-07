@@ -10,11 +10,22 @@ Aplicacao web SPA (Single Page Application) em HTML/CSS/JS puro com Firebase com
 - **Backend:** Firebase Realtime Database + Firebase Auth
 - **Dependencias externas (CDN):** firebase-app-compat, firebase-auth-compat, firebase-database-compat (v9.23.0)
 
-## Estrutura do arquivo index.html
+## Estrutura de arquivos
 
-1. `<head>` — imports Firebase CDN + todo o CSS inline
-2. `<body>` — telas de login e app, paginas, nav inferior, modais
-3. `<script>` — toda a logica JS (linha ~1252 em diante)
+O codigo foi modularizado a partir do `index.html` original. Atualmente:
+
+- `index.html` — estrutura HTML + importa CSS e JS externos
+- `css/styles.css` — todo o CSS da aplicacao
+- `js/01-config.js` — configuracao Firebase
+- `js/02-utils.js` — funcoes utilitarias (datas, formatacao, etc)
+- `js/03-nav.js` — navegacao entre paginas
+- `js/04-dashboard.js` — dashboard e alertas do dia
+- `js/05-machines.js` — logica da aba Maquinas (cadastro, saida, entrada, reserva, render)
+- `js/06-actions.js` — operacoes em lote (aba Acoes)
+- `js/07-financeiro.js` — logica financeira
+- `js/08-fechamento.js` — fechamento de eventos
+- `js/09-recorrentes.js` — clientes recorrentes
+- `js/10-admin.js` — funcoes administrativas
 
 ## Paginas (bottom nav — 6 abas)
 
@@ -91,6 +102,16 @@ Disponivel --> Manutencao --> Disponivel
 - `save()` e `saveFinanceiro()` escrevem todo o objeto de volta no Firebase
 - Autocomplete reutilizavel: `showAutocomplete()`, `handleAutocompleteKey()`, `hideAutocomplete()`
 - Hooks de listeners encadeados com pattern `var _orig = fn; fn = function(){ _orig(); novoCodigo(); }`
+
+## Aba Maquinas — layout de cards
+
+Cada maquina e exibida como um card colapsavel:
+
+- **Fechado (padrao):** serial em negrito + marca em cinza + badge de status + botao ▼
+- **Aberto:** clique no card ou no ▼ expande e mostra info do estado atual + botoes de acao + historico
+- Estado de expansao controlado por `expandedMachines{}` em memoria (nao persiste no Firebase)
+- `toggleMachineExpand(serial)` — alterna aberto/fechado e re-renderiza
+- Classes CSS relevantes: `.machine-item`, `.machine-compact-row`, `.machine-expand-btn`, `.machine-detail`
 
 ## Marcas suportadas
 
