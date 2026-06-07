@@ -88,17 +88,23 @@ body{font-family:Arial,Helvetica,sans-serif;background:#f4f7fb;color:#1f2937;min
 .atraso-group h3 button{font-size:11px;padding:4px 10px;width:auto}
 
 /* MACHINE CARDS */
-.machine-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
-.machine-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
-.machine-serial{font-size:16px;font-weight:bold;color:#111827}
-.machine-brand{font-size:12px;color:#6b7280;margin-top:1px}
-.status{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
+.machine-item{background:#fff;border-radius:14px;margin-bottom:8px;box-shadow:var(--shadow);overflow:hidden}
+.machine-compact-row{display:flex;align-items:center;padding:12px 14px;gap:10px;cursor:pointer;user-select:none}
+.machine-compact-row:active{background:#f9fafb}
+.machine-compact-row>div:first-child{flex:1}
+.machine-serial{font-size:15px;font-weight:bold;color:#111827}
+.machine-expand-btn{background:none;border:none;color:#9ca3af;font-size:16px;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border-radius:6px;transition:transform .2s,color .15s}
+.machine-item.expanded .machine-expand-btn{transform:rotate(180deg);color:var(--blue)}
+.machine-detail{display:none;padding:10px 14px 14px;border-top:1px solid var(--border)}
+.machine-item.expanded .machine-detail{display:block}
+.machine-brand{font-size:12px;color:#6b7280;margin-bottom:8px}
+.status{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:bold;white-space:nowrap}
 .disponivel{background:#dcfce7;color:#166534}
 .em-uso{background:#fee2e2;color:#991b1b}
 .manutencao{background:#e5e7eb;color:#374151}
 .reservada-hoje{background:#fef3c7;color:#92400e}
 .em-atraso{background:#fce7f3;color:#9d174d}
-.machine-info{border-top:1px solid var(--border);margin-top:7px;padding-top:7px;font-size:12px;color:#374151;line-height:1.6}
+.machine-info{margin-bottom:10px;font-size:12px;color:#374151;line-height:1.6}
 .machine-info p{margin:2px 0}
 .alert-reservada{margin-top:7px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
 .alert-atraso-card{margin-top:7px;padding:6px 10px;background:#fce7f3;border:1px solid #f9a8d4;border-radius:8px;font-size:12px;color:#9d174d}

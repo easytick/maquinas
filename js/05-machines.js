@@ -142,6 +142,15 @@ function openCadastroModal(){ document.getElementById('cadastroModal').classList
 function closeCadastroModal(){ document.getElementById('cadastroModal').classList.remove('open'); }
 
 // ═══════════════════════════════════════════
+// EXPAND STATE (in-memory, not persisted)
+// ═══════════════════════════════════════════
+var expandedMachines = {};
+function toggleMachineExpand(serial) {
+  expandedMachines[serial] = !expandedMachines[serial];
+  renderMachines();
+}
+
+// ═══════════════════════════════════════════
 // STATUS FILTER (CHIPS)
 // ═══════════════════════════════════════════
 var currentStatusFilter = '';
@@ -204,8 +213,19 @@ function renderMachines() {
     if(rs==='Em uso'||rs==='Em atraso') acoesHtml='<div class="actions-row"><button class="btn-entrada" onclick="registerEntry(\''+m.serial+'\')">📥 Registrar entrada</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button></div>';
     if(rs==='Manutencao') acoesHtml='<div class="actions-row"><button style="background:var(--green)" onclick="returnFromMaintenance(\''+m.serial+'\')">Liberar</button><button class="btn-secundario" onclick="toggleHistory(\''+m.serial+'\')">'+(m.showHistory?'Ocultar':'Historico')+'</button><button class="btn-danger" onclick="deleteMachine(\''+m.serial+'\')">Excluir</button></div>';
     var historyHtml=m.showHistory?'<div class="history-box">'+(m.history.length===0?'<p>Sem historico.</p>':m.history.slice().reverse().map(function(h){return'<div class="history-item"><b>'+h.type.toUpperCase()+(h.batch?' EM LOTE':'')+'</b>'+(h.event?'<br>Evento: '+h.event:'')+(h.city?'<br>Cidade: '+h.city:'')+(h.address?'<br>Endereco: '+h.address:'')+(h.startDate?'<br>'+formatDate(h.startDate)+' ate '+formatDate(h.endDate):'')+(h.observation?'<br>Obs: '+h.observation:'')+'<br><small style="color:#9ca3af">'+formatDateTime(h.date)+'</small>'+(h.user?'<br><span class="history-user">'+h.user+'</span>':'')+'</div>';}).join(''))+'</div>':'';
-    var div=document.createElement('div'); div.className='machine-item';
-    div.innerHTML='<div class="machine-header"><div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div><span class="status '+getStatusClass(rs)+'">'+rs+'</span></div><div class="machine-info">'+infoHtml+'</div><div class="actions">'+acoesHtml+'</div>'+historyHtml;
+    var isExpanded=!!expandedMachines[m.serial];
+    var div=document.createElement('div'); div.className='machine-item'+(isExpanded?' expanded':'');
+    div.innerHTML=
+      '<div class="machine-compact-row" onclick="toggleMachineExpand(\''+m.serial+'\')">'+
+        '<div><div class="machine-serial">'+m.serial+'</div><div class="machine-brand">'+m.brand+'</div></div>'+
+        '<span class="status '+getStatusClass(rs)+'">'+rs+'</span>'+
+        '<button class="machine-expand-btn" onclick="event.stopPropagation();toggleMachineExpand(\''+m.serial+'\')">▼</button>'+
+      '</div>'+
+      '<div class="machine-detail">'+
+        '<div class="machine-info">'+infoHtml+'</div>'+
+        '<div class="actions">'+acoesHtml+'</div>'+
+        historyHtml+
+      '</div>';
     list.appendChild(div);
   });
 }
