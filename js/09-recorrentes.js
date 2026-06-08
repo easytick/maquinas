@@ -162,7 +162,7 @@ function cadastrarRecorrente(e) {
   var nome = document.getElementById('recNome').value.trim();
   var tipo = document.getElementById('recTipo').value;
   var freq = document.getElementById('recFrequencia').value;
-  var valor = parseFloat(document.getElementById('recValor').value);
+  var valor = parseMoney(document.getElementById('recValor').value);
   var diaVenc = freq==='unica' ? 0 : parseInt(document.getElementById('recDiaVenc').value)||0;
   var mesVenc = freq==='anual' ? parseInt(document.getElementById('recMesVenc').value)||0 : 0;
   var obs = document.getElementById('recObs').value.trim();
@@ -214,7 +214,7 @@ function openRecEditModal(id) {
   document.getElementById('recEditNome').value=r.nome;
   document.getElementById('recEditTipo').value=r.tipo;
   document.getElementById('recEditFrequencia').value=r.frequencia||'mensal';
-  document.getElementById('recEditValor').value=r.valor;
+  setMoneyValue('recEditValor', r.valor);
   document.getElementById('recEditDiaVenc').value=r.diaVenc||'';
   document.getElementById('recEditMesVenc').value=r.mesVenc||1;
   document.getElementById('recEditObs').value=r.obs||'';
@@ -229,7 +229,7 @@ function salvarEditRecorrente(e) {
   r.nome=document.getElementById('recEditNome').value.trim();
   r.tipo=document.getElementById('recEditTipo').value;
   r.frequencia=document.getElementById('recEditFrequencia').value;
-  r.valor=parseFloat(document.getElementById('recEditValor').value);
+  r.valor=parseMoney(document.getElementById('recEditValor').value);
   r.diaVenc=r.frequencia==='unica'?0:parseInt(document.getElementById('recEditDiaVenc').value)||0;
   r.mesVenc=r.frequencia==='anual'?parseInt(document.getElementById('recEditMesVenc').value)||0:0;
   r.obs=document.getElementById('recEditObs').value.trim();

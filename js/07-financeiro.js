@@ -63,7 +63,7 @@ function parsePixText() {
 
   if(nome)  document.getElementById('finEvento').value = nome;
   if(dest)  document.getElementById('finNome').value   = dest;
-  if(valor) document.getElementById('finValor').value  = valor;
+  if(valor) setMoneyValue('finValor', valor);
 
   if(chave) {
     document.getElementById('finTipoPagamento').value = 'Pix';
@@ -102,7 +102,7 @@ function setPixTipoByName(name) {
 }
 var finItens = [];
 function adicionarItem(){
-  var tipoLanc=document.getElementById('finTipoLancamento').value,evento=document.getElementById('finEvento').value.trim(),nome=document.getElementById('finNome').value.trim(),tipoPag=document.getElementById('finTipoPagamento').value,valor=parseFloat(document.getElementById('finValor').value),obs=document.getElementById('finObs').value.trim();
+  var tipoLanc=document.getElementById('finTipoLancamento').value,evento=document.getElementById('finEvento').value.trim(),nome=document.getElementById('finNome').value.trim(),tipoPag=document.getElementById('finTipoPagamento').value,valor=parseMoney(document.getElementById('finValor').value),obs=document.getElementById('finObs').value.trim();
   var chave='';
   if(tipoPag==='Pix') chave=_pixTipo+': '+(document.getElementById('finChavePix').value.trim()||'');
   else if(document.getElementById('naoPixFields').style.display!=='none') chave=document.getElementById('finChaveOutros').value.trim();
@@ -126,7 +126,7 @@ function renderFinItens(){
 function removerItem(i){finItens.splice(i,1);renderFinItens();}
 
 function solicitarPagamento(){
-  var tipoLanc=document.getElementById('finTipoLancamento').value,evento=document.getElementById('finEvento').value.trim(),nome=document.getElementById('finNome').value.trim(),tipoPag=document.getElementById('finTipoPagamento').value,valor=parseFloat(document.getElementById('finValor').value),obs=document.getElementById('finObs').value.trim(),result=document.getElementById('finSolicitarResult');
+  var tipoLanc=document.getElementById('finTipoLancamento').value,evento=document.getElementById('finEvento').value.trim(),nome=document.getElementById('finNome').value.trim(),tipoPag=document.getElementById('finTipoPagamento').value,valor=parseMoney(document.getElementById('finValor').value),obs=document.getElementById('finObs').value.trim(),result=document.getElementById('finSolicitarResult');
   if(!tipoLanc||!evento||!nome||!tipoPag||!valor||valor<=0){alert('Preencha todos os campos obrigatorios.');return;}
   var chave='';
   if(tipoPag==='Pix') chave=_pixTipo+': '+(document.getElementById('finChavePix').value.trim()||'');
@@ -390,7 +390,7 @@ function openNovoSaldoModal() {
 function closeNovoSaldoModal() { document.getElementById('novoSaldoModal').classList.remove('open'); }
 function confirmarNovoSaldo() {
   var evName = document.getElementById('novoSaldoEvento').value;
-  var valor = parseFloat(document.getElementById('novoSaldoValor').value);
+  var valor = parseMoney(document.getElementById('novoSaldoValor').value);
   if (!evName) { alert('Selecione o evento.'); return; }
   if (!valor || valor <= 0) { alert('Informe o valor.'); return; }
   var un = getCurrentUserName();
@@ -425,7 +425,7 @@ function openAtualizarSaldoModal(evName) {
 function closeAtualizarSaldoModal() { document.getElementById('atualizarSaldoModal').classList.remove('open'); }
 function confirmarAtualizarSaldo() {
   var evName = document.getElementById('atualizarSaldoEvento').value;
-  var valor = parseFloat(document.getElementById('atualizarSaldoValor').value);
+  var valor = parseMoney(document.getElementById('atualizarSaldoValor').value);
   if (!valor || valor <= 0) { alert('Informe o valor.'); return; }
   var un = getCurrentUserName();
   if (!saldoEventos[evName]) saldoEventos[evName] = { ativo: true, historico: [] };

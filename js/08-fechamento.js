@@ -61,7 +61,7 @@ function renderManualForm() {
     return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">' +
       '<span style="flex:1;font-size:13px;color:#374151">' + f + (isDin ? ' 💵' : '') + '</span>' +
       '<span style="font-size:12px;color:#6b7280">R$</span>' +
-      '<input type="number" id="manual-forma-'+f.toLowerCase()+'" value="0" min="0" step="0.01" ' +
+      '<input type="text" class="money-input" id="manual-forma-'+f.toLowerCase()+'" placeholder="0,00" ' +
       'onchange="recalcManualTotal()" ' +
       'style="width:110px;font-size:13px;padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;text-align:right">' +
     '</div>';
@@ -73,6 +73,7 @@ function renderManualForm() {
   fechAddPdv(); // começa com 1 PDV
 
   document.getElementById('fech-manual-total') && (document.getElementById('fech-manual-total').textContent = 'R$ 0,00');
+  applyMoneyInputs();
 }
 
 function fechAddPdv() {
@@ -84,10 +85,11 @@ function fechAddPdv() {
   row.style.cssText = 'display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;margin-bottom:6px';
   row.innerHTML =
     '<input type="text" id="nome-'+id+'" placeholder="Nome do PDV" style="font-size:13px;padding:6px 8px">' +
-    '<input type="number" id="val-'+id+'" value="0" min="0" step="0.01" onchange="recalcManualTotal()" style="width:100px;font-size:13px;padding:6px 8px;text-align:right">' +
+    '<input type="text" class="money-input" id="val-'+id+'" placeholder="0,00" onchange="recalcManualTotal()" style="width:100px;font-size:13px;padding:6px 8px;text-align:right">' +
     '<button type="button" onclick="this.parentElement.remove();recalcManualTotal()" ' +
     'style="width:auto;padding:6px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:7px;font-size:12px;cursor:pointer">✕</button>';
   div.appendChild(row);
+  initMoneyInput(document.getElementById('val-'+id));
 }
 
 function recalcManualTotal() {
@@ -100,7 +102,7 @@ function confirmarManual() {
   var totalGeral = 0;
   formasNomes.forEach(function(f) {
     var el = document.getElementById('manual-forma-' + f.toLowerCase());
-    var v = el ? (parseFloat(el.value)||0) : 0;
+    var v = el ? (parseMoney(el.value)||0) : 0;
     formas[f] = { qtd: 0, valor: v };
     totalGeral += v;
   });
@@ -112,18 +114,18 @@ function confirmarManual() {
     var vEl = document.getElementById('val-manual-pdv-' + i);
     if (!nEl || !vEl) continue;
     var nome = nEl.value.trim() || ('PDV ' + i);
-    var val = parseFloat(vEl.value)||0;
+    var val = parseMoney(vEl.value)||0;
     pdvs[nome] = { qtd: 0, valor: val };
   }
   // Busca PDVs pelo container
   var pdvDiv2 = document.getElementById('fech-manual-pdvs');
   pdvs = {};
   pdvDiv2.querySelectorAll('div[id^="row-manual-pdv-"]').forEach(function(row) {
-    var nEl = row.querySelector('input[type="text"]');
-    var vEl = row.querySelector('input[type="number"]');
+    var nEl = row.querySelector('input[type="text"]:not(.money-input)');
+    var vEl = row.querySelector('.money-input');
     if (!nEl || !vEl) return;
     var nome = nEl.value.trim() || 'PDV';
-    var val = parseFloat(vEl.value)||0;
+    var val = parseMoney(vEl.value)||0;
     if (nome || val) pdvs[nome] = { qtd: 0, valor: val };
   });
 
@@ -152,11 +154,6 @@ function confirmarManual() {
   }
   document.getElementById('fech-passo1').style.display = 'none';
   document.getElementById('fech-passo2').style.display = 'block';
-}
-
-function parseMoney(str) {
-  if (!str) return 0;
-  return parseFloat(str.replace(/\./g,'').replace(',','.')) || 0;
 }
 
 // ── PARSER RELATORIO ──
@@ -402,7 +399,7 @@ function fechRecalcFormas(dinheiroOverride) {
   Object.keys(map).forEach(function(f) {
     var el = document.getElementById(map[f]);
     if (el) {
-      var v = parseFloat(el.value)||0;
+      var v = parseMoney(el.value)||0;
       d.formas[f].valor = v;
       totalGeral += v;
       if (/dinheiro/i.test(f)) dinheiro = v;
@@ -410,7 +407,7 @@ function fechRecalcFormas(dinheiroOverride) {
   });
   // Atualiza total bruto
   var tbInput = document.getElementById('fechTotalBrutoInput');
-  if (tbInput) totalGeral = parseFloat(tbInput.value)||totalGeral;
+  if (tbInput) totalGeral = parseMoney(tbInput.value)||totalGeral;
   d.totalGeral = totalGeral;
   d.dinheiro = (dinheiroOverride !== undefined) ? dinheiroOverride : dinheiro;
   // Atualiza aviso dinheiro
@@ -443,7 +440,7 @@ function renderDadosLidos() {
     if ((d.totalPdv||0) > 0)     linhasTotal += '<div style="font-size:11px;color:#374151">PDV físico: ' + formatMoney(d.totalPdv||0) + '</div>';
     tbEl.innerHTML = '<div style="text-align:right;line-height:1.8">' + linhasTotal + '</div>';
   } else {
-    tbEl.innerHTML = '<input type="number" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" min="0" step="0.01" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
+    tbEl.innerHTML = '<input type="text" class="money-input" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
   }
 
   // Formas editáveis
@@ -470,7 +467,7 @@ function renderDadosLidos() {
     var suffix = isDigital ? ' <span style="font-size:10px;color:#92400e;font-weight:bold">fica c/ produtor</span>' : '';
 
     row.innerHTML = '<span style="color:#374151;flex:1">' + icon + f + (v.qtd ? ' <span style="color:#9ca3af">('+v.qtd+')</span>' : '') + suffix + '</span>' +
-      '<input type="number" id="'+fId+'" value="'+v.valor.toFixed(2)+'" min="0" step="0.01" onchange="fechRecalcFormas()" ' +
+      '<input type="text" class="money-input" id="'+fId+'" value="'+v.valor.toFixed(2)+'" onchange="fechRecalcFormas()" ' +
       'style="width:110px;font-size:12px;font-weight:bold;color:'+(isRed?'#92400e':'#1f2937')+';border:1px solid var(--border);border-radius:6px;padding:3px 6px;text-align:right">' +
       (isRed ? '<span style="font-size:14px">💵</span>' : '');
     formasList.appendChild(row);
@@ -508,6 +505,7 @@ function renderDadosLidos() {
   var dinLabel = d.tipo === 'ingresso' ? (d.totalDigital||0) : dinheiro;
   document.getElementById('fechValorDinheiro').textContent = dinLabel.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   d.dinheiro = d.tipo === 'ingresso' ? (d.totalDigital||0) : dinheiro;
+  applyMoneyInputs();
 }
 
 // ── PARSER ORÇAMENTO ──
@@ -636,15 +634,15 @@ function renderCobrancas() {
       var v0 = (l.val||0).toFixed(2);
       body = '<div style="display:flex;align-items:center;gap:8px">' +
         '<span style="font-size:12px;color:#6b7280">R$</span>' +
-        '<input type="number" id="fi-'+l.id+'" value="'+v0+'" min="0" step="0.01" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+        '<input type="text" class="money-input" id="fi-'+l.id+'" value="'+v0+'" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(l.val||0)+'</span>' +
       '</div>';
 
     } else if (l.tipo === 'qtd_unit') {
       var calc0 = (l.qtd||0) * (l.unit||0);
       body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">' +
-        '<div><div style="font-size:11px;color:#6b7280">Qtd</div><input type="number" id="fq-'+l.id+'" value="'+(l.qtd||0)+'" min="0" step="1" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
-        '<div><div style="font-size:11px;color:#6b7280">Valor unit. (R$)</div><input type="number" id="fu-'+l.id+'" value="'+(l.unit||0).toFixed(2)+'" min="0" step="0.01" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
+        '<div><div style="font-size:11px;color:#6b7280">Qtd</div><input type="number" id="fq-'+l.id+'" inputmode="numeric" value="'+(l.qtd||0)+'" min="0" step="1" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
+        '<div><div style="font-size:11px;color:#6b7280">Valor unit. (R$)</div><input type="text" class="money-input" id="fu-'+l.id+'" value="'+(l.unit||0).toFixed(2)+'" onchange="recalcFech()" style="font-size:13px;padding:6px 8px;margin-top:2px"></div>' +
       '</div>' +
       (l.obs ? '<div style="font-size:11px;color:#9ca3af;margin-top:3px">'+l.obs+'</div>' : '') +
       '<div style="text-align:right;margin-top:5px;font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calc0)+'</div>';
@@ -655,7 +653,7 @@ function renderCobrancas() {
       var calcP = baseV * (l.pct||0) / 100;
       body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: <b>'+formatMoney(baseV)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:6px">' +
-        '<input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+        '<input type="number" id="fp-'+l.id+'" inputmode="decimal" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="color:#6b7280;font-size:13px">%</span>' +
         '<span style="font-size:13px;font-weight:bold;color:var(--red)" id="ft-'+l.id+'">- '+formatMoney(calcP)+'</span>' +
       '</div>';
@@ -666,7 +664,7 @@ function renderCobrancas() {
       var calcT = baseT * (l.pct||0) / 100;
       body = '<div style="font-size:11px;color:#6b7280;margin-bottom:6px">Base: <b>'+formatMoney(baseT)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-        '<input type="number" id="fp-'+l.id+'" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
+        '<input type="number" id="fp-'+l.id+'" inputmode="decimal" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="color:#6b7280;font-size:13px">%</span>' +
         '</div>' +
         '<div style="display:flex;gap:6px;align-items:center">' +
@@ -682,6 +680,7 @@ function renderCobrancas() {
   });
 
   recalcFech();
+  applyMoneyInputs();
 }
 
 function toggleRespTaxa(id) {
@@ -736,10 +735,10 @@ function getLinhaValor(l) {
   var d = window._fechDados;
 
   if (l.tipo === 'fixo' || l.tipo === 'livre') {
-    return parseFloat(document.getElementById('fi-'+l.id).value)||0;
+    return parseMoney(document.getElementById('fi-'+l.id).value)||0;
   } else if (l.tipo === 'qtd_unit') {
     var q = parseFloat(document.getElementById('fq-'+l.id).value)||0;
-    var u = parseFloat(document.getElementById('fu-'+l.id).value)||0;
+    var u = parseMoney(document.getElementById('fu-'+l.id).value)||0;
     return q * u;
   } else if (l.tipo === 'pct') {
     var base = getBaseForma(d.formas, l.forma);
@@ -1619,19 +1618,20 @@ function abrirBaixaManual(fid) {
       '</div>' +
       '<div style="display:grid;gap:10px">' +
         '<label style="font-size:12px;font-weight:bold;color:var(--gray)">Valor recebido<br>' +
-          '<input type="number" id="baixa-val" min="0.01" step="0.01" value="' + saldo.toFixed(2) + '" style="margin-top:4px"></label>' +
+          '<input type="text" class="money-input" id="baixa-val" value="' + saldo.toFixed(2) + '" style="margin-top:4px"></label>' +
         '<label style="font-size:12px;font-weight:bold;color:var(--gray)">Observacao<br>' +
           '<input type="text" id="baixa-obs" placeholder="Ex: Pix direto, dinheiro na mao..." style="margin-top:4px"></label>' +
         '<button type="button" onclick="salvarBaixaManual(\'' + fid + '\')" style="background:var(--green)">Confirmar baixa</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
+  applyMoneyInputs();
 }
 
 function salvarBaixaManual(fid) {
   var valEl = document.getElementById('baixa-val');
   var obsEl = document.getElementById('baixa-obs');
-  var valor = parseFloat(valEl ? valEl.value : 0) || 0;
+  var valor = parseMoney(valEl ? valEl.value : 0) || 0;
   if (valor <= 0) { alert('Informe um valor valido.'); return; }
   var obs = obsEl ? obsEl.value.trim() : '';
   var key = 'bx_' + Date.now();

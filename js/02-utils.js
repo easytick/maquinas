@@ -8,6 +8,73 @@ function getMonthRange(){var t=new Date(getToday()+'T00:00:00'),f=new Date(t.get
 function formatDate(d){return d?new Date(d+'T00:00:00').toLocaleDateString('pt-BR'):'-';}
 function formatDateTime(d){if(!d)return '-';try{var dt=new Date(d);return isNaN(dt.getTime())?d:dt.toLocaleString('pt-BR');}catch(e){return d;}}
 function formatMoney(v){return 'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
+
+function parseMoney(str) {
+  if (!str && str !== 0) return 0;
+  var s = String(str).replace(/R\$\s*/g, '').trim();
+  if (s === '') return 0;
+  var hasDot = s.indexOf('.') !== -1;
+  var hasComma = s.indexOf(',') !== -1;
+  if (hasDot && hasComma) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    s = s.replace(',', '.');
+  }
+  return parseFloat(s) || 0;
+}
+
+function initMoneyInput(el) {
+  if (el.dataset.moneyInit) return;
+  el.dataset.moneyInit = '1';
+  el.type = 'text';
+  el.setAttribute('inputmode', 'decimal');
+  if (el.value !== '') {
+    var iv = parseMoney(el.value);
+    el.value = iv.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  el.addEventListener('focus', function() {
+    var v = parseMoney(this.value);
+    this.value = v ? v.toFixed(2).replace('.', ',') : '';
+    this.select();
+  });
+  el.addEventListener('blur', function() {
+    var v = parseMoney(this.value);
+    this.value = v ? v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  });
+  el.addEventListener('input', function() {
+    this.value = this.value.replace(/[^\d,.]/g, '');
+  });
+  if (document.activeElement === el) {
+    var va = parseMoney(el.value);
+    el.value = va ? va.toFixed(2).replace('.', ',') : '';
+    try { el.select(); } catch(e2) {}
+  }
+}
+
+function setMoneyValue(id, v) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  initMoneyInput(el);
+  var n = parseMoney(String(v||0));
+  el.value = n ? n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+}
+
+function applyMoneyInputs() {
+  document.querySelectorAll('.money-input').forEach(function(el) { initMoneyInput(el); });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  applyMoneyInputs();
+  document.addEventListener('focus', function(e) {
+    if (e.target && e.target.classList && e.target.classList.contains('money-input')) {
+      initMoneyInput(e.target);
+    }
+  }, true);
+});
 function getTipoLabel(tipo){
   var labels={'saque_evento':'Saque de evento','pagamento_funcionario':'Pag. funcionario','pagamento_servico':'Pag. servico','pagamento_boleto':'Pag. boleto','fornecedor':'Fornecedor','outros_saida':'Outros (saida)','recebimento_evento':'Recebimento evento','deposito':'Deposito','outros_entrada':'Outros (entrada)'};
   return labels[tipo]||tipo||'';

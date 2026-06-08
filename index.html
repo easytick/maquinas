@@ -149,10 +149,10 @@
               <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Manual</button>
               <button type="button" id="reserveQtyBtn" onclick="setReserveMode('quantidade')" class="mode-btn">📦 Quantidade</button>
             </div>
-            <div id="reserveAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" placeholder="Quantidade" min="1"/></div>
+            <div id="reserveAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" inputmode="numeric" placeholder="Quantidade" min="1"/></div>
             <div id="reserveQtySection" style="display:none">
               <p class="mode-info">Reserve por quantidade — os seriais sao escolhidos na hora da saida.</p>
-              <input type="number" id="batchQtyIntencao" placeholder="Quantidade de maquinas" min="1"/>
+              <input type="number" id="batchQtyIntencao" inputmode="numeric" placeholder="Quantidade de maquinas" min="1"/>
               <div id="batchQtyDisponivel" style="margin-top:6px;font-size:12px;color:#6b7280"></div>
             </div>
             <div id="reserveManualSection" style="display:none">
@@ -195,7 +195,7 @@
               <button type="button" id="exitAutoBtn" onclick="setExitMode('auto')" class="mode-btn mode-btn-active">🤖 Automatico</button>
               <button type="button" id="exitManualBtn" onclick="setExitMode('manual')" class="mode-btn">📋 Manual</button>
             </div>
-            <div id="exitAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchExitQuantity" placeholder="Quantidade" min="1"/></div>
+            <div id="exitAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchExitQuantity" inputmode="numeric" placeholder="Quantidade" min="1"/></div>
             <div id="exitManualSection" style="display:none">
               <div class="machine-select-box">
                 <div class="search-in-select"><div class="search-clear-wrap"><input type="text" placeholder="🔍 Pesquisar serial..." oninput="filterSelectList('exitMachineList',this.value)"/><button type="button" class="search-clear-btn" onclick="this.previousElementSibling.value='';filterSelectList('exitMachineList','')">✕</button></div></div>
@@ -377,7 +377,7 @@
           <div id="naoPixFields" style="display:none">
             <input type="text" id="finChaveOutros" placeholder="Dados bancarios / referencia"/>
           </div>
-          <input type="number" id="finValor" placeholder="Valor (R$)" min="0" step="0.01"/>
+          <input type="text" class="money-input" id="finValor" placeholder="0,00"/>
           <input type="text" id="finObs" placeholder="Observacao (opcional)"/>
           <div id="finItensLista" style="display:none;margin-bottom:4px">
             <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px">Lancamentos adicionados:</p>
@@ -725,9 +725,9 @@
               <option value="unica">1️⃣ Unica — pagamento unico</option>
             </select>
           </label>
-          <label>Valor (R$)<input type="number" id="recValor" placeholder="Ex: 350.00" min="0" step="0.01" required/></label>
+          <label>Valor (R$)<input type="text" class="money-input" id="recValor" placeholder="Ex: 350,00" required/></label>
           <div id="recDiaVencWrap">
-            <label>Dia de vencimento (1-28)<input type="number" id="recDiaVenc" placeholder="Ex: 10" min="1" max="28"/></label>
+            <label>Dia de vencimento (1-28)<input type="number" id="recDiaVenc" inputmode="numeric" placeholder="Ex: 10" min="1" max="28"/></label>
           </div>
           <div id="recMesVencWrap" style="display:none">
             <label>Mes de vencimento
@@ -786,7 +786,7 @@
       <select id="novoSaldoEvento" style="margin-top:4px"><option value="">Selecione o evento</option></select>
     </label>
     <label style="margin-top:8px">Valor atual disponivel (R$)
-      <input type="number" id="novoSaldoValor" placeholder="Ex: 400.00" min="0" step="0.01" style="margin-top:4px"/>
+      <input type="text" class="money-input" id="novoSaldoValor" placeholder="Ex: 400,00" style="margin-top:4px"/>
     </label>
     <p style="font-size:12px;color:#6b7280;margin-top:6px">Este valor representa o total atual no sistema do cliente, sem subtrair saques anteriores.</p>
     <div class="modal-actions" style="margin-top:12px">
@@ -802,7 +802,7 @@
     <input type="hidden" id="atualizarSaldoEvento"/>
     <div id="atualizarSaldoInfo" style="background:#f9fafb;border-radius:9px;padding:11px;margin-bottom:12px;font-size:13px"></div>
     <label>Novo valor atual no sistema (R$)
-      <input type="number" id="atualizarSaldoValor" placeholder="Ex: 600.00" min="0" step="0.01" style="margin-top:4px"/>
+      <input type="text" class="money-input" id="atualizarSaldoValor" placeholder="Ex: 600,00" style="margin-top:4px"/>
     </label>
     <p style="font-size:12px;color:#6b7280;margin-top:6px">Informe sempre o valor TOTAL atual, sem subtrair nada. O sistema calcula o disponivel automaticamente.</p>
     <div class="modal-actions" style="margin-top:12px">
@@ -900,8 +900,8 @@
       <input type="text" id="recEditNome" placeholder="Nome" required/>
       <label>Tipo<select id="recEditTipo"><option value="Ficha">Ficha</option><option value="Ingresso">Ingresso</option><option value="Mensalidade">Mensalidade</option><option value="Outro">Outro</option></select></label>
       <label>Frequencia<select id="recEditFrequencia" onchange="toggleRecEditFrequencia()"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="unica">Unica</option></select></label>
-      <label>Valor (R$)<input type="number" id="recEditValor" min="0" step="0.01" required/></label>
-      <div id="recEditDiaWrap"><label>Dia de vencimento<input type="number" id="recEditDiaVenc" min="1" max="28"/></label></div>
+      <label>Valor (R$)<input type="text" class="money-input" id="recEditValor" placeholder="0,00" required/></label>
+      <div id="recEditDiaWrap"><label>Dia de vencimento<input type="number" id="recEditDiaVenc" inputmode="numeric" min="1" max="28"/></label></div>
       <div id="recEditMesWrap" style="display:none"><label>Mes de vencimento<select id="recEditMesVenc"><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Marco</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select></label></div>
       <input type="text" id="recEditObs" placeholder="Observacao (opcional)"/>
       <div class="modal-actions">
