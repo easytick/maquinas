@@ -1273,15 +1273,23 @@ function baixarImagemFechamento() {
     if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + fmtImg(d.totalDigital), red: true });
     compLinhas.push({ label: '(=) Loja virtual bruto', valor: fmtImg(d.totalBruto||d.totalLoja||0), red: false });
     if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + fmtImg(d.totalDesconto), red: true });
+    if ((d.totalPdv||0) > 0) {
+      if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(=) Loja virtual líquido', valor: fmtImg(d.totalLoja||0), red: false });
+      compLinhas.push({ label: '(+) PDV físico (máquinas)', valor: fmtImg(d.totalPdv), green: true });
+    }
 
     var compHTML = compLinhas.map(function(c,i) {
+      var lColor = c.red ? '#92400e' : (c.green ? '#166534' : '#475569');
+      var lWeight = (c.red || c.green) ? '500' : '400';
+      var vColor = c.red ? '#b45309' : (c.green ? '#15803d' : '#1e293b');
       return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:10px 0;'+(i===compLinhas.length-1?'':'border-bottom:1px dashed #dde3ed;')+'">' +
-        '<span style="font-size:14px;color:'+(c.red?'#92400e':'#475569')+';font-weight:'+(c.red?'500':'400')+';">'+c.label+'</span>' +
-        '<span style="font-size:14px;font-weight:600;color:'+(c.red?'#b45309':'#1e293b')+';">'+c.valor+'</span></div>';
+        '<span style="font-size:14px;color:'+lColor+';font-weight:'+lWeight+';">'+c.label+'</span>' +
+        '<span style="font-size:14px;font-weight:600;color:'+vColor+';">'+c.valor+'</span></div>';
     }).join('');
 
-    var baseVal = d.totalLoja||0;
-    var baseLabel = 'Base do repasse — loja virtual líquido';
+    var hasPdv = (d.totalPdv||0) > 0;
+    var baseVal = (d.totalLoja||0) + (d.totalPdv||0);
+    var baseLabel = hasPdv ? 'Base do repasse — loja virtual + PDV' : 'Base do repasse — loja virtual líquido';
 
     var cobHTML = '', saqHTML = '';
     linhas.forEach(function(l) {
@@ -1309,6 +1317,7 @@ function baixarImagemFechamento() {
       '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;">' +
         '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;">'+baseLabel.toUpperCase()+'</div>' +
         '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;">'+fmtImg(baseVal)+'</div>' +
+        (hasPdv ? '<div style="'+F+'font-size:11px;color:#4b7cbf;margin-top:5px;">Loja Virtual: '+fmtImg(d.totalLoja||0)+'&nbsp;&nbsp;+&nbsp;&nbsp;PDV: '+fmtImg(d.totalPdv||0)+'</div>' : '') +
       '</div>' +
       '<div style="height:1px;background:#b5d4f4;"></div>' +
       '<div style="padding:4px 28px 0;background:#fff;">' +
