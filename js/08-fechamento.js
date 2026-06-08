@@ -405,9 +405,9 @@ function fechRecalcFormas(dinheiroOverride) {
       if (/dinheiro/i.test(f)) dinheiro = v;
     }
   });
-  // Atualiza total bruto
+  // Atualiza total bruto com a soma das formas
   var tbInput = document.getElementById('fechTotalBrutoInput');
-  if (tbInput) totalGeral = parseMoney(tbInput.value)||totalGeral;
+  if (tbInput) tbInput.value = totalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   d.totalGeral = totalGeral;
   d.dinheiro = (dinheiroOverride !== undefined) ? dinheiroOverride : dinheiro;
   // Atualiza aviso dinheiro
@@ -440,7 +440,7 @@ function renderDadosLidos() {
     if ((d.totalPdv||0) > 0)     linhasTotal += '<div style="font-size:11px;color:#374151">PDV físico: ' + formatMoney(d.totalPdv||0) + '</div>';
     tbEl.innerHTML = '<div style="text-align:right;line-height:1.8">' + linhasTotal + '</div>';
   } else {
-    tbEl.innerHTML = '<input type="text" class="money-input" id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" onchange="fechAtualizarTotal()" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right">';
+    tbEl.innerHTML = '<input type="text" readonly id="fechTotalBrutoInput" value="'+d.totalGeral.toFixed(2)+'" style="width:130px;font-size:15px;font-weight:bold;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;padding:4px 8px;text-align:right;background:#f0f7ff;cursor:default">';
   }
 
   // Formas editáveis
@@ -651,7 +651,7 @@ function renderCobrancas() {
       // Taxa % sobre base (ficha) — sempre desconta do produtor
       var baseV = getBaseForma(d.formas, l.forma);
       var calcP = baseV * (l.pct||0) / 100;
-      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: <b>'+formatMoney(baseV)+'</b></div>' +
+      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Base: <b id="fb-'+l.id+'">'+formatMoney(baseV)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:6px">' +
         '<input type="number" id="fp-'+l.id+'" inputmode="decimal" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="color:#6b7280;font-size:13px">%</span>' +
@@ -662,7 +662,7 @@ function renderCobrancas() {
       // Taxa % com toggle Produtor / Cliente Final (padrão = Cliente = não desconta)
       var baseT = getBaseForma(d.formas, l.forma);
       var calcT = baseT * (l.pct||0) / 100;
-      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:6px">Base: <b>'+formatMoney(baseT)+'</b></div>' +
+      body = '<div style="font-size:11px;color:#6b7280;margin-bottom:6px">Base: <b id="fb-'+l.id+'">'+formatMoney(baseT)+'</b></div>' +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
         '<input type="number" id="fp-'+l.id+'" inputmode="decimal" value="'+(l.pct||0)+'" min="0" step="0.1" onchange="recalcFech()" style="flex:1;font-size:13px;padding:6px 8px">' +
         '<span style="color:#6b7280;font-size:13px">%</span>' +
@@ -763,6 +763,10 @@ function recalcFech() {
   linhas.forEach(function(l) {
     var v = getLinhaValor(l);
     totalCobranças += v;
+    if (l.tipo === 'pct' || l.tipo === 'pct_toggle') {
+      var fbEl = document.getElementById('fb-'+l.id);
+      if (fbEl) fbEl.textContent = formatMoney(getBaseForma(d.formas, l.forma));
+    }
     var ftEl = document.getElementById('ft-'+l.id);
     if (ftEl) {
       if (l.tipo === 'pct_toggle') {
