@@ -75,10 +75,12 @@ function renderDayAlerts(){
     var hoje=getToday(), proxDias=new Date(); proxDias.setDate(proxDias.getDate()+3); proxDias=proxDias.toISOString().slice(0,10);
     var intProximas=reservasIntencao.filter(function(r){return r.status==='pendente'&&r.startDate>=hoje&&r.startDate<=proxDias;});
     if(intProximas.length>0){
-      makeAlert('alertaFinanceiro','financeiro',
+      makeAlert('alertaIntencoes','financeiro',
         intProximas.length+' reserva'+(intProximas.length>1?'s':'')+' de intencao com saida em ate 3 dias',
         intProximas.map(function(r){return r.evento+' ('+r.quantidade+'x '+r.marca+')';}).join(', '),
         'Ver reservas',function(){setPage('acoes');setLoteAba('intencoes');});
+    } else {
+      hideAlert('alertaIntencoes');
     }
   }
 }

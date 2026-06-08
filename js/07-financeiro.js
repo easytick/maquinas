@@ -2,7 +2,7 @@
 // FINANCEIRO
 // ═══════════════════════════════════════════
 var FIN_ABAS=['solicitar','pendentes','extrato','saldo'];
-function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#financeiroSection .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes'){refreshFinEventos();renderPendentes();}if(tab==='extrato'){refreshFinEventos();renderExtrato();}if(tab==='saldo'){renderSaldoEventoList();}}
+function setFinTab(tab){FIN_ABAS.forEach(function(a){document.getElementById('fin-'+a).classList.toggle('active',a===tab);});document.querySelectorAll('#page-financeiro .lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',FIN_ABAS[i]===tab);});if(tab==='pendentes'){refreshFinEventos();renderPendentes();}if(tab==='extrato'){refreshFinEventos();renderExtrato();}if(tab==='saldo'){renderSaldoEventoList();}}
 
 function toggleFinTipo(){}
 function togglePixFields(){var t=document.getElementById('finTipoPagamento').value;document.getElementById('pixFields').style.display=t==='Pix'?'block':'none';document.getElementById('naoPixFields').style.display=(t&&t!=='Pix'&&t!=='Dinheiro')?'block':'none';}
@@ -130,7 +130,7 @@ function solicitarPagamento(){
   if(!tipoLanc||!evento||!nome||!tipoPag||!valor||valor<=0){alert('Preencha todos os campos obrigatorios.');return;}
   var chave='';
   if(tipoPag==='Pix') chave=_pixTipo+': '+(document.getElementById('finChavePix').value.trim()||'');
-  else if(document.getElementById('finChaveOutros').style.display!=='none') chave=document.getElementById('finChaveOutros').value.trim();
+  else if(document.getElementById('naoPixFields').style.display!=='none') chave=document.getElementById('finChaveOutros').value.trim();
   var isEntrada=['recebimento_evento','deposito','outros_entrada'].indexOf(tipoLanc)>-1;
   var id='fin_'+Date.now();var un=getCurrentUserName(),ue=getCurrentUserEmail();
   financeiro.push({id:id,tipoLancamento:tipoLanc,isEntrada:isEntrada,evento:evento,nome:nome,tipoPagamento:tipoPag,chave:chave,valor:valor,obs:obs,status:isEntrada?'Pago':'Pendente',dataSolicitacao:new Date().toISOString(),solicitadoPor:un,solicitadoEmail:ue,banco:isEntrada?'':''});
@@ -215,7 +215,7 @@ function renderExtrato(){
   refreshFinEventos();
   // Restore selection after refresh
   var _sel=document.getElementById('finExtratoFiltroEvento');if(_sel&&evFilt)_sel.value=evFilt;
-  evFilt=document.getElementById('finExtratoFiltroEvento').value,statusFilt=document.getElementById('finExtratoFiltroStatus').value,bancoFilt=document.getElementById('finExtratoFiltroBanco').value,dataInicio=document.getElementById('finExtratoDataInicio').value,dataFim=document.getElementById('finExtratoDataFim').value;
+  evFilt=document.getElementById('finExtratoFiltroEvento').value; var statusFilt=document.getElementById('finExtratoFiltroStatus').value,bancoFilt=document.getElementById('finExtratoFiltroBanco').value,dataInicio=document.getElementById('finExtratoDataInicio').value,dataFim=document.getElementById('finExtratoDataFim').value;
   var filtered=financeiro.filter(function(f){
     if(evFilt&&f.evento!==evFilt)return false;
     if(statusFilt&&f.status!==statusFilt)return false;

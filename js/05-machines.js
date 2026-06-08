@@ -171,12 +171,6 @@ function setStatusFilter2(status) {
   document.querySelectorAll('.chip').forEach(function(c){ if(c.textContent.trim().indexOf(status)>-1||( status==='' && c.textContent.trim()==='Todas')) c.classList.add('active'); });
   renderMachines();
 }
-function setStatusFilter(status) {
-  currentStatusFilter = status;
-  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
-  event.currentTarget.classList.add('active');
-  renderMachines();
-}
 
 // ═══════════════════════════════════════════
 // RENDER MACHINES (separado do render geral)
@@ -238,12 +232,4 @@ document.getElementById('searchInput').addEventListener('input', renderMachines)
 document.getElementById('brandFilter').addEventListener('change', renderMachines);
 document.getElementById('eventFilter').addEventListener('change', renderMachines);
 
-// Date mins
-var _today=getToday();
-['batchStartDate','batchEndDate','customStartDate','customEndDate','batchExitStartDate','batchExitEndDate','novaDataRetorno'].forEach(function(id){var el=document.getElementById(id);if(el)el.min=_today;});
-document.getElementById('batchStartDate').addEventListener('change',function(){document.getElementById('batchEndDate').min=this.value;if(reserveMode==='manual')refreshReserveMachineList();});
-document.getElementById('batchEndDate').addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});
-document.getElementById('batchExitStartDate').addEventListener('change',function(){document.getElementById('batchExitEndDate').min=this.value;if(exitMode==='manual')refreshExitMachineList();});
-document.getElementById('batchExitEndDate').addEventListener('change',function(){if(exitMode==='manual')refreshExitMachineList();});
-document.getElementById('customStartDate').addEventListener('change',function(){document.getElementById('customEndDate').min=this.value;});
 

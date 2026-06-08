@@ -93,7 +93,13 @@ function fechAddPdv() {
 }
 
 function recalcManualTotal() {
-  // só atualiza display, o total real é calculado no confirmarManual
+  var total = 0;
+  ['debito','credito','pix','dinheiro'].forEach(function(f) {
+    var el = document.getElementById('manual-forma-' + f);
+    if (el) total += parseMoney(el.value) || 0;
+  });
+  var el = document.getElementById('fech-manual-total');
+  if (el) el.textContent = formatMoney(total);
 }
 
 function confirmarManual() {
@@ -107,19 +113,8 @@ function confirmarManual() {
     totalGeral += v;
   });
 
-  var pdvs = {};
-  var counter = _fechPdvCounter;
-  for (var i = 1; i <= counter + 5; i++) {
-    var nEl = document.getElementById('nome-manual-pdv-' + i);
-    var vEl = document.getElementById('val-manual-pdv-' + i);
-    if (!nEl || !vEl) continue;
-    var nome = nEl.value.trim() || ('PDV ' + i);
-    var val = parseMoney(vEl.value)||0;
-    pdvs[nome] = { qtd: 0, valor: val };
-  }
-  // Busca PDVs pelo container
   var pdvDiv2 = document.getElementById('fech-manual-pdvs');
-  pdvs = {};
+  var pdvs = {};
   pdvDiv2.querySelectorAll('div[id^="row-manual-pdv-"]').forEach(function(row) {
     var nEl = row.querySelector('input[type="text"]:not(.money-input)');
     var vEl = row.querySelector('.money-input');
