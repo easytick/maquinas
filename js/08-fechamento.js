@@ -1429,13 +1429,22 @@ function renderFechHistorico() {
   var container = document.getElementById('fech-hist-lista');
   if (!container) return;
 
+  var filtro = (document.getElementById('fech-hist-filtro') ? document.getElementById('fech-hist-filtro').value : '').trim().toLowerCase();
+  var lista = fechamentos.filter(function(f) {
+    return !filtro || (f.evento||'').toLowerCase().indexOf(filtro) > -1;
+  });
+
   if (fechamentos.length === 0) {
     container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">Nenhum fechamento salvo ainda.</p>';
     return;
   }
+  if (lista.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">Nenhum fechamento encontrado para "' + filtro + '".</p>';
+    return;
+  }
 
   container.innerHTML = '';
-  fechamentos.forEach(function(f) {
+  lista.forEach(function(f) {
     var card = document.createElement('div');
     card.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px';
 
@@ -1444,6 +1453,56 @@ function renderFechHistorico() {
     var tipoLabel = f.tipo === 'ficha' ? '🍺 Ficha' : '🎟️ Ingresso';
     var data = f.criadoEm ? new Date(f.criadoEm).toLocaleString('pt-BR') : '-';
 
+    // Saques pagos APÓS o fechamento para este evento
+    var dataFech = f.criadoEm ? new Date(f.criadoEm) : null;
+    var saquesPos = (financeiro||[]).filter(function(x) {
+      if (x.tipoLancamento !== 'saque_evento') return false;
+      if ((x.evento||'').toLowerCase() !== (f.evento||'').toLowerCase()) return false;
+      if (x.status !== 'Pago') return false;
+      if (!dataFech) return false;
+      var dataPag = x.dataPagamento || x.dataSolicitacao;
+      return dataPag && new Date(dataPag) > dataFech;
+    });
+    var totalFinanceiro = saquesPos.reduce(function(acc, x) { return acc + (x.valor||0); }, 0);
+    var baixasArr = [];
+    if (f.baixasManual) {
+      Object.keys(f.baixasManual).forEach(function(k) { baixasArr.push(f.baixasManual[k]); });
+      baixasArr.sort(function(a,b){ return new Date(a.data)-new Date(b.data); });
+    }
+    var totalBaixas = baixasArr.reduce(function(acc, b) { return acc + (b.valor||0); }, 0);
+    var totalRepassado = totalFinanceiro + totalBaixas;
+    var valorFinal = f.valorFinal || 0;
+    var saldoRestante = valorFinal - totalRepassado;
+
+    var statusColor, statusBg, statusLabel;
+    if (saldoRestante <= 0) {
+      statusColor = '#166534'; statusBg = '#dcfce7'; statusLabel = 'Quitado';
+    } else if (totalRepassado > 0) {
+      statusColor = '#92400e'; statusBg = '#fef3c7'; statusLabel = 'Parcial';
+    } else {
+      statusColor = '#991b1b'; statusBg = '#fee2e2'; statusLabel = 'Pendente';
+    }
+
+    var saquesHtml = '';
+    if (saquesPos.length > 0 || baixasArr.length > 0) {
+      saquesHtml = '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">';
+      saquesPos.forEach(function(s) {
+        var ds = s.dataPagamento ? new Date(s.dataPagamento).toLocaleDateString('pt-BR') : (s.dataSolicitacao ? new Date(s.dataSolicitacao).toLocaleDateString('pt-BR') : '-');
+        saquesHtml += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#374151;padding:2px 0">' +
+          '<span>' + (s.nome||'-') + ' <span style="color:#9ca3af">· ' + ds + '</span></span>' +
+          '<span style="color:var(--red)">- ' + formatMoney(s.valor||0) + '</span>' +
+        '</div>';
+      });
+      baixasArr.forEach(function(b) {
+        var db2 = b.data ? new Date(b.data).toLocaleDateString('pt-BR') : '-';
+        saquesHtml += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#374151;padding:2px 0">' +
+          '<span>Baixa manual' + (b.obs ? ': ' + b.obs : '') + ' <span style="color:#9ca3af">· ' + db2 + (b.user ? ' · ' + b.user : '') + '</span></span>' +
+          '<span style="color:var(--red)">- ' + formatMoney(b.valor||0) + '</span>' +
+        '</div>';
+      });
+      saquesHtml += '</div>';
+    }
+
     card.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">' +
         '<div>' +
@@ -1451,15 +1510,28 @@ function renderFechHistorico() {
           '<span style="background:'+tipoBg+';color:'+tipoColor+';border-radius:999px;padding:2px 8px;font-size:11px;font-weight:bold;margin-left:6px">' + tipoLabel + '</span>' +
           '<div style="font-size:11px;color:#9ca3af;margin-top:3px">' + data + ' · ' + (f.criadoPor||'-') + '</div>' +
         '</div>' +
-        '<b style="font-size:18px;color:var(--green);white-space:nowrap">' + formatMoney(f.valorFinal||0) + '</b>' +
+        '<b style="font-size:18px;color:var(--green);white-space:nowrap">' + formatMoney(valorFinal) + '</b>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;margin-bottom:10px">' +
         '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Total bruto</div><b>' + formatMoney(f.totalGeral||0) + '</b></div>' +
         '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Cobranças</div><b style="color:var(--red)">- ' + formatMoney(f.totalCobrancas||0) + '</b></div>' +
         '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Saques</div><b style="color:var(--red)">- ' + formatMoney(f.totalSaques||0) + '</b></div>' +
       '</div>' +
+      '<div style="background:#f0f4ff;border-radius:10px;padding:10px;margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<span style="font-size:12px;font-weight:bold;color:#1e3a5f">Repasse pós-fechamento</span>' +
+          '<span style="background:'+statusBg+';color:'+statusColor+';border-radius:999px;padding:2px 8px;font-size:11px;font-weight:bold">' + statusLabel + '</span>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px">' +
+          '<div style="background:#fff;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">A repassar</div><b style="color:#1e3a5f">' + formatMoney(valorFinal) + '</b></div>' +
+          '<div style="background:#fff;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Já repassado</div><b style="color:var(--green)">- ' + formatMoney(totalRepassado) + '</b></div>' +
+          '<div style="background:#fff;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Saldo</div><b style="color:' + (saldoRestante <= 0 ? 'var(--green)' : 'var(--red)') + '">' + formatMoney(Math.max(0, saldoRestante)) + '</b></div>' +
+        '</div>' +
+        saquesHtml +
+      '</div>' +
       '<div style="display:flex;gap:8px">' +
         '<button type="button" data-fid="' + f.id + '" onclick="histVerTexto(this)" style="flex:1;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">📋 Ver texto</button>' +
+        (saldoRestante > 0 ? '<button type="button" onclick="abrirBaixaManual(\''+f.id+'\')" style="flex:1;font-size:12px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold">✓ Dar baixa</button>' : '') +
         '<button type="button" data-fid="' + f.id + '" onclick="histExcluir(this)" style="font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:6px 10px;width:auto">🗑️</button>' +
       '</div>';
 
@@ -1501,5 +1573,66 @@ function copiarTextoHist(id) {
     document.execCommand('copy'); document.body.removeChild(ta);
     alert('Copiado!');
   }
+}
+
+function abrirBaixaManual(fid) {
+  var f = fechamentos.find(function(x){ return x.id === fid; });
+  if (!f) return;
+  var dataFech = f.criadoEm ? new Date(f.criadoEm) : null;
+  var saquesPos = (financeiro||[]).filter(function(x) {
+    if (x.tipoLancamento !== 'saque_evento') return false;
+    if ((x.evento||'').toLowerCase() !== (f.evento||'').toLowerCase()) return false;
+    if (x.status !== 'Pago') return false;
+    if (!dataFech) return false;
+    var dataPag = x.dataPagamento || x.dataSolicitacao;
+    return dataPag && new Date(dataPag) > dataFech;
+  });
+  var totalFin = saquesPos.reduce(function(acc, x){ return acc + (x.valor||0); }, 0);
+  var baixasArr = [];
+  if (f.baixasManual) { Object.keys(f.baixasManual).forEach(function(k){ baixasArr.push(f.baixasManual[k]); }); }
+  var totalBx = baixasArr.reduce(function(acc, b){ return acc + (b.valor||0); }, 0);
+  var saldo = Math.max(0, (f.valorFinal||0) - totalFin - totalBx);
+
+  var el = document.getElementById('modal-baixa-manual');
+  if (el) el.remove();
+  var modal = document.createElement('div');
+  modal.id = 'modal-baixa-manual';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:600px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+        '<b style="font-size:15px">Dar baixa manual</b>' +
+        '<button type="button" onclick="document.getElementById(\'modal-baixa-manual\').remove()" style="width:auto;padding:4px 10px;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">✕ Fechar</button>' +
+      '</div>' +
+      '<p style="font-size:12px;color:#6b7280;margin:0 0 12px">Registra recebimento sem criar lancamento na aba Financeiro.</p>' +
+      '<div style="background:#f9fafb;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#374151">' +
+        '<b>' + (f.evento||'-') + '</b> &nbsp;·&nbsp; Saldo pendente: <b style="color:var(--red)">' + formatMoney(saldo) + '</b>' +
+      '</div>' +
+      '<div style="display:grid;gap:10px">' +
+        '<label style="font-size:12px;font-weight:bold;color:var(--gray)">Valor recebido<br>' +
+          '<input type="number" id="baixa-val" min="0.01" step="0.01" value="' + saldo.toFixed(2) + '" style="margin-top:4px"></label>' +
+        '<label style="font-size:12px;font-weight:bold;color:var(--gray)">Observacao<br>' +
+          '<input type="text" id="baixa-obs" placeholder="Ex: Pix direto, dinheiro na mao..." style="margin-top:4px"></label>' +
+        '<button type="button" onclick="salvarBaixaManual(\'' + fid + '\')" style="background:var(--green)">Confirmar baixa</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+function salvarBaixaManual(fid) {
+  var valEl = document.getElementById('baixa-val');
+  var obsEl = document.getElementById('baixa-obs');
+  var valor = parseFloat(valEl ? valEl.value : 0) || 0;
+  if (valor <= 0) { alert('Informe um valor valido.'); return; }
+  var obs = obsEl ? obsEl.value.trim() : '';
+  var key = 'bx_' + Date.now();
+  firebase.database().ref('fechamentos/' + fid + '/baixasManual/' + key).set({
+    valor: valor,
+    obs: obs,
+    data: new Date().toISOString(),
+    user: getCurrentUserName()
+  });
+  var modal = document.getElementById('modal-baixa-manual');
+  if (modal) modal.remove();
 }
 
