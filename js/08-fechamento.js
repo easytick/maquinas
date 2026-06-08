@@ -1383,6 +1383,7 @@ function baixarImagemFechamento() {
 // FECHAMENTOS — FIREBASE
 // ═══════════════════════════════════════════
 var fechamentos = [];
+var _fechHistFiltroStatus = 'todos';
 
 function startFechamentosListener() {
   var db = firebase.database();
@@ -1432,13 +1433,49 @@ function deleteFechamento(id) {
   firebase.database().ref('fechamentos/' + id).remove();
 }
 
+function getFechStatus(f) {
+  var dataFech = f.criadoEm ? new Date(f.criadoEm) : null;
+  var saquesPos = (financeiro||[]).filter(function(x) {
+    if (x.tipoLancamento !== 'saque_evento') return false;
+    if ((x.evento||'').toLowerCase() !== (f.evento||'').toLowerCase()) return false;
+    if (x.status !== 'Pago') return false;
+    if (!dataFech) return false;
+    var dataPag = x.dataPagamento || x.dataSolicitacao;
+    return dataPag && new Date(dataPag) > dataFech;
+  });
+  var totalFin = saquesPos.reduce(function(acc, x){ return acc + (x.valor||0); }, 0);
+  var totalBx = 0;
+  if (f.baixasManual) Object.keys(f.baixasManual).forEach(function(k){ totalBx += (f.baixasManual[k].valor||0); });
+  var saldo = (f.valorFinal||0) - totalFin - totalBx;
+  if (Math.round(saldo * 100) <= 0) return 'quitado';
+  if ((totalFin + totalBx) > 0) return 'parcial';
+  return 'pendente';
+}
+
+function setFechHistFiltroStatus(status) {
+  _fechHistFiltroStatus = status;
+  ['todos','pendente','parcial','quitado'].forEach(function(s) {
+    var btn = document.getElementById('btn-fst-' + s);
+    if (!btn) return;
+    var active = s === status;
+    btn.style.background = active ? '#374151' : '#f9fafb';
+    btn.style.color = active ? '#fff' : '#374151';
+    btn.style.border = active ? '1.5px solid #374151' : '1.5px solid var(--border)';
+    btn.style.fontWeight = active ? 'bold' : 'normal';
+  });
+  renderFechHistorico();
+}
+
 function renderFechHistorico() {
   var container = document.getElementById('fech-hist-lista');
   if (!container) return;
 
   var filtro = (document.getElementById('fech-hist-filtro') ? document.getElementById('fech-hist-filtro').value : '').trim().toLowerCase();
+  var filtroStatus = _fechHistFiltroStatus || 'todos';
   var lista = fechamentos.filter(function(f) {
-    return !filtro || (f.evento||'').toLowerCase().indexOf(filtro) > -1;
+    var textoOk = !filtro || (f.evento||'').toLowerCase().indexOf(filtro) > -1;
+    var statusOk = filtroStatus === 'todos' || getFechStatus(f) === filtroStatus;
+    return textoOk && statusOk;
   });
 
   if (fechamentos.length === 0) {
@@ -1446,7 +1483,10 @@ function renderFechHistorico() {
     return;
   }
   if (lista.length === 0) {
-    container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">Nenhum fechamento encontrado para "' + filtro + '".</p>';
+    var msgVazio = filtroStatus !== 'todos'
+      ? 'Nenhum fechamento com status "' + filtroStatus + '"' + (filtro ? ' para "' + filtro + '"' : '') + '.'
+      : 'Nenhum fechamento encontrado' + (filtro ? ' para "' + filtro + '"' : '') + '.';
+    container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">' + msgVazio + '</p>';
     return;
   }
 
@@ -1482,7 +1522,7 @@ function renderFechHistorico() {
     var saldoRestante = valorFinal - totalRepassado;
 
     var statusColor, statusBg, statusLabel;
-    if (saldoRestante <= 0) {
+    if (Math.round(saldoRestante * 100) <= 0) {
       statusColor = '#166534'; statusBg = '#dcfce7'; statusLabel = 'Quitado';
     } else if (totalRepassado > 0) {
       statusColor = '#92400e'; statusBg = '#fef3c7'; statusLabel = 'Parcial';
@@ -1538,7 +1578,7 @@ function renderFechHistorico() {
       '</div>' +
       '<div style="display:flex;gap:8px">' +
         '<button type="button" data-fid="' + f.id + '" onclick="histVerTexto(this)" style="flex:1;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">📋 Ver texto</button>' +
-        (saldoRestante > 0 ? '<button type="button" onclick="abrirBaixaManual(\''+f.id+'\')" style="flex:1;font-size:12px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold">✓ Dar baixa</button>' : '') +
+        (Math.round(saldoRestante * 100) > 0 ? '<button type="button" onclick="abrirBaixaManual(\''+f.id+'\')" style="flex:1;font-size:12px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold">✓ Dar baixa</button>' : '') +
         '<button type="button" data-fid="' + f.id + '" onclick="histExcluir(this)" style="font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:6px 10px;width:auto">🗑️</button>' +
       '</div>';
 

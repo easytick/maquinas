@@ -44,12 +44,9 @@
 
   <!-- PAGE: INICIO -->
   <div id="page-inicio" class="page active">
-    <div id="alertaSaida" style="display:none"></div>
-    <div id="alertaRetorno" style="display:none"></div>
-    <div id="alertaAtraso" style="display:none"></div>
-    <div id="alertaFinanceiro" style="display:none"></div>
-    <div id="alertaRecorrentes" style="display:none"></div>
-    <div id="alertaIntencoes" style="display:none"></div>
+    <div id="alertas-strip" class="alertas-strip" style="display:none"></div>
+    <div id="alertas-section-label" class="alertas-section-label" style="display:none">Requer atenção</div>
+    <div id="alertas-lista" class="alertas-lista"></div>
 
     <div class="dash-grid">
       <div class="dash-card"><span id="totalCount">0</span><p>Total</p></div>
@@ -679,6 +676,12 @@
 
       <!-- HISTORICO -->
       <div id="fech-historico" class="lote-tab-content">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button type="button" id="btn-fst-todos" onclick="setFechHistFiltroStatus('todos')" style="flex:1;font-size:12px;padding:7px 0;background:#374151;color:#fff;border:1.5px solid #374151;border-radius:8px;font-weight:bold">Todos</button>
+          <button type="button" id="btn-fst-pendente" onclick="setFechHistFiltroStatus('pendente')" style="flex:1;font-size:12px;padding:7px 0;background:#f9fafb;color:#374151;border:1.5px solid var(--border);border-radius:8px">Pendente</button>
+          <button type="button" id="btn-fst-parcial" onclick="setFechHistFiltroStatus('parcial')" style="flex:1;font-size:12px;padding:7px 0;background:#f9fafb;color:#374151;border:1.5px solid var(--border);border-radius:8px">Parcial</button>
+          <button type="button" id="btn-fst-quitado" onclick="setFechHistFiltroStatus('quitado')" style="flex:1;font-size:12px;padding:7px 0;background:#f9fafb;color:#374151;border:1.5px solid var(--border);border-radius:8px">Quitado</button>
+        </div>
         <input id="fech-hist-filtro" type="text" placeholder="Buscar por nome do evento..." oninput="renderFechHistorico()" style="margin-bottom:12px;font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;width:100%;box-sizing:border-box">
         <div id="fech-hist-lista">
           <p style="color:#9ca3af;font-size:13px">Carregando...</p>

@@ -361,27 +361,7 @@ function renderRecExtrato() {
 }
 
 function renderDayAlertsRec() {
-  var atrasados=recorrentes.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='atrasado';});
-  var vencendo=recorrentes.filter(function(r){return r.status!=='inativo'&&getRecStatus(r)==='vencendo';});
-  var elR=document.getElementById('alertaRecorrentes');if(!elR)return;
-  if(atrasados.length||vencendo.length){
-    elR.style.display='block';elR.innerHTML='';
-    var div=document.createElement('div');div.className='alert-box atraso';
-    var txt=document.createElement('div');txt.className='alert-box-text';
-    var b=document.createElement('b');
-    var msg=[];
-    if(atrasados.length)msg.push(atrasados.length+' plano'+(atrasados.length>1?'s':'')+' em atraso');
-    if(vencendo.length)msg.push(vencendo.length+' vencendo em breve');
-    b.textContent='🔄 '+msg.join(' · ');
-    var p=document.createElement('p');
-    p.textContent=atrasados.concat(vencendo).slice(0,3).map(function(r){return r.nome;}).join(', ');
-    txt.appendChild(b);txt.appendChild(p);
-    var btn=document.createElement('button');
-    btn.textContent='Ver recorrentes';
-    btn.style.cssText='width:auto;font-size:12px;padding:7px 13px;flex-shrink:0';
-    btn.onclick=function(){setPage('recorrentes');};
-    div.appendChild(txt);div.appendChild(btn);elR.appendChild(div);
-  } else { elR.style.display='none'; }
+  renderDayAlerts();
 }
 
 // Hook into startFirebaseListener
