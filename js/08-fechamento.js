@@ -1579,6 +1579,7 @@ function renderFechHistorico() {
       '<div style="display:flex;gap:8px">' +
         '<button type="button" data-fid="' + f.id + '" onclick="histVerTexto(this)" style="flex:1;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">📋 Ver texto</button>' +
         (Math.round(saldoRestante * 100) > 0 ? '<button type="button" onclick="abrirBaixaManual(\''+f.id+'\')" style="flex:1;font-size:12px;background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold">✓ Dar baixa</button>' : '') +
+        (Math.round(saldoRestante * 100) > 0 ? '<button type="button" onclick="abrirSolicitarSaqueFechamento(\''+f.id+'\')" style="flex:1;font-size:12px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;font-weight:bold">💸 Saque</button>' : '') +
         '<button type="button" data-fid="' + f.id + '" onclick="histExcluir(this)" style="font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:6px 10px;width:auto">🗑️</button>' +
       '</div>';
 
@@ -1586,6 +1587,32 @@ function renderFechHistorico() {
   });
 }
 
+
+function abrirSolicitarSaqueFechamento(fid) {
+  var f = fechamentos.find(function(x){ return x.id === fid; });
+  if (!f) return;
+  var dataFech = f.criadoEm ? new Date(f.criadoEm) : null;
+  var saquesPos = (financeiro||[]).filter(function(x) {
+    if (x.tipoLancamento !== 'saque_evento') return false;
+    if ((x.evento||'').toLowerCase() !== (f.evento||'').toLowerCase()) return false;
+    if (x.status !== 'Pago') return false;
+    var dataPag = x.dataPagamento || x.dataSolicitacao;
+    return dataFech && dataPag && new Date(dataPag) > dataFech;
+  });
+  var totalFin = saquesPos.reduce(function(a, x){ return a + (x.valor||0); }, 0);
+  var totalBx = 0;
+  if (f.baixasManual) Object.keys(f.baixasManual).forEach(function(k){ totalBx += f.baixasManual[k].valor||0; });
+  var saldoRestante = Math.max(0, (f.valorFinal||0) - totalFin - totalBx);
+  setPage('financeiro');
+  setFinTab('solicitar');
+  setTimeout(function() {
+    document.getElementById('finTipoLancamento').value = 'saque_evento';
+    document.getElementById('finEvento').value = f.evento || '';
+    setMoneyValue('finValor', saldoRestante);
+    checkSaldoDisponivel(f.evento || '');
+    document.getElementById('finNome').focus();
+  }, 50);
+}
 
 function fechHistFecharModal(btn) { var m = btn; while(m && m.style && !m.style.position.includes('fixed')) m = m.parentElement; if(m) m.remove(); }
 function histVerTexto(btn) { verTextoFechamento(btn.getAttribute('data-fid')); }
