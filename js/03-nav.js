@@ -20,7 +20,7 @@ function filterEventSelect(selectId, query) {
 // ═══════════════════════════════════════════
 // ABAS LOTE
 // ═══════════════════════════════════════════
-var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao','intencoes'];
+var LOTE_ABAS=['reservar','saida','entrada','renovar','cancelar','manutencao'];
 function setLoteAba(aba){
   LOTE_ABAS.forEach(function(a){document.getElementById('lote-'+a).classList.toggle('active',a===aba);});
   document.querySelectorAll('.lote-tab-btn').forEach(function(btn,i){btn.classList.toggle('active',LOTE_ABAS[i]===aba);});
@@ -30,7 +30,6 @@ function setLoteAba(aba){
   if(aba==='renovar')   refreshRenovarEventos();
   if(aba==='cancelar')  refreshCancelarEventos();
   if(aba==='manutencao')refreshManutList();
-  if(aba==='intencoes') renderReservasIntencao();
 }
 
 // ═══════════════════════════════════════════
@@ -47,6 +46,7 @@ function setPage(page) {
   });
   var fab = document.getElementById('fabCadastrar');
   if(fab) fab.style.display = page==='maquinas' ? 'flex' : 'none';
+  if(page==='inicio' && typeof renderReservasIntencao==='function') renderReservasIntencao();
   if(page==='maquinas') renderMachines();
   if(page==='financeiro') { refreshFinEventos(); renderPendentes(); renderExtrato(); renderSaldoEventoList(); }
   if(page==='recorrentes') { renderRecPainel(); }

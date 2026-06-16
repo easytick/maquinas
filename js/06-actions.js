@@ -2,7 +2,7 @@
 // ═══════════════════════════════════════════
 // MODO SELECAO
 // ═══════════════════════════════════════════
-var reserveMode='auto',exitMode='auto',reserveSelected=new Set(),exitSelected=new Set();
+var reserveMode='quantidade',exitMode='auto',reserveSelected=new Set(),exitSelected=new Set();
 function setReserveMode(mode){
   reserveMode=mode;
   document.getElementById('reserveAutoBtn').className=mode==='auto'?'mode-btn mode-btn-active':'mode-btn';
@@ -139,7 +139,7 @@ function startReservasIntencaoListener() {
   db.ref('reservasIntencao').on('value', function(snap) {
     var d = snap.val();
     reservasIntencao = d ? Object.values(d) : [];
-    if(currentPage==='acoes') renderReservasIntencao();
+    if(currentPage==='inicio'||currentPage==='acoes') renderReservasIntencao();
     updateDashboard();
   });
 }
@@ -194,6 +194,11 @@ function renderReservasIntencao() {
     if(filtroData==='3dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+3); if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
     if(filtroData==='7dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+7); if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
     if(filtroData==='15dias'){ var lim=new Date(); lim.setDate(lim.getDate()+15);if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
+    if(filtroData==='personalizado'){
+      var di=(document.getElementById('intencaoFiltroDataInicio')||{}).value;
+      var df=(document.getElementById('intencaoFiltroDataFim')||{}).value;
+      if(di&&df&&(r.startDate<di||r.startDate>df)) return false;
+    }
     return true;
   });
 
@@ -218,7 +223,8 @@ function renderReservasIntencao() {
         '<div>'+
           '<b style="font-size:14px">'+r.evento+'</b>'+
           '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+r.quantidade+'x '+marcasLabel+' &nbsp;•&nbsp; '+formatDate(r.startDate)+' – '+formatDate(r.endDate)+'</div>'+
-          (r.cidade?'<div style="font-size:12px;color:#6b7280">'+r.cidade+(r.responsavel?' — '+r.responsavel:'')+'</div>':'')+ 
+          (r.cidade?'<div style="font-size:12px;color:#6b7280">'+r.cidade+(r.responsavel?' — '+r.responsavel:'')+'</div>':'')+
+          (r.endereco?'<div style="font-size:12px;color:#6b7280">📍 '+r.endereco+'</div>':'')+
         '</div>'+
         '<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:bold;padding:3px 10px;border-radius:999px;white-space:nowrap">'+r.status+'</span>'+
       '</div>'+
@@ -231,6 +237,13 @@ function renderReservasIntencao() {
         '</div>':'')+
     '</div>';
   }).join('');
+}
+
+function onFiltroDataChange() {
+  var v = (document.getElementById('intencaoFiltroData')||{}).value;
+  var box = document.getElementById('intencaoFiltroPersonalizado');
+  if(box) box.style.display = v==='personalizado' ? 'block' : 'none';
+  if(v !== 'personalizado') renderReservasIntencao();
 }
 
 function cancelarIntencao(id) {

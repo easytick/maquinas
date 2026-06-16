@@ -196,7 +196,7 @@ function renderDayAlerts() {
     listaEl.appendChild(_makeAlertaItem('yellow', '📋',
       intProximas.length + ' reserva' + (intProximas.length > 1 ? 's' : '') + ' de intenção em até 3 dias',
       subInt, detalheInt, 'Ver intenções',
-      function() { setPage('acoes'); setLoteAba('intencoes'); }));
+      function() { setPage('inicio'); setTimeout(function(){ var el=document.getElementById('reservasIntencaoCard'); if(el) el.scrollIntoView({behavior:'smooth'}); },50); }));
   }
 
   // Prioridade 6 — Retornos hoje

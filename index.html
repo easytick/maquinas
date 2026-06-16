@@ -76,6 +76,32 @@
       </div>
       <div id="dayResumeBox" class="day-box">Selecione um periodo.</div>
     </div>
+
+    <!-- RESERVAS DE INTENCAO -->
+    <div class="card" id="reservasIntencaoCard" style="margin-top:12px">
+      <div class="card-title">🗓️ Reservas por Quantidade</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <select id="intencaoFiltroData" onchange="onFiltroDataChange()" style="font-size:12px">
+          <option value="todas">Todas as datas</option>
+          <option value="hoje">Saindo hoje</option>
+          <option value="3dias">Proximos 3 dias</option>
+          <option value="7dias">Proximos 7 dias</option>
+          <option value="15dias">Proximos 15 dias</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+        <select id="intencaoFiltroStatus" onchange="renderReservasIntencao()" style="font-size:12px">
+          <option value="todas">Todos os status</option>
+          <option value="pendente">Pendentes</option>
+          <option value="concluida">Concluidas</option>
+          <option value="cancelada">Canceladas</option>
+        </select>
+      </div>
+      <div id="intencaoFiltroPersonalizado" style="display:none;gap:8px;margin-bottom:10px">
+        <input type="date" id="intencaoFiltroDataInicio" onchange="renderReservasIntencao()" style="font-size:12px;width:100%;margin-bottom:6px"/>
+        <input type="date" id="intencaoFiltroDataFim" onchange="renderReservasIntencao()" style="font-size:12px;width:100%"/>
+      </div>
+      <div id="intencoesList"></div>
+    </div>
   </div>
 
   <!-- PAGE: MAQUINAS -->
@@ -116,7 +142,6 @@
         <button class="lote-tab-btn" onclick="setLoteAba('renovar')">🔄 Renovar</button>
         <button class="lote-tab-btn" onclick="setLoteAba('cancelar')">❌ Cancelar</button>
         <button class="lote-tab-btn" onclick="setLoteAba('manutencao')">🔧 Manutencao</button>
-        <button class="lote-tab-btn" onclick="setLoteAba('intencoes')">🗓️ Reservas</button>
       </div>
 
       <!-- RESERVAR -->
@@ -143,12 +168,12 @@
           <div class="mode-selector">
             <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:8px">Modo de selecao</p>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-              <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn mode-btn-active">🤖 Automatico</button>
+              <button type="button" id="reserveAutoBtn" onclick="setReserveMode('auto')" class="mode-btn">🤖 Automatico</button>
               <button type="button" id="reserveManualBtn" onclick="setReserveMode('manual')" class="mode-btn">📋 Manual</button>
-              <button type="button" id="reserveQtyBtn" onclick="setReserveMode('quantidade')" class="mode-btn">📦 Quantidade</button>
+              <button type="button" id="reserveQtyBtn" onclick="setReserveMode('quantidade')" class="mode-btn mode-btn-active">📦 Quantidade</button>
             </div>
-            <div id="reserveAutoSection"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" inputmode="numeric" placeholder="Quantidade" min="1"/></div>
-            <div id="reserveQtySection" style="display:none">
+            <div id="reserveAutoSection" style="display:none"><p class="mode-info">O sistema escolhera as maquinas que menos giraram.</p><input type="number" id="batchQuantity" inputmode="numeric" placeholder="Quantidade" min="1"/></div>
+            <div id="reserveQtySection">
               <p class="mode-info">Reserve por quantidade — os seriais sao escolhidos na hora da saida.</p>
               <input type="number" id="batchQtyIntencao" inputmode="numeric" placeholder="Quantidade de maquinas" min="1"/>
               <div id="batchQtyDisponivel" style="margin-top:6px;font-size:12px;color:#6b7280"></div>
@@ -286,26 +311,6 @@
         <div id="manutResult" class="batch-result"></div>
       </div>
 
-      <!-- INTENCOES -->
-      <div id="lote-intencoes" class="lote-tab-content">
-        <p class="helper-text">Reservas por quantidade — aguardando definicao de seriais na saida.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <select id="intencaoFiltroData" onchange="renderReservasIntencao()" style="font-size:12px">
-            <option value="todas">Todas as datas</option>
-            <option value="hoje">Saindo hoje</option>
-            <option value="3dias">Proximos 3 dias</option>
-            <option value="7dias">Proximos 7 dias</option>
-            <option value="15dias">Proximos 15 dias</option>
-          </select>
-          <select id="intencaoFiltroStatus" onchange="renderReservasIntencao()" style="font-size:12px">
-            <option value="todas">Todos os status</option>
-            <option value="pendente">Pendentes</option>
-            <option value="concluida">Concluidas</option>
-            <option value="cancelada">Canceladas</option>
-          </select>
-        </div>
-        <div id="intencoesList"></div>
-      </div>
     </div>
   </div>
 
