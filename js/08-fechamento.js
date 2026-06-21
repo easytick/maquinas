@@ -2089,10 +2089,15 @@ function confirmarFestival() {
   if (p2) p2.scrollIntoView({ behavior: 'smooth' });
 }
 
+function _getFestEventoNome() {
+  var evEl = document.getElementById('fechEvento');
+  return (window._fechDados && window._fechDados.evento) || (evEl && evEl.value.trim()) || 'Festival';
+}
+
 function gerarTextoRelatorioProdutor() {
   var ops = (window._festOperacoes && window._festOperacoes.length > 0) ? window._festOperacoes : festGetOpsFromForm();
   if (ops.length === 0) return '';
-  var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
+  var evento = _getFestEventoNome();
   var hoje = new Date().toLocaleDateString('pt-BR');
   var sep = '─'.repeat(44);
   var txt = '🎪 RELATÓRIO POR OPERAÇÃO\n';
@@ -2113,26 +2118,32 @@ function gerarTextoRelatorioProdutor() {
   return txt;
 }
 
-function copiarRelatorioProdutor() {
+function copiarRelatorioProdutor(btn) {
   var txt = gerarTextoRelatorioProdutor();
-  if (!txt) return;
-  navigator.clipboard.writeText(txt).then(function() {
-    var btn = document.getElementById('btn-copiar-rel-produtor');
+  if (!txt) { alert('Preencha ao menos uma operação antes de copiar.'); return; }
+  function feedback() {
     if (btn) { var orig = btn.textContent; btn.textContent = '✓ Copiado!'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
-  }).catch(function() {
+  }
+  function fallback() {
     var ta = document.createElement('textarea');
     ta.value = txt;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
     document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); feedback(); } catch(e) { alert('Não foi possível copiar. Tente manualmente.'); }
     document.body.removeChild(ta);
-  });
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(feedback).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 function baixarImagemRelatorioProdutor() {
   var ops = (window._festOperacoes && window._festOperacoes.length > 0) ? window._festOperacoes : festGetOpsFromForm();
   if (ops.length === 0) { alert('Adicione ao menos uma operação antes de baixar.'); return; }
-  var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
+  var evento = _getFestEventoNome();
   var hoje = new Date().toLocaleDateString('pt-BR');
   var grand = ops.reduce(function(a,o){ return a+o.total; }, 0);
   var fmt = function(v) {
