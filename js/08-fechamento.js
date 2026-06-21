@@ -1,11 +1,14 @@
 // ═══════════════════════════════════════════
 function setFechTab(tab) {
   document.querySelectorAll('#page-fechamentos .lote-tab-btn').forEach(function(b,i){
-    b.classList.toggle('active', (i===0&&tab==='novo')||(i===1&&tab==='historico'));
+    b.classList.toggle('active', (i===0&&tab==='novo')||(i===1&&tab==='historico')||(i===2&&tab==='festivals'));
   });
   document.getElementById('fech-novo').classList.toggle('active', tab==='novo');
   document.getElementById('fech-historico').classList.toggle('active', tab==='historico');
+  var festTab = document.getElementById('fech-festivals');
+  if (festTab) festTab.classList.toggle('active', tab==='festivals');
   if (tab === 'historico') renderFechHistorico();
+  if (tab === 'festivals') renderFestHistorico();
 }
 
 function fechVoltarPasso1() {
@@ -1549,6 +1552,15 @@ function startFechamentosListener() {
         document.getElementById('fech-historico').classList.contains('active')) {
       renderFechHistorico();
     }
+    var festTab = document.getElementById('fech-festivals');
+    if (festTab && festTab.classList.contains('active')) {
+      var detalhe = document.getElementById('fest-detalhe');
+      if (detalhe && detalhe.style.display !== 'none' && window._currentFestId) {
+        renderFestivalDetalhe(window._currentFestId);
+      } else {
+        renderFestHistorico();
+      }
+    }
   });
 }
 
@@ -1575,6 +1587,7 @@ function saveFechamento(dados) {
     criadoEm: new Date().toISOString(),
     criadoPor: getCurrentUserName()
   };
+  if (dados.tipo === 'festival') obj.statusFest = 'aberto';
   db.ref('fechamentos/' + id).set(obj);
   return id;
 }
@@ -1624,6 +1637,7 @@ function renderFechHistorico() {
   var filtro = (document.getElementById('fech-hist-filtro') ? document.getElementById('fech-hist-filtro').value : '').trim().toLowerCase();
   var filtroStatus = _fechHistFiltroStatus || 'todos';
   var lista = fechamentos.filter(function(f) {
+    if (f.tipo === 'festival') return false;
     var textoOk = !filtro || (f.evento||'').toLowerCase().indexOf(filtro) > -1;
     var statusOk = filtroStatus === 'todos' || getFechStatus(f) === filtroStatus;
     return textoOk && statusOk;
@@ -2310,5 +2324,275 @@ function festGetRepasses() {
     result.push({ nome: nome, responsavel: resp, chavePix: pix, valor: val });
   });
   return result;
+}
+
+// ══════════════════════════════════════════════
+// ABA FESTIVALS — histórico e gestão de repasses
+// ══════════════════════════════════════════════
+
+function renderFestHistorico() {
+  var container = document.getElementById('fest-hist-lista');
+  if (!container) return;
+  var lista = fechamentos.filter(function(f) { return f.tipo === 'festival'; });
+  if (lista.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:24px">Nenhum festival salvo ainda.<br>Crie um fechamento do tipo Festival.</p>';
+    return;
+  }
+  container.innerHTML = '';
+  lista.forEach(function(f) {
+    var statusFest = f.statusFest || 'aberto';
+    var isAberto = statusFest === 'aberto';
+    var disponivel = f.valorFinal || 0;
+    var log = _festParseLog(f);
+    var distribuido = log.filter(function(r){ return r.status === 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+    var pendente = log.filter(function(r){ return r.status !== 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+    var restante = disponivel - distribuido - pendente;
+    var data = f.criadoEm ? new Date(f.criadoEm).toLocaleDateString('pt-BR') : '-';
+    var statusColor = isAberto ? '#92400e' : '#166534';
+    var statusBg    = isAberto ? '#fef3c7' : '#dcfce7';
+    var statusLabel = isAberto ? '🔄 Aberto' : '✓ Encerrado';
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px';
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<div>' +
+          '<b style="font-size:14px;color:#1f2937">' + (f.evento||'-') + '</b>' +
+          '<div style="font-size:11px;color:#9ca3af;margin-top:2px">' + data + ' · ' + (f.criadoPor||'-') + '</div>' +
+        '</div>' +
+        '<span style="background:'+statusBg+';color:'+statusColor+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:bold">' + statusLabel + '</span>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;margin-bottom:10px">' +
+        '<div style="background:#eff6ff;border-radius:8px;padding:7px;text-align:center"><div style="color:#1e40af;font-size:10px">Disponível</div><b style="color:var(--blue)">' + formatMoney(disponivel) + '</b></div>' +
+        '<div style="background:#f0fdf4;border-radius:8px;padding:7px;text-align:center"><div style="color:#166534;font-size:10px">Pago</div><b style="color:var(--green)">' + formatMoney(distribuido) + '</b></div>' +
+        '<div style="background:' + (restante > 0.01 ? '#fff7ed' : '#f9fafb') + ';border-radius:8px;padding:7px;text-align:center"><div style="color:' + (restante > 0.01 ? '#c2410c' : '#6b7280') + ';font-size:10px">Saldo</div><b style="color:' + (restante > 0.01 ? '#c2410c' : '#374151') + '">' + formatMoney(Math.max(0, restante)) + '</b></div>' +
+      '</div>' +
+      '<button type="button" onclick="abrirFestivalDetalhe(\''+f.id+'\')" style="width:100%;font-size:13px;background:var(--blue);color:#fff">📂 Abrir Festival</button>';
+    container.appendChild(card);
+  });
+}
+
+function _festParseLog(f) {
+  var log = [];
+  if (f.repassesLog && typeof f.repassesLog === 'object') {
+    Object.keys(f.repassesLog).forEach(function(k) {
+      log.push(Object.assign({}, f.repassesLog[k], { _id: k }));
+    });
+    log.sort(function(a, b) { return (a.data || '') < (b.data || '') ? -1 : 1; });
+  }
+  return log;
+}
+
+function abrirFestivalDetalhe(id) {
+  window._currentFestId = id;
+  document.getElementById('fest-hist-lista').style.display = 'none';
+  var d = document.getElementById('fest-detalhe');
+  if (d) { d.style.display = 'block'; renderFestivalDetalhe(id); }
+}
+
+function fecharFestivalDetalhe() {
+  window._currentFestId = null;
+  var d = document.getElementById('fest-detalhe');
+  if (d) d.style.display = 'none';
+  document.getElementById('fest-hist-lista').style.display = 'block';
+  renderFestHistorico();
+}
+
+function renderFestivalDetalhe(id) {
+  var f = fechamentos.find(function(x){ return x.id === id; });
+  if (!f) { fecharFestivalDetalhe(); return; }
+  var detalhe = document.getElementById('fest-detalhe');
+  if (!detalhe) return;
+
+  var disponivel = f.valorFinal || 0;
+  var ops = []; try { ops = JSON.parse(f.operacoes||'[]'); } catch(e){}
+  var log = _festParseLog(f);
+  var totalPago    = log.filter(function(r){ return r.status === 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+  var totalPend    = log.filter(function(r){ return r.status !== 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+  var saldoLivre   = disponivel - totalPago - totalPend;
+
+  var statusFest = f.statusFest || 'aberto';
+  var isAberto   = statusFest === 'aberto';
+  var sColor = isAberto ? '#92400e' : '#166534';
+  var sBg    = isAberto ? '#fef3c7' : '#dcfce7';
+  var sLabel = isAberto ? '🔄 Aberto' : '✓ Encerrado';
+
+  // operacoes summary
+  var totalCard = ops.reduce(function(a,o){ return a+(o.deb||0)+(o.cred||0)+(o.pix||0); }, 0);
+  var opsHtml = ops.map(function(op) {
+    var card = (op.deb||0)+(op.cred||0)+(op.pix||0);
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+      '<span style="font-weight:600;color:#1f2937">' + (op.nome||'Operação') + '</span>' +
+      '<div style="text-align:right">' +
+        '<div style="font-weight:bold">' + formatMoney(op.total||0) + '</div>' +
+        '<div style="font-size:10px;color:#6b7280">cartão: ' + formatMoney(card) + ' · din: ' + formatMoney(op.din||0) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // log entries
+  var tipoLabel = { repasse: 'Repasse', saque: 'Saque', despesa: 'Despesa' };
+  var tColor = { repasse: '#166534', saque: '#92400e', despesa: '#991b1b' };
+  var tBg    = { repasse: '#dcfce7', saque: '#fef3c7', despesa: '#fee2e2' };
+  var logHtml = log.length === 0
+    ? '<p style="color:#9ca3af;font-size:12px;text-align:center;padding:12px">Nenhum lançamento ainda. Clique em + Adicionar.</p>'
+    : log.map(function(r) {
+        var isPago = r.status === 'pago';
+        var tl = tipoLabel[r.tipo] || r.tipo;
+        var tc = tColor[r.tipo] || '#374151';
+        var tb = tBg[r.tipo] || '#f3f4f6';
+        var df = r.data ? new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR') : '-';
+        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+            '<div>' +
+              '<span style="background:'+tb+';color:'+tc+';border-radius:999px;padding:2px 7px;font-size:10px;font-weight:bold">'+tl+'</span>' +
+              ' <b style="font-size:12px;color:#1f2937">'+r.beneficiario+'</b>' +
+              (r.tipoBenef === 'produtor' ? ' <span style="font-size:10px;color:#6b7280">produtor</span>' : '') +
+            '</div>' +
+            '<b style="font-size:14px;color:var(--blue)">'+formatMoney(r.valor||0)+'</b>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span style="font-size:10px;color:#9ca3af">' + df + (r.chavePix?' · '+r.chavePix:'') + (r.obs?' · '+r.obs:'') + '</span>' +
+            '<div style="display:flex;gap:4px">' +
+              '<button type="button" onclick="festToggleLogStatus(\''+f.id+'\',\''+r._id+'\',\''+r.status+'\')" style="width:auto;padding:3px 8px;font-size:10px;background:'+(isPago?'#dcfce7':'#fef3c7')+';color:'+(isPago?'#166534':'#92400e')+';border:none;border-radius:5px">'+(isPago?'✓ Pago':'⏳ Pendente')+'</button>' +
+              '<button type="button" onclick="festRemoverLogEntry(\''+f.id+'\',\''+r._id+'\')" style="width:auto;padding:3px 6px;font-size:10px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px">✕</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+  // beneficiary balances
+  var benefMap = {};
+  log.forEach(function(r) {
+    if (!benefMap[r.beneficiario]) benefMap[r.beneficiario] = { pago: 0, pend: 0, tipo: r.tipoBenef };
+    if (r.status === 'pago') benefMap[r.beneficiario].pago += (r.valor||0);
+    else benefMap[r.beneficiario].pend += (r.valor||0);
+  });
+  var benefHtml = Object.keys(benefMap).length === 0
+    ? '<p style="font-size:12px;color:#9ca3af;text-align:center">Sem movimentações.</p>'
+    : Object.keys(benefMap).map(function(b) {
+        var bm = benefMap[b];
+        var icon = bm.tipo === 'produtor' ? '🎪' : '🏪';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+          '<span style="color:#374151">'+icon+' '+b+'</span>' +
+          '<div style="text-align:right">' +
+            '<div style="color:var(--green);font-weight:bold">pago: '+formatMoney(bm.pago)+'</div>' +
+            (bm.pend > 0 ? '<div style="font-size:10px;color:#92400e">pendente: '+formatMoney(bm.pend)+'</div>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+  // beneficiary options for form
+  var benefOpts = '<option value="">-- Selecionar --</option><option value="Produtor" data-tipo="produtor">🎪 Produtor</option>';
+  ops.forEach(function(op){ benefOpts += '<option value="'+(op.nome||'Operação')+'" data-tipo="operacao">🏪 '+(op.nome||'Operação')+'</option>'; });
+
+  detalhe.innerHTML =
+    // Header
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
+      '<button type="button" onclick="fecharFestivalDetalhe()" style="width:auto;padding:5px 12px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:12px">← Voltar</button>' +
+      '<div style="flex:1"><b style="font-size:15px;color:#1f2937">'+(f.evento||'-')+'</b><div style="font-size:11px;color:#9ca3af">'+(f.criadoEm?new Date(f.criadoEm).toLocaleDateString('pt-BR'):'-')+'</div></div>' +
+      '<span style="background:'+sBg+';color:'+sColor+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:bold">'+sLabel+'</span>' +
+    '</div>' +
+    // Summary bar
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">' +
+      '<div style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:#1e40af">Disponível</div><b style="font-size:15px;color:var(--blue)">'+formatMoney(disponivel)+'</b></div>' +
+      '<div style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:#166534">Pago</div><b style="font-size:15px;color:var(--green)">'+formatMoney(totalPago)+'</b></div>' +
+      '<div style="background:'+(totalPend>0?'#fef3c7':'#f9fafb')+';border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;color:'+(totalPend>0?'#92400e':'#6b7280')+'">Pendente</div><b style="font-size:15px;color:'+(totalPend>0?'#92400e':'#374151')+'">'+formatMoney(totalPend)+'</b></div>' +
+    '</div>' +
+    // Operacoes
+    '<details style="margin-bottom:12px">' +
+      '<summary style="font-size:12px;font-weight:bold;color:#374151;cursor:pointer;padding:10px;background:#f9fafb;border:1.5px solid var(--border);border-radius:10px">📊 Operações do Festival · total '+formatMoney(f.totalGeral||0)+'</summary>' +
+      '<div style="background:#f9fafb;border:1.5px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:10px">' +
+        opsHtml +
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;padding-top:6px"><span>Em cartão (Easytick recebeu)</span><span>'+formatMoney(totalCard)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--red);margin-top:2px"><span>(-) Cobranças Easytick</span><span>'+formatMoney(f.totalCobrancas||0)+'</span></div>' +
+        (f.totalSaques > 0 ? '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--red);margin-top:2px"><span>(-) Saques antecipados</span><span>'+formatMoney(f.totalSaques||0)+'</span></div>' : '') +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:bold;color:#166534;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>Disponível para distribuir</span><span>'+formatMoney(disponivel)+'</span></div>' +
+      '</div>' +
+    '</details>' +
+    // Repasses log
+    '<div style="background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<div style="font-size:12px;font-weight:bold;color:#374151">💸 Repasses & Saques</div>' +
+        '<button type="button" onclick="festToggleAddForm(\''+f.id+'\',\''+benefOpts.replace(/'/g,'&#39;')+'\')" id="btn-fest-add" style="width:auto;padding:4px 10px;font-size:11px;background:var(--blue);color:#fff;border:none;border-radius:6px">+ Adicionar</button>' +
+      '</div>' +
+      '<div id="fest-log-form" style="display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px"></div>' +
+      '<div id="fest-log-entries">' + logHtml + '</div>' +
+    '</div>' +
+    // Balances
+    '<div style="background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">' +
+      '<div style="font-size:12px;font-weight:bold;color:#374151;margin-bottom:8px">👥 Por Beneficiário</div>' +
+      benefHtml +
+      (saldoLivre > 0.01 ? '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;margin-top:4px;border-top:1px solid var(--border)"><span style="color:#6b7280">Saldo livre (não alocado)</span><b style="color:var(--blue)">'+formatMoney(saldoLivre)+'</b></div>' : '') +
+    '</div>' +
+    // Footer
+    '<div style="display:flex;gap:8px">' +
+      (isAberto
+        ? '<button type="button" onclick="festEncerrarFestival(\''+f.id+'\')" style="flex:1;background:#dcfce7;color:#166534;border:1.5px solid #86efac;font-size:13px">✓ Encerrar Festival</button>'
+        : '<button type="button" onclick="festReabrirFestival(\''+f.id+'\')" style="flex:1;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;font-size:13px">🔄 Reabrir Festival</button>') +
+      '<button type="button" onclick="festDeletar(\''+f.id+'\')" style="width:auto;padding:8px 12px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-size:13px">🗑️</button>' +
+    '</div>';
+}
+
+function festToggleAddForm(festId, benefOptsHtml) {
+  var form = document.getElementById('fest-log-form');
+  if (!form) return;
+  if (form.style.display !== 'none') { form.style.display = 'none'; return; }
+  form.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Data<br><input type="date" id="flf-data" value="'+new Date().toISOString().substr(0,10)+'" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"></label>' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Tipo<br><select id="flf-tipo" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"><option value="repasse">Repasse final</option><option value="saque">Saque / Adiantamento</option><option value="despesa">Despesa do produtor</option></select></label>' +
+    '</div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:11px;font-weight:bold;color:#374151">Beneficiário<br><select id="flf-benef" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box">'+benefOptsHtml+'</select></label></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Valor<br><input type="text" class="money-input" id="flf-valor" placeholder="0,00" style="margin-top:3px"></label>' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Chave Pix<br><input type="text" id="flf-pix" placeholder="CPF, tel, e-mail..." style="margin-top:3px;font-size:12px;padding:6px 8px"></label>' +
+    '</div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:bold;color:#374151">Observação<br><input type="text" id="flf-obs" placeholder="Opcional..." style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"></label></div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button type="button" onclick="festSalvarLogEntry(\''+festId+'\')" style="flex:1;font-size:13px;background:var(--green)">✓ Salvar</button>' +
+      '<button type="button" onclick="document.getElementById(\'fest-log-form\').style.display=\'none\'" style="flex:1;font-size:13px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">Cancelar</button>' +
+    '</div>';
+  form.style.display = 'block';
+  applyMoneyInputs();
+}
+
+function festSalvarLogEntry(festId) {
+  var data  = (document.getElementById('flf-data')||{}).value || new Date().toISOString().substr(0,10);
+  var tipo  = (document.getElementById('flf-tipo')||{}).value || 'repasse';
+  var benefSel = document.getElementById('flf-benef');
+  var benefNome = benefSel ? benefSel.value : '';
+  var opt = benefSel && benefSel.options ? benefSel.options[benefSel.selectedIndex] : null;
+  var tipoBenef = opt ? (opt.getAttribute('data-tipo')||'operacao') : 'operacao';
+  var valor = parseMoney((document.getElementById('flf-valor')||{}).value||'0') || 0;
+  var pix   = (document.getElementById('flf-pix')||{}).value || '';
+  var obs   = (document.getElementById('flf-obs')||{}).value || '';
+  if (!benefNome) { alert('Selecione o beneficiário.'); return; }
+  if (valor <= 0)  { alert('Informe um valor maior que zero.'); return; }
+  var entry = { data: data, beneficiario: benefNome, tipoBenef: tipoBenef, tipo: tipo, valor: valor, chavePix: pix, obs: obs, status: 'pendente', criadoEm: new Date().toISOString() };
+  firebase.database().ref('fechamentos/' + festId + '/repassesLog').push(entry).catch(function(e){ alert('Erro: ' + e.message); });
+}
+
+function festToggleLogStatus(festId, entryId, current) {
+  var next = current === 'pago' ? 'pendente' : 'pago';
+  firebase.database().ref('fechamentos/' + festId + '/repassesLog/' + entryId + '/status').set(next);
+}
+
+function festRemoverLogEntry(festId, entryId) {
+  if (!confirm('Remover este lançamento?')) return;
+  firebase.database().ref('fechamentos/' + festId + '/repassesLog/' + entryId).remove();
+}
+
+function festEncerrarFestival(id) {
+  if (!confirm('Encerrar este festival? Você poderá reabrir se necessário.')) return;
+  firebase.database().ref('fechamentos/' + id + '/statusFest').set('encerrado');
+}
+
+function festReabrirFestival(id) {
+  firebase.database().ref('fechamentos/' + id + '/statusFest').set('aberto');
+}
+
+function festDeletar(id) {
+  if (!confirm('Excluir este festival permanentemente? Esta ação não pode ser desfeita.')) return;
+  firebase.database().ref('fechamentos/' + id).remove().then(function() { fecharFestivalDetalhe(); });
 }
 

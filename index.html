@@ -485,9 +485,10 @@
   <!-- PAGE: FECHAMENTOS -->
   <div id="page-fechamentos" class="page">
     <div class="card">
-      <div class="lote-tabs" style="margin:-16px -16px 14px;grid-template-columns:repeat(2,1fr)">
+      <div class="lote-tabs" style="margin:-16px -16px 14px;grid-template-columns:repeat(3,1fr)">
         <button class="lote-tab-btn active" onclick="setFechTab('novo')">📋 Novo Fechamento</button>
         <button class="lote-tab-btn" onclick="setFechTab('historico')">📂 Historico</button>
+        <button class="lote-tab-btn" onclick="setFechTab('festivals')">🎪 Festivals</button>
       </div>
 
       <!-- NOVO FECHAMENTO -->
@@ -737,6 +738,14 @@
         </div>
         <input id="fech-hist-filtro" type="text" placeholder="Buscar por nome do evento..." oninput="renderFechHistorico()" style="margin-bottom:12px;font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;width:100%;box-sizing:border-box">
         <div id="fech-hist-lista">
+          <p style="color:#9ca3af;font-size:13px">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- FESTIVALS TAB -->
+      <div id="fech-festivals" class="lote-tab-content">
+        <div id="fest-detalhe" style="display:none"></div>
+        <div id="fest-hist-lista">
           <p style="color:#9ca3af;font-size:13px">Carregando...</p>
         </div>
       </div>
