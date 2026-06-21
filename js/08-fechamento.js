@@ -24,12 +24,19 @@ function setFechModo(modo) {
   var isRel = modo === 'relatorio';
   document.getElementById('fech-modo-relatorio').style.display = isRel ? 'block' : 'none';
   document.getElementById('fech-modo-manual').style.display = isRel ? 'none' : 'block';
+  document.getElementById('fech-modo-festival').style.display = 'none';
   document.getElementById('btn-modo-relatorio').style.borderColor = isRel ? 'var(--blue)' : 'var(--border)';
   document.getElementById('btn-modo-relatorio').style.background  = isRel ? '#eef6ff' : '#f9fafb';
   document.getElementById('btn-modo-relatorio').style.color       = isRel ? 'var(--blue)' : '#6b7280';
+  document.getElementById('btn-modo-relatorio').style.fontWeight  = isRel ? 'bold' : 'normal';
   document.getElementById('btn-modo-manual').style.borderColor    = isRel ? 'var(--border)' : 'var(--blue)';
   document.getElementById('btn-modo-manual').style.background     = isRel ? '#f9fafb' : '#eef6ff';
   document.getElementById('btn-modo-manual').style.color          = isRel ? '#6b7280' : 'var(--blue)';
+  document.getElementById('btn-modo-manual').style.fontWeight     = isRel ? 'normal' : 'bold';
+  document.getElementById('btn-modo-festival').style.borderColor  = 'var(--border)';
+  document.getElementById('btn-modo-festival').style.background   = '#f9fafb';
+  document.getElementById('btn-modo-festival').style.color        = '#6b7280';
+  document.getElementById('btn-modo-festival').style.fontWeight   = 'normal';
 }
 
 var _fechTipoManual = 'ficha';
@@ -162,12 +169,28 @@ function limparEstadoFechamento() {
   window._fechTotalCobranças = 0;
   window._fechTotalSaques = 0;
   window._fechSaquesSelecionados = [];
+  window._festOperacoes = [];
+  window._festTotalRepasses = 0;
+  window._fechTotalARepassar = 0;
   // Limpa listas visuais
   ['fechFormasList','fechPdvList','fechCobrancasList','fechResumoLinhas'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.innerHTML = '';
   });
   var tb = document.getElementById('fechTotalBruto'); if(tb) tb.innerHTML = 'R$ 0,00';
   var vf = document.getElementById('fechValorFinal'); if(vf) vf.textContent = 'R$ 0,00';
+  // Limpa festival
+  var festLista = document.getElementById('fest-ops-lista');
+  if (festLista) festLista.innerHTML = '';
+  var festGT = document.getElementById('fest-grand-total');
+  if (festGT) festGT.textContent = 'R$ 0,00';
+  var festSec = document.getElementById('fest-repasses-section');
+  if (festSec) festSec.style.display = 'none';
+  var festRpLista = document.getElementById('fest-repasses-lista');
+  if (festRpLista) festRpLista.innerHTML = '';
+  var festRpTot = document.getElementById('fest-repasses-total');
+  if (festRpTot) festRpTot.textContent = 'R$ 0,00';
+  var lbl = document.getElementById('fechValorFinalLabel');
+  if (lbl) lbl.textContent = 'Valor a repassar ao produtor';
 }
 
 function matchTotalLinha(linha) {
@@ -422,6 +445,8 @@ function renderDadosLidos() {
 
   document.getElementById('fechTipoBadge').innerHTML = d.tipo === 'ficha'
     ? '<span style="background:#dcfce7;color:#166534;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🍺 Ficha</span>'
+    : d.tipo === 'festival'
+    ? '<span style="background:#fef3c7;color:#92400e;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎪 Festival</span>'
     : '<span style="background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold">🎟️ Ingresso</span>';
 
   // Total — para ingresso mostra loja + digital + pdv
@@ -578,7 +603,7 @@ function renderCobrancas() {
 
   var linhas = [];
 
-  if (d.tipo === 'ficha') {
+  if (d.tipo === 'ficha' || d.tipo === 'festival') {
     linhas = [
       { id:'pdv',      label:'PDV (por terminal)',           tipo:'qtd_unit', qtd:numPdvsFisicos, unit:p.pdvValor||89.90, obs:'terminais detectados: '+numPdvsFisicos },
       { id:'debito',   label:'Taxa Debito',                  tipo:'pct',      forma:'debito',  pct:p.pctDebito||2.0 },
@@ -779,9 +804,23 @@ function recalcFech() {
   var totalSaques = 0;
   (window._fechSaquesSelecionados || []).forEach(function(s){ totalSaques += s.valor; });
 
-  // Base repasse = valor líquido loja virtual (já descontado cupons e digital)
+  // Base repasse = total cartao (sem dinheiro)
   var baseRepasse = d.totalGeral - d.dinheiro;
-  var valorFinal = baseRepasse - totalCobranças - totalSaques;
+
+  // Calculo do valor final depende do tipo
+  var valorFinal;
+  if (d.tipo === 'festival') {
+    var totalARepassar = baseRepasse - totalCobranças;
+    var totalRepasses = window._festTotalRepasses || 0;
+    valorFinal = totalARepassar - totalRepasses - totalSaques;
+    window._fechTotalARepassar = totalARepassar;
+  } else {
+    valorFinal = baseRepasse - totalCobranças - totalSaques;
+  }
+
+  // Atualiza label do valor final
+  var vfLabel = document.getElementById('fechValorFinalLabel');
+  if (vfLabel) vfLabel.textContent = d.tipo === 'festival' ? 'Restante para o produtor' : 'Valor a repassar ao produtor';
 
   var resumoEl = document.getElementById('fechResumoLinhas');
   if (resumoEl) {
@@ -792,14 +831,27 @@ function recalcFech() {
         ((d.totalDigital||0) > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Digital/App (produtor)</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' : '') +
         ((d.totalPdv||0) > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">PDV fisico</span><span>+'+formatMoney(d.totalPdv||0)+'</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px"><span style="opacity:.8">= Base repasse</span><span>'+formatMoney(baseRepasse)+'</span></div>';
+    } else if (d.tipo === 'festival') {
+      var totalRep = window._festTotalRepasses || 0;
+      var totalAR = window._fechTotalARepassar || 0;
+      html +=
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
+        (d.dinheiro > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Dinheiro produtor</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' : '') +
+        '<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.15);margin-top:3px;padding-top:3px"><span style="opacity:.8">Total entrada cartao</span><span>'+formatMoney(baseRepasse)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Taxas + despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-weight:bold;border-top:1px solid rgba(255,255,255,.15);margin-top:3px;padding-top:3px"><span>Total a repassar</span><span>'+formatMoney(totalAR)+'</span></div>' +
+        (totalRep > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Repasses operacoes</span><span>- '+formatMoney(totalRep)+'</span></div>' : '') +
+        (totalSaques > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Saques produtor</span><span>- '+formatMoney(totalSaques)+'</span></div>' : '');
     } else {
       html +=
         '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Total bruto</span><span>'+formatMoney(d.totalGeral)+'</span></div>' +
         '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Dinheiro produtor</span><span>- '+formatMoney(d.dinheiro)+'</span></div>';
     }
-    html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cobranças / despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>';
-    if (totalSaques > 0) {
-      html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Saques antecipados</span><span>- '+formatMoney(totalSaques)+'</span></div>';
+    if (d.tipo !== 'festival') {
+      html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Cobranças / despesas</span><span>- '+formatMoney(totalCobranças)+'</span></div>';
+      if (totalSaques > 0) {
+        html += '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Saques antecipados</span><span>- '+formatMoney(totalSaques)+'</span></div>';
+      }
     }
     resumoEl.innerHTML = html;
   }
@@ -958,7 +1010,7 @@ function gerarFechamento() {
   var evento = document.getElementById('fechEvento').value.trim() || 'Evento';
   if (!evento) { alert('Informe o nome do evento antes de gerar.'); return; }
 
-  var tipo = d.tipo === 'ficha' ? '🍺 FICHA' : '🎟️ INGRESSO';
+  var tipo = d.tipo === 'ficha' ? '🍺 FICHA' : (d.tipo === 'festival' ? '🎪 FESTIVAL' : '🎟️ INGRESSO');
   var hoje = new Date().toLocaleDateString('pt-BR');
   var txt = '';
   txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
@@ -1017,17 +1069,51 @@ function gerarFechamento() {
     if ((d.totalDesconto||0) > 0) txt += '  (-) Cupons/descontos:  - ' + formatMoney(d.totalDesconto||0) + '\n';
     txt += '  (=) Loja Virtual liq.: ' + formatMoney(d.totalLoja||0) + '\n';
     if ((d.totalPdv||0) > 0) txt += '  (+) PDV fisico:         ' + formatMoney(d.totalPdv||0) + '\n';
+  } else if (d.tipo === 'festival') {
+    var cartaoFest = d.totalGeral - d.dinheiro;
+    txt += '  Total bruto:           ' + formatMoney(d.totalGeral) + '\n';
+    if (d.dinheiro > 0) txt += '  (-) Dinheiro produtor: - ' + formatMoney(d.dinheiro) + '\n';
+    txt += '  Total entrada cartao:  ' + formatMoney(cartaoFest) + '\n';
   } else {
     txt += '  Total bruto:          ' + formatMoney(d.totalGeral) + '\n';
     txt += '  (-) Dinheiro produtor: ' + formatMoney(d.dinheiro) + '\n';
   }
   txt += '  (-) Cobranças:         ' + formatMoney(window._fechTotalCobranças) + '\n';
-  if ((window._fechTotalSaques||0) > 0) {
-    txt += '  (-) Saques antecip.:   ' + formatMoney(window._fechTotalSaques) + '\n';
+  if (d.tipo === 'festival') {
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    txt += '  TOTAL A REPASSAR: ' + formatMoney(window._fechTotalARepassar||0) + '\n';
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+    var repFest = festGetRepasses ? festGetRepasses() : [];
+    if (repFest.length > 0) {
+      txt += '💸 REPASSES POR OPERACAO\n';
+      var totalRepFest = 0;
+      repFest.forEach(function(r) {
+        txt += (r.ok ? '✓ ' : '  ') + (r.nome||'-') + ': ' + formatMoney(r.valor);
+        if (r.responsavel) txt += '  (' + r.responsavel + ')';
+        if (r.chavePix) txt += '  Pix: ' + r.chavePix;
+        txt += '\n';
+        totalRepFest += r.valor;
+      });
+      txt += 'Total repasses: ' + formatMoney(totalRepFest) + '\n\n';
+    }
+    if ((window._fechTotalSaques||0) > 0) {
+      txt += '💸 SAQUES DO PRODUTOR\n';
+      (window._fechSaquesSelecionados||[]).forEach(function(s){
+        txt += '  ' + (s.nome||'-') + ': - ' + formatMoney(s.valor) + '\n';
+      });
+      txt += '\n';
+    }
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    txt += '  RESTANTE PARA O PRODUTOR: ' + formatMoney(window._fechValorFinal) + '\n';
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  } else {
+    if ((window._fechTotalSaques||0) > 0) {
+      txt += '  (-) Saques antecip.:   ' + formatMoney(window._fechTotalSaques) + '\n';
+    }
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    txt += '  REPASSE AO PRODUTOR: ' + formatMoney(window._fechValorFinal) + '\n';
+    txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   }
-  txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  txt += '  REPASSE AO PRODUTOR: ' + formatMoney(window._fechValorFinal) + '\n';
-  txt += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   txt += '\nEasytick • ' + hoje;
 
   document.getElementById('fechRelatorioFinal').textContent = txt;
@@ -1051,10 +1137,13 @@ function gerarFechamento() {
     totalCobranças: window._fechTotalCobranças || 0,
     totalSaques: window._fechTotalSaques || 0,
     valorFinal: window._fechValorFinal || 0,
+    totalARepassar: window._fechTotalARepassar || 0,
     formas: d.formas,
     pdvs: d.pdvs,
     cobranças: cobAtivas,
     saques: window._fechSaquesSelecionados || [],
+    operacoes: d.operacoes || [],
+    repasses: (typeof festGetRepasses === 'function') ? festGetRepasses() : [],
     textoFinal: txt
   });
 }
@@ -1082,7 +1171,7 @@ function baixarImagemFechamento() {
 
   var evento = (document.getElementById('fechEvento').value || 'Evento').toUpperCase();
   var hoje = new Date().toLocaleDateString('pt-BR');
-  var tipoLabel = d.tipo === 'ficha' ? 'Fechamento fichas' : 'Fechamento ingressos';
+  var tipoLabel = d.tipo === 'ficha' ? 'Fechamento fichas' : (d.tipo === 'festival' ? 'Fechamento festival' : 'Fechamento ingressos');
 
   function fmtImg(v) {
     return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1324,23 +1413,82 @@ function baixarImagemFechamento() {
       '</div>';
   }
 
-  // ── TOTAL DEDUÇÕES (ambos) ──
-  html +=
-    '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">' +
-      '<span style="font-size:14px;font-weight:600;color:#374151;">Total deduções</span>' +
-      '<span style="font-size:14px;font-weight:700;color:#dc2626;">- '+fmtImg(totalDed)+'</span>' +
-    '</div>' +
+  if (d.tipo === 'festival') {
+    // ── FESTIVAL: TOTAL A REPASSAR ──
+    html +=
+      '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:#eef4fd;border-left:4px solid #185fa5;border-top:1px solid #b5d4f4;">' +
+        '<div>' +
+          '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;">Total a repassar para o contratante</div>' +
+          '<div style="'+F+'font-size:11px;color:#4b7cbf;margin-top:3px;">Total cartao liquido — taxas e despesas EasyTick</div>' +
+        '</div>' +
+        '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;">'+fmtImg(window._fechTotalARepassar||0)+'</div>' +
+      '</div>';
 
-  // ── REPASSE FINAL ──
-  '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
-    '<div>' +
-      '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Repasse ao produtor</div>' +
-      '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
-    '</div>' +
-    '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmtImg(window._fechValorFinal)+'</div>' +
-  '</div>' +
+    // ── FESTIVAL: TABELA REPASSES ──
+    var repImg = (typeof festGetRepasses === 'function') ? festGetRepasses() : [];
+    if (repImg.length > 0) {
+      var rpRows = repImg.map(function(r, i) {
+        var last = i === repImg.length - 1;
+        var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+        return '<tr>' +
+          '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'color:#1e293b;">'+(r.ok?'✓ ':'')+( r.nome||'-')+'</td>' +
+          '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#475569;">'+(r.responsavel||'—')+'</td>' +
+          '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#64748b;">'+(r.chavePix||'—')+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'text-align:right;font-weight:600;color:#1e293b;">'+fmtImg(r.valor)+'</td>' +
+        '</tr>';
+      }).join('');
+      var totalRepImg = repImg.reduce(function(a, r){ return a + r.valor; }, 0);
+      html +=
+        '<div style="padding:4px 28px 0;background:#fff;">' +
+          secLabel('Repasses por operacao') +
+          '<table style="width:100%;border-collapse:collapse;">' +
+            '<thead><tr style="background:#f8fafc;">' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Operacao</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Responsavel</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Chave Pix</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:right;font-weight:600;">Valor</th>' +
+            '</tr></thead>' +
+            '<tbody>'+rpRows+'</tbody>' +
+          '</table>' +
+          '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1.5px solid #e2e8f0;margin-top:4px;">' +
+            '<span style="font-size:13px;font-weight:700;color:#374151;">Total repasses</span>' +
+            '<span style="font-size:13px;font-weight:700;color:#374151;">'+fmtImg(totalRepImg)+'</span>' +
+          '</div>' +
+        '</div>';
+    }
+    if ((window._fechTotalSaques||0) > 0) {
+      html += '<div style="padding:4px 28px 0;background:#fff;">' + secLabel('Saques do produtor');
+      (saques||[]).forEach(function(s,i){ html += dashedRow('(-) '+(s.nome||'-'), '- '+fmtImg(s.valor), true, i===saques.length-1); });
+      html += '</div>';
+    }
+    // ── RESTANTE PRODUTOR ──
+    html +=
+      '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div>' +
+          '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Restante para o produtor</div>' +
+          '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
+        '</div>' +
+        '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmtImg(window._fechValorFinal)+'</div>' +
+      '</div>';
+  } else {
+    // ── TOTAL DEDUÇÕES (ficha / ingresso) ──
+    html +=
+      '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:11px 28px;border-top:1.5px solid #fca5a5;background:#fff5f5;">' +
+        '<span style="font-size:14px;font-weight:600;color:#374151;">Total deduções</span>' +
+        '<span style="font-size:14px;font-weight:700;color:#dc2626;">- '+fmtImg(totalDed)+'</span>' +
+      '</div>' +
+    // ── REPASSE FINAL ──
+    '<div style="background:#166534;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Repasse ao produtor</div>' +
+        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
+      '</div>' +
+      '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmtImg(window._fechValorFinal)+'</div>' +
+    '</div>';
+  }
 
   // ── RODAPÉ ──
+  html +=
   '<div style="padding:10px 28px;text-align:center;">' +
     '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+hoje+'</span>' +
   '</div>' +
@@ -1416,10 +1564,13 @@ function saveFechamento(dados) {
     totalCobrancas: dados.totalCobranças || 0,
     totalSaques: dados.totalSaques || 0,
     valorFinal: dados.valorFinal,
+    totalARepassar: dados.totalARepassar || 0,
     formas: JSON.stringify(dados.formas||{}),
     pdvs: JSON.stringify(dados.pdvs||{}),
     cobrancas: JSON.stringify(dados.cobranças||[]),
     saques: JSON.stringify(dados.saques||[]),
+    operacoes: JSON.stringify(dados.operacoes||[]),
+    repasses: JSON.stringify(dados.repasses||[]),
     textoFinal: dados.textoFinal || '',
     criadoEm: new Date().toISOString(),
     criadoPor: getCurrentUserName()
@@ -1495,9 +1646,9 @@ function renderFechHistorico() {
     var card = document.createElement('div');
     card.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px';
 
-    var tipoColor = f.tipo === 'ficha' ? '#166534' : '#1e40af';
-    var tipoBg = f.tipo === 'ficha' ? '#dcfce7' : '#dbeafe';
-    var tipoLabel = f.tipo === 'ficha' ? '🍺 Ficha' : '🎟️ Ingresso';
+    var tipoColor = f.tipo === 'ficha' ? '#166534' : (f.tipo === 'festival' ? '#92400e' : '#1e40af');
+    var tipoBg = f.tipo === 'ficha' ? '#dcfce7' : (f.tipo === 'festival' ? '#fef3c7' : '#dbeafe');
+    var tipoLabel = f.tipo === 'ficha' ? '🍺 Ficha' : (f.tipo === 'festival' ? '🎪 Festival' : '🎟️ Ingresso');
     var data = f.criadoEm ? new Date(f.criadoEm).toLocaleString('pt-BR') : '-';
 
     // Saques pagos APÓS o fechamento para este evento
@@ -1709,5 +1860,431 @@ function salvarBaixaManual(fid) {
   });
   var modal = document.getElementById('modal-baixa-manual');
   if (modal) modal.remove();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FESTIVAL — funções de suporte
+// ═══════════════════════════════════════════════════════════════
+
+var _festOpCounter = 0;
+
+function setFechModoFestival() {
+  // Esconde os outros modos
+  document.getElementById('fech-modo-relatorio').style.display = 'none';
+  document.getElementById('fech-modo-manual').style.display    = 'none';
+  document.getElementById('fech-modo-festival').style.display  = 'block';
+
+  // Estiliza botão ativo
+  ['btn-modo-relatorio','btn-modo-manual'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = '#f9fafb';
+    b.style.color       = '#6b7280';
+    b.style.fontWeight  = 'normal';
+  });
+  var bFest = document.getElementById('btn-modo-festival');
+  if (bFest) {
+    bFest.style.borderColor = 'var(--blue)';
+    bFest.style.background  = '#eff6ff';
+    bFest.style.color       = 'var(--blue)';
+    bFest.style.fontWeight  = '700';
+  }
+
+  initFestival();
+}
+
+function initFestival() {
+  _festOpCounter = 0;
+  window._festOperacoes = [];
+  window._festTotalRepasses = 0;
+  window._fechTotalARepassar = 0;
+  var lista = document.getElementById('fest-ops-lista');
+  if (lista) lista.innerHTML = '';
+  var gt = document.getElementById('fest-grand-total');
+  if (gt) gt.textContent = 'R$ 0,00';
+  // Adiciona primeira operação já aberta
+  festAddOperacao();
+}
+
+function festAddOperacao() {
+  _festOpCounter++;
+  var id = _festOpCounter;
+  var lista = document.getElementById('fest-ops-lista');
+  if (!lista) return;
+
+  var card = document.createElement('div');
+  card.className = 'fest-op-card';
+  card.setAttribute('data-id', id);
+  card.style.cssText = 'background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;';
+
+  card.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--blue);">Operação #'+id+'</div>' +
+      '<button type="button" onclick="festRemoveOp('+id+')" style="width:auto;padding:3px 9px;font-size:11px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;">✕ Remover</button>' +
+    '</div>' +
+    '<div style="display:grid;gap:8px;">' +
+      '<label style="font-size:12px;font-weight:700;color:#374151;">Nome da operação<br>' +
+        '<input type="text" id="fest-op-nome-'+id+'" placeholder="Ex: Bar do João" oninput="festRecalcOp('+id+')" style="margin-top:3px;">' +
+      '</label>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        '<label style="font-size:12px;font-weight:700;color:#374151;">Débito<br><input type="text" class="money-input" id="fest-op-deb-'+id+'" value="0,00" oninput="festRecalcOp('+id+')" style="margin-top:3px;"></label>' +
+        '<label style="font-size:12px;font-weight:700;color:#374151;">Crédito<br><input type="text" class="money-input" id="fest-op-cred-'+id+'" value="0,00" oninput="festRecalcOp('+id+')" style="margin-top:3px;"></label>' +
+        '<label style="font-size:12px;font-weight:700;color:#374151;">Pix<br><input type="text" class="money-input" id="fest-op-pix-'+id+'" value="0,00" oninput="festRecalcOp('+id+')" style="margin-top:3px;"></label>' +
+        '<label style="font-size:12px;font-weight:700;color:#374151;">Dinheiro<br><input type="text" class="money-input" id="fest-op-din-'+id+'" value="0,00" oninput="festRecalcOp('+id+')" style="margin-top:3px;"></label>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;border-radius:6px;padding:8px 12px;">' +
+        '<span style="font-size:12px;font-weight:700;color:#166534;">Total operação</span>' +
+        '<span id="fest-op-total-'+id+'" style="font-size:14px;font-weight:700;color:#166534;">R$ 0,00</span>' +
+      '</div>' +
+      '<button type="button" onclick="festToggleOpRel('+id+')" style="width:auto;background:#f9fafb;color:#374151;border:1px solid var(--border);font-size:12px;padding:6px 12px;text-align:left;">📋 Colar relatório (opcional)</button>' +
+      '<div id="fest-op-rel-'+id+'" style="display:none;">' +
+        '<textarea id="fest-op-rel-txt-'+id+'" placeholder="Cole aqui o relatório desta operação..." style="font-size:11px;min-height:70px;margin-bottom:6px;"></textarea>' +
+        '<button type="button" onclick="festParsearOpRel('+id+')" style="width:auto;background:var(--blue);color:#fff;font-size:12px;padding:6px 14px;">Extrair valores</button>' +
+      '</div>' +
+    '</div>';
+
+  lista.appendChild(card);
+  applyMoneyInputs();
+}
+
+function festRemoveOp(id) {
+  var card = document.querySelector('.fest-op-card[data-id="'+id+'"]');
+  if (card) card.remove();
+  festRecalcGrandTotal();
+}
+
+function festToggleOpRel(id) {
+  var el = document.getElementById('fest-op-rel-'+id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function festParsearOpRel(id) {
+  var txtEl = document.getElementById('fest-op-rel-txt-'+id);
+  if (!txtEl || !txtEl.value.trim()) return;
+  var dados = extrairDadosRelatorio(txtEl.value.trim());
+  if (!dados) { alert('Não foi possível extrair os dados. Verifique o formato do relatório.'); return; }
+
+  function setFV(elId, v) {
+    var el = document.getElementById(elId);
+    if (el) { el.value = formatMoney(v||0).replace('R$','').trim(); }
+  }
+
+  var formas = dados.formas || {};
+  var deb = 0, cred = 0, pix = 0, din = 0;
+  Object.keys(formas).forEach(function(k) {
+    var kl = k.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    var v = formas[k].valor || 0;
+    if (/debito/.test(kl)) deb += v;
+    else if (/credito/.test(kl)) cred += v;
+    else if (/pix/.test(kl)) pix += v;
+    else if (/dinheiro|especie/.test(kl)) din += v;
+  });
+
+  setFV('fest-op-deb-'+id,  deb);
+  setFV('fest-op-cred-'+id, cred);
+  setFV('fest-op-pix-'+id,  pix);
+  setFV('fest-op-din-'+id,  din);
+
+  if (dados.evento) {
+    var nomeEl = document.getElementById('fest-op-nome-'+id);
+    if (nomeEl && !nomeEl.value.trim()) nomeEl.value = dados.evento;
+  }
+
+  festRecalcOp(id);
+  var relDiv = document.getElementById('fest-op-rel-'+id);
+  if (relDiv) relDiv.style.display = 'none';
+}
+
+function festRecalcOp(id) {
+  var parse = function(elId) { return parseMoney(( document.getElementById(elId)||{}).value||0) || 0; };
+  var deb  = parse('fest-op-deb-'+id);
+  var cred = parse('fest-op-cred-'+id);
+  var pix  = parse('fest-op-pix-'+id);
+  var din  = parse('fest-op-din-'+id);
+  var total = deb + cred + pix + din;
+  var el = document.getElementById('fest-op-total-'+id);
+  if (el) el.textContent = formatMoney(total);
+  festRecalcGrandTotal();
+}
+
+function festRecalcGrandTotal() {
+  var ops = festGetOpsFromForm();
+  var grand = ops.reduce(function(a, o) { return a + o.total; }, 0);
+  var gt = document.getElementById('fest-grand-total');
+  if (gt) gt.textContent = formatMoney(grand);
+}
+
+function festGetOpsFromForm() {
+  var cards = document.querySelectorAll('.fest-op-card');
+  var result = [];
+  cards.forEach(function(card) {
+    var id = card.getAttribute('data-id');
+    var nome = (document.getElementById('fest-op-nome-'+id)||{}).value || ('Operação #'+id);
+    var parse = function(elId) { return parseMoney(( document.getElementById(elId)||{}).value||0) || 0; };
+    var deb  = parse('fest-op-deb-'+id);
+    var cred = parse('fest-op-cred-'+id);
+    var pix  = parse('fest-op-pix-'+id);
+    var din  = parse('fest-op-din-'+id);
+    result.push({ id: id, nome: nome, deb: deb, cred: cred, pix: pix, din: din, total: deb+cred+pix+din });
+  });
+  return result;
+}
+
+function confirmarFestival() {
+  var ops = festGetOpsFromForm();
+  if (ops.length === 0) { alert('Adicione ao menos uma operação.'); return; }
+  var valid = ops.filter(function(o) { return o.total > 0; });
+  if (valid.length === 0) { alert('Informe os valores de pelo menos uma operação.'); return; }
+
+  var totalBruto  = ops.reduce(function(a, o) { return a + o.total; }, 0);
+  var totalDin    = ops.reduce(function(a, o) { return a + o.din; }, 0);
+  var totalCartao = totalBruto - totalDin;
+  var totalDeb    = ops.reduce(function(a, o) { return a + o.deb; }, 0);
+  var totalCred   = ops.reduce(function(a, o) { return a + o.cred; }, 0);
+  var totalPix    = ops.reduce(function(a, o) { return a + o.pix; }, 0);
+
+  window._festOperacoes = ops;
+
+  // Monta _fechDados como festival
+  window._fechDados = window._fechDados || {};
+  window._fechDados.tipo       = 'festival';
+  window._fechDados.totalGeral = totalBruto;   // recalcFech usa totalGeral - dinheiro = totalCartao
+  window._fechDados.totalBruto = totalBruto;
+  window._fechDados.formas     = {
+    'Débito':   { valor: totalDeb },
+    'Crédito':  { valor: totalCred },
+    'Pix':      { valor: totalPix },
+    'Dinheiro': { valor: totalDin }
+  };
+  window._fechDados.dinheiro  = totalDin;
+  window._fechDados.pdvs      = {};
+  window._fechDados.operacoes = ops;
+
+  // Evento: tenta pegar do campo se já existir, senão padrão
+  var evEl = document.getElementById('fechEvento');
+  if (!window._fechDados.evento && evEl && evEl.value.trim()) {
+    window._fechDados.evento = evEl.value.trim();
+  }
+
+  // Gera texto do relatório para produtor no preview
+  var previewEl = document.getElementById('fest-relatorio-preview');
+  if (previewEl) previewEl.textContent = gerarTextoRelatorioProdutor();
+
+  // Vai para passo 2
+  renderDadosLidos();
+  window._fechParams = {};
+  renderCobrancas();
+  renderFestRepasses();
+  var evInput = document.getElementById('fechEvento');
+  if (evInput && evInput.value.trim()) {
+    inicializarSaquesAuto(evInput.value.trim());
+  }
+  document.getElementById('fech-passo1').style.display = 'none';
+  document.getElementById('fech-passo2').style.display = 'block';
+
+  // Scroll para passo 2
+  var p2 = document.getElementById('fech-passo2');
+  if (p2) p2.scrollIntoView({ behavior: 'smooth' });
+}
+
+function gerarTextoRelatorioProdutor() {
+  var ops = window._festOperacoes || [];
+  if (ops.length === 0) return '';
+  var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var sep = '─'.repeat(44);
+  var txt = '🎪 RELATÓRIO POR OPERAÇÃO\n';
+  txt += evento + ' — ' + hoje + '\n';
+  txt += sep + '\n';
+  var fmt = function(v) { return 'R$ ' + (v||0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 }); };
+  ops.forEach(function(op) {
+    txt += '\n📌 ' + op.nome + '\n';
+    if (op.deb  > 0) txt += '  Débito:   ' + fmt(op.deb)  + '\n';
+    if (op.cred > 0) txt += '  Crédito:  ' + fmt(op.cred) + '\n';
+    if (op.pix  > 0) txt += '  Pix:      ' + fmt(op.pix)  + '\n';
+    if (op.din  > 0) txt += '  Dinheiro: ' + fmt(op.din)  + '\n';
+    txt += '  TOTAL:    ' + fmt(op.total) + '\n';
+  });
+  txt += '\n' + sep + '\n';
+  var grand = ops.reduce(function(a,o){ return a+o.total; }, 0);
+  txt += 'TOTAL GERAL: ' + fmt(grand) + '\n';
+  return txt;
+}
+
+function copiarRelatorioProdutor() {
+  var txt = gerarTextoRelatorioProdutor();
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(function() {
+    var btn = document.getElementById('btn-copiar-rel-produtor');
+    if (btn) { var orig = btn.textContent; btn.textContent = '✓ Copiado!'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+function baixarImagemRelatorioProdutor() {
+  var ops = window._festOperacoes || [];
+  if (ops.length === 0) return;
+  var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var grand = ops.reduce(function(a,o){ return a+o.total; }, 0);
+  var fmt = function(v) {
+    return 'R$&nbsp;' + (v||0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  };
+  var F = "font-family:'Segoe UI',Arial,sans-serif;";
+
+  var rows = ops.map(function(op, i) {
+    var last = i === ops.length - 1;
+    var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+    return '<tr>' +
+      '<td style="'+F+'font-size:13px;padding:9px 10px;'+bd+'color:#1e293b;font-weight:600;">'+op.nome+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:9px 10px;'+bd+'text-align:right;color:#475569;">'+(op.deb>0?fmt(op.deb):'—')+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:9px 10px;'+bd+'text-align:right;color:#475569;">'+(op.cred>0?fmt(op.cred):'—')+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:9px 10px;'+bd+'text-align:right;color:#475569;">'+(op.pix>0?fmt(op.pix):'—')+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:9px 10px;'+bd+'text-align:right;color:#64748b;">'+(op.din>0?fmt(op.din):'—')+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:9px 10px;'+bd+'text-align:right;font-weight:700;color:#166534;">'+fmt(op.total)+'</td>' +
+    '</tr>';
+  }).join('');
+
+  var html =
+    '<div id="_fest-rel-img" style="width:640px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12);">' +
+      // Header
+      '<div style="background:var(--blue,#004aad);padding:20px 28px;">' +
+        '<div style="'+F+'font-size:11px;font-weight:600;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Relatório por operação</div>' +
+        '<div style="'+F+'font-size:18px;font-weight:700;color:#fff;">'+evento+'</div>' +
+        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">Gerado em '+hoje+'</div>' +
+      '</div>' +
+      // Tabela
+      '<div style="padding:16px 20px;">' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+          '<thead>' +
+            '<tr style="background:#f8fafc;">' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:left;font-weight:600;">Operação</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:right;font-weight:600;">Débito</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:right;font-weight:600;">Crédito</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:right;font-weight:600;">Pix</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:right;font-weight:600;">Dinheiro</th>' +
+              '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:6px 10px;text-align:right;font-weight:600;">Total</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>'+rows+'</tbody>' +
+        '</table>' +
+      '</div>' +
+      // Total geral
+      '<div style="background:#166534;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="'+F+'font-size:12px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;">Total geral</div>' +
+        '<div style="'+F+'font-size:24px;font-weight:700;color:#fff;">'+fmt(grand)+'</div>' +
+      '</div>' +
+      '<div style="padding:8px 20px;text-align:center;">' +
+        '<span style="'+F+'font-size:10px;color:#94a3b8;">Easytick&nbsp;•&nbsp;easytick.com.br&nbsp;•&nbsp;Gerado em '+hoje+'</span>' +
+      '</div>' +
+    '</div>';
+
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+  var target = wrapper.querySelector('#_fest-rel-img');
+  html2canvas(target, { scale: 2, backgroundColor: null, useCORS: true }).then(function(canvas) {
+    var link = document.createElement('a');
+    link.download = 'relatorio-produtor-' + (evento||'festival').replace(/\s+/g,'-').toLowerCase() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    document.body.removeChild(wrapper);
+  }).catch(function(e) {
+    document.body.removeChild(wrapper);
+    alert('Erro ao gerar imagem: ' + e.message);
+  });
+}
+
+// ── PASSO 3: Repasses ──
+
+var _festRpCounter = 0;
+
+function renderFestRepasses() {
+  var sec = document.getElementById('fest-repasses-section');
+  if (sec) sec.style.display = 'block';
+  var lista = document.getElementById('fest-repasses-lista');
+  if (!lista) return;
+  lista.innerHTML = '';
+  _festRpCounter = 0;
+  var ops = window._festOperacoes || [];
+  // Pré-popula com uma linha por operação
+  ops.forEach(function(op) {
+    festAddRepasseRow(op.nome, '', 0, '');
+  });
+  festRecalcRepasses();
+}
+
+function festAddRepasseRow(nome, responsavel, valor, chavePix) {
+  _festRpCounter++;
+  var id = _festRpCounter;
+  var lista = document.getElementById('fest-repasses-lista');
+  if (!lista) return;
+
+  var row = document.createElement('div');
+  row.className = 'fest-rp-row';
+  row.setAttribute('data-id', id);
+  row.style.cssText = 'background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;';
+
+  row.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+      '<span style="font-size:12px;font-weight:700;color:#374151;">Repasse #'+id+'</span>' +
+      '<button type="button" onclick="festRemoveRepasse('+id+')" style="width:auto;padding:2px 8px;font-size:11px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;">✕</button>' +
+    '</div>' +
+    '<div style="display:grid;gap:7px;">' +
+      '<label style="font-size:11px;font-weight:700;color:#374151;">Operação / Beneficiário<br>' +
+        '<input type="text" id="fest-rp-nome-'+id+'" value="'+(nome||'')+'" style="margin-top:3px;" oninput="festRecalcRepasses()">' +
+      '</label>' +
+      '<label style="font-size:11px;font-weight:700;color:#374151;">Responsável<br>' +
+        '<input type="text" id="fest-rp-resp-'+id+'" value="'+(responsavel||'')+'" placeholder="Nome do responsável" style="margin-top:3px;">' +
+      '</label>' +
+      '<label style="font-size:11px;font-weight:700;color:#374151;">Chave Pix<br>' +
+        '<input type="text" id="fest-rp-pix-'+id+'" value="'+(chavePix||'')+'" placeholder="CPF, telefone, e-mail..." style="margin-top:3px;">' +
+      '</label>' +
+      '<label style="font-size:11px;font-weight:700;color:#374151;">Valor a repassar<br>' +
+        '<input type="text" class="money-input" id="fest-rp-val-'+id+'" value="'+(valor > 0 ? (valor).toFixed(2) : '0,00')+'" oninput="festRecalcRepasses()" style="margin-top:3px;">' +
+      '</label>' +
+    '</div>';
+
+  lista.appendChild(row);
+  applyMoneyInputs();
+}
+
+function festRemoveRepasse(id) {
+  var row = document.querySelector('.fest-rp-row[data-id="'+id+'"]');
+  if (row) row.remove();
+  festRecalcRepasses();
+}
+
+function festRecalcRepasses() {
+  var reps = festGetRepasses();
+  var total = reps.reduce(function(a, r) { return a + r.valor; }, 0);
+  window._festTotalRepasses = total;
+  var el = document.getElementById('fest-repasses-total');
+  if (el) el.textContent = formatMoney(total);
+  // Recalcula o fechamento completo
+  if (typeof recalcFech === 'function') recalcFech();
+}
+
+function festGetRepasses() {
+  var rows = document.querySelectorAll('.fest-rp-row');
+  var result = [];
+  rows.forEach(function(row) {
+    var id  = row.getAttribute('data-id');
+    var nome = (document.getElementById('fest-rp-nome-'+id)||{}).value || '';
+    var resp = (document.getElementById('fest-rp-resp-'+id)||{}).value || '';
+    var pix  = (document.getElementById('fest-rp-pix-'+id)||{}).value  || '';
+    var val  = parseMoney((document.getElementById('fest-rp-val-'+id)||{}).value||0) || 0;
+    result.push({ nome: nome, responsavel: resp, chavePix: pix, valor: val });
+  });
+  return result;
 }
 

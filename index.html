@@ -497,7 +497,7 @@
         <div id="fech-passo1">
 
           <!-- Seletor de modo -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
             <button type="button" id="btn-modo-relatorio" onclick="setFechModo('relatorio')"
               style="padding:10px 6px;font-size:12px;border-radius:9px;border:2px solid var(--blue);background:#eef6ff;color:var(--blue);font-weight:bold;font-family:Arial,sans-serif;cursor:pointer">
               📋 Colar relatorio
@@ -505,6 +505,10 @@
             <button type="button" id="btn-modo-manual" onclick="setFechModo('manual')"
               style="padding:10px 6px;font-size:12px;border-radius:9px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">
               ✏️ Inserir manual
+            </button>
+            <button type="button" id="btn-modo-festival" onclick="setFechModoFestival()"
+              style="padding:10px 6px;font-size:12px;border-radius:9px;border:2px solid var(--border);background:#f9fafb;color:#6b7280;font-family:Arial,sans-serif;cursor:pointer">
+              🎪 Festival
             </button>
           </div>
 
@@ -575,6 +579,35 @@
               </div>
               <button type="button" onclick="confirmarManual()" style="background:var(--blue);font-size:13px">▶️ Continuar para cobranças</button>
             </div>
+          </div>
+
+          <!-- MODO FESTIVAL -->
+          <div id="fech-modo-festival" style="display:none">
+            <p class="helper-text">Adicione as operacoes do festival e preencha os valores de vendas de cada uma.</p>
+            <div id="fest-ops-lista"></div>
+            <button type="button" onclick="festAddOperacao()"
+              style="margin-bottom:12px;background:#eff6ff;color:var(--blue);border:1.5px solid #bfdbfe;font-size:12px;padding:7px 14px">
+              + Adicionar operacao
+            </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;margin-bottom:12px">
+              <span style="font-size:13px;font-weight:bold;color:#166534">Total geral do festival</span>
+              <b style="font-size:16px;color:#166534" id="fest-grand-total">R$ 0,00</b>
+            </div>
+            <div style="background:#fef3c7;border:1.5px solid #fcd34d;border-radius:10px;padding:12px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:bold;color:#92400e;margin-bottom:6px">📤 Relatorio para o produtor</div>
+              <p style="font-size:12px;color:#92400e;margin:0 0 8px;line-height:1.5">Gere o relatorio de vendas por operacao para enviar ao produtor. Ele ira retornar com os valores a repassar para cada operacao.</p>
+              <div style="display:flex;gap:8px">
+                <button type="button" onclick="copiarRelatorioProdutor()"
+                  style="flex:1;background:#92400e;color:#fff;font-size:12px;padding:7px 6px">
+                  📋 Copiar texto
+                </button>
+                <button type="button" onclick="baixarImagemRelatorioProdutor()"
+                  style="flex:1;background:#78350f;color:#fff;font-size:12px;padding:7px 6px">
+                  🖼️ Baixar imagem
+                </button>
+              </div>
+            </div>
+            <button type="button" onclick="confirmarFestival()" style="background:var(--blue);font-size:13px">▶️ Continuar para cobrancas</button>
           </div>
 
           <div id="fechErro" style="display:none;background:#fee2e2;border-radius:10px;padding:10px;font-size:13px;color:#991b1b;margin-top:8px"></div>
@@ -649,12 +682,27 @@
               <div id="fechSaquesSelecionados"></div>
             </div>
 
+            <!-- FESTIVAL: REPASSES POR OPERACAO -->
+            <div id="fest-repasses-section" style="display:none;margin-top:14px;margin-bottom:4px">
+              <div style="font-size:13px;font-weight:bold;color:var(--gray);margin-bottom:6px">💸 Repasses por operacao</div>
+              <p style="font-size:12px;color:#6b7280;margin:0 0 10px;line-height:1.5">Informe quanto repassar para cada operacao conforme instrucao do produtor.</p>
+              <div id="fest-repasses-lista"></div>
+              <button type="button" onclick="festAddRepasseRow('','',0,'')"
+                style="margin-bottom:10px;background:#f3f4f6;color:#374151;border:1px solid var(--border);font-size:12px;padding:6px 10px">
+                + Adicionar operacao
+              </button>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f0fdf4;border-radius:9px;border:1.5px solid #86efac">
+                <span style="font-size:12px;font-weight:bold;color:#166534">Total repasses</span>
+                <b style="font-size:14px;color:#166534" id="fest-repasses-total">R$ 0,00</b>
+              </div>
+            </div>
+
             <!-- TOTALIZADOR -->
             <div style="background:var(--blue);color:#fff;border-radius:12px;padding:14px;margin-top:12px">
               <div style="font-size:11px;opacity:.8;margin-bottom:6px;text-transform:uppercase">Resumo do fechamento</div>
               <div style="display:grid;gap:6px;font-size:13px" id="fechResumoLinhas"></div>
               <div style="border-top:1px solid rgba(255,255,255,.3);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:13px;opacity:.9">Valor a repassar ao produtor</span>
+                <span style="font-size:13px;opacity:.9" id="fechValorFinalLabel">Valor a repassar ao produtor</span>
                 <b style="font-size:22px" id="fechValorFinal">R$ 0,00</b>
               </div>
             </div>
