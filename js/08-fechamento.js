@@ -2090,7 +2090,7 @@ function confirmarFestival() {
 }
 
 function gerarTextoRelatorioProdutor() {
-  var ops = window._festOperacoes || [];
+  var ops = (window._festOperacoes && window._festOperacoes.length > 0) ? window._festOperacoes : festGetOpsFromForm();
   if (ops.length === 0) return '';
   var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
   var hoje = new Date().toLocaleDateString('pt-BR');
@@ -2130,8 +2130,8 @@ function copiarRelatorioProdutor() {
 }
 
 function baixarImagemRelatorioProdutor() {
-  var ops = window._festOperacoes || [];
-  if (ops.length === 0) return;
+  var ops = (window._festOperacoes && window._festOperacoes.length > 0) ? window._festOperacoes : festGetOpsFromForm();
+  if (ops.length === 0) { alert('Adicione ao menos uma operação antes de baixar.'); return; }
   var evento = (window._fechDados && window._fechDados.evento) || 'Festival';
   var hoje = new Date().toLocaleDateString('pt-BR');
   var grand = ops.reduce(function(a,o){ return a+o.total; }, 0);
@@ -2188,20 +2188,33 @@ function baixarImagemRelatorioProdutor() {
     '</div>';
 
   var wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
   var target = wrapper.querySelector('#_fest-rel-img');
-  html2canvas(target, { scale: 2, backgroundColor: null, useCORS: true }).then(function(canvas) {
-    var link = document.createElement('a');
-    link.download = 'relatorio-produtor-' + (evento||'festival').replace(/\s+/g,'-').toLowerCase() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    document.body.removeChild(wrapper);
-  }).catch(function(e) {
-    document.body.removeChild(wrapper);
-    alert('Erro ao gerar imagem: ' + e.message);
-  });
+
+  function capturarFest() {
+    html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false }).then(function(canvas) {
+      document.body.removeChild(wrapper);
+      var link = document.createElement('a');
+      link.download = 'relatorio-produtor-' + (evento||'festival').replace(/\s+/g,'-').toLowerCase() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(e) {
+      document.body.removeChild(wrapper);
+      alert('Erro ao gerar imagem: ' + e.message);
+    });
+  }
+
+  if (typeof html2canvas !== 'undefined') {
+    capturarFest();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = capturarFest;
+    script.onerror = function() { alert('Erro ao carregar html2canvas.'); document.body.removeChild(wrapper); };
+    document.head.appendChild(script);
+  }
 }
 
 // ── PASSO 3: Repasses ──
