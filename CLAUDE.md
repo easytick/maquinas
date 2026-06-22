@@ -87,6 +87,23 @@ Disponivel --> Manutencao --> Disponivel
 - Conciliacao automatica de saques do financeiro pelo nome do evento
 - Exportacao: copiar texto ou baixar imagem
 
+### Historico de fechamentos
+
+- `renderFechHistorico()` — lista fechamentos com status (Pendente / Parcial / Quitado)
+- Botao `⋮` no canto superior direito de cada card abre dropdown via `toggleFechMenu(fid, event)`
+- Opcao "Editar e regerar" chama `editarFechamento(fid)`:
+  - Restaura `_fechDados` a partir dos campos JSON salvos no Firebase (`formas`, `pdvs`, `saques`, `cobrancas`)
+  - Leva direto ao passo 2 com badge amarelo indicando modo edicao
+  - Cobranças que estavam inativas: `qtd_unit` → qty=0 (editavel), `fixo`/`livre` → valor=0, `pct` → marcado como N/A
+  - Cobranças ativas: valores restaurados com calculo reverso (ex: pct_toggle recalcula % a partir do valor salvo)
+  - Seta `window._fechEditandoId = fid`
+- Ao gerar em modo edicao: `updateFechamento(id, dados)` faz `.update()` no Firebase (nao cria novo registro)
+- `limparEstadoFechamento()` zera `_fechEditandoId` e esconde o badge de edicao
+
+### Geracao de imagem — atencao
+
+- Na linha que monta `qtdLabel` para cobranças `qtd_unit`, usar `parseMoney(uEl.value)` e nao `parseFloat(uEl.value)` — o `initMoneyInput` formata o campo em pt-BR (virgula decimal) e `parseFloat` retorna 0
+
 ## Recorrentes
 
 - Planos: Ficha, Ingresso, Mensalidade, Outro
