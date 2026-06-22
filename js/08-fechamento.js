@@ -172,6 +172,8 @@ function limparEstadoFechamento() {
   window._fechTotalCobranças = 0;
   window._fechTotalSaques = 0;
   window._fechSaquesSelecionados = [];
+  window._fechEditandoId = null;
+  var editBadge = document.getElementById('fech-edit-badge'); if (editBadge) editBadge.style.display = 'none';
   window._festOperacoes = [];
   window._festTotalRepasses = 0;
   window._fechTotalARepassar = 0;
@@ -1132,7 +1134,7 @@ function gerarFechamento() {
     if (v === 0) return;
     cobAtivas.push({ label: l.label, valor: v });
   });
-  saveFechamento({
+  var dadosFech = {
     evento: evento,
     tipo: d.tipo,
     totalGeral: d.totalGeral,
@@ -1148,7 +1150,14 @@ function gerarFechamento() {
     operacoes: d.operacoes || [],
     repasses: (typeof festGetRepasses === 'function') ? festGetRepasses() : [],
     textoFinal: txt
-  });
+  };
+  if (window._fechEditandoId) {
+    updateFechamento(window._fechEditandoId, dadosFech);
+    window._fechEditandoId = null;
+    var eb = document.getElementById('fech-edit-badge'); if (eb) eb.style.display = 'none';
+  } else {
+    saveFechamento(dadosFech);
+  }
 }
 
 function copiarFechamento() {
@@ -1389,7 +1398,7 @@ function baixarImagemFechamento() {
       var extra = '';
       if (l.tipo === 'pct'||l.tipo === 'pct_toggle') { var pEl = document.getElementById('fp-'+l.id); if (pEl) extra = ' ('+parseFloat(pEl.value).toFixed(1)+'%)'; }
       var qtdLabel = '';
-      if (l.tipo === 'qtd_unit') { var qEl = document.getElementById('fq-'+l.id); var uEl = document.getElementById('fu-'+l.id); if (qEl&&uEl&&parseFloat(qEl.value)>0) qtdLabel = ' — '+parseFloat(qEl.value)+' x R$ '+Number(parseFloat(uEl.value)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+      if (l.tipo === 'qtd_unit') { var qEl = document.getElementById('fq-'+l.id); var uEl = document.getElementById('fu-'+l.id); if (qEl&&uEl&&parseFloat(qEl.value)>0) { var uVal = parseMoney(uEl.value); qtdLabel = ' — '+parseFloat(qEl.value)+' x R$ '+uVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); } }
       cobHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+l.label+extra+qtdLabel+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(v)+'</span></div>';
     });
     saques.forEach(function(s,i) {
@@ -1592,6 +1601,153 @@ function saveFechamento(dados) {
   return id;
 }
 
+function updateFechamento(id, dados) {
+  var db = firebase.database();
+  var obj = {
+    evento: dados.evento,
+    tipo: dados.tipo,
+    totalGeral: dados.totalGeral,
+    dinheiro: dados.dinheiro,
+    totalCobrancas: dados.totalCobranças || 0,
+    totalSaques: dados.totalSaques || 0,
+    valorFinal: dados.valorFinal,
+    totalARepassar: dados.totalARepassar || 0,
+    formas: JSON.stringify(dados.formas||{}),
+    pdvs: JSON.stringify(dados.pdvs||{}),
+    cobrancas: JSON.stringify(dados.cobranças||[]),
+    saques: JSON.stringify(dados.saques||[]),
+    operacoes: JSON.stringify(dados.operacoes||[]),
+    repasses: JSON.stringify(dados.repasses||[]),
+    textoFinal: dados.textoFinal || '',
+    editadoEm: new Date().toISOString(),
+    editadoPor: getCurrentUserName()
+  };
+  db.ref('fechamentos/' + id).update(obj);
+}
+
+function toggleFechMenu(fid, event) {
+  event.stopPropagation();
+  var menu = document.getElementById('fech-menu-' + fid);
+  if (!menu) return;
+  var isOpen = menu.style.display !== 'none';
+  document.querySelectorAll('[id^="fech-menu-"]').forEach(function(m){ m.style.display = 'none'; });
+  if (!isOpen) {
+    menu.style.display = 'block';
+    setTimeout(function() {
+      function closeFechMenu() {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeFechMenu);
+      }
+      document.addEventListener('click', closeFechMenu);
+    }, 0);
+  }
+}
+
+function editarFechamento(fid) {
+  document.querySelectorAll('[id^="fech-menu-"]').forEach(function(m){ m.style.display = 'none'; });
+  var f = fechamentos.find(function(x){ return x.id === fid; });
+  if (!f) return;
+
+  var formas = {}, pdvs = {}, saques = [], cobranças = [], operacoes = [];
+  try { formas = JSON.parse(f.formas || '{}'); } catch(e) {}
+  try { pdvs = JSON.parse(f.pdvs || '{}'); } catch(e) {}
+  try { saques = JSON.parse(f.saques || '[]'); } catch(e) {}
+  try { cobranças = JSON.parse(f.cobrancas || '[]'); } catch(e) {}
+  try { operacoes = JSON.parse(f.operacoes || '[]'); } catch(e) {}
+
+  window._fechDados = {
+    tipo: f.tipo,
+    formas: formas,
+    pdvs: pdvs,
+    totalGeral: f.totalGeral || 0,
+    dinheiro: f.dinheiro || 0,
+    totalLoja: f.totalLoja || 0,
+    totalPdv: f.totalPdv || 0,
+    totalDigital: f.totalDigital || 0,
+    totalQtd: f.totalQtd || 0,
+    totalBruto: f.totalBruto || f.totalGeral || 0,
+    totalDesconto: f.totalDesconto || 0,
+    operacoes: operacoes
+  };
+  window._fechSaquesSelecionados = saques;
+  window._fechParams = {};
+  window._fechEditandoId = fid;
+
+  // Ativa aba Novo sem re-renderizar historico
+  document.querySelectorAll('#page-fechamentos .lote-tab-btn').forEach(function(b, i){ b.classList.toggle('active', i === 0); });
+  document.getElementById('fech-novo').classList.add('active');
+  document.getElementById('fech-historico').classList.remove('active');
+  var festTab = document.getElementById('fech-festivals'); if (festTab) festTab.classList.remove('active');
+
+  document.getElementById('fech-passo1').style.display = 'none';
+  document.getElementById('fech-passo2').style.display = 'block';
+  document.getElementById('fech-passo3').style.display = 'none';
+
+  var evInput = document.getElementById('fechEvento');
+  if (evInput) evInput.value = f.evento || '';
+
+  renderDadosLidos();
+  renderCobrancas();
+
+  // Restaura valores das cobranças salvas
+  var linhas = window._fechLinhas || [];
+  var d = window._fechDados;
+  var ativasMap = {};
+  (cobranças||[]).forEach(function(c){ ativasMap[c.label] = c.valor; });
+
+  linhas.forEach(function(l) {
+    if (ativasMap[l.label] === undefined) {
+      // Linha não estava ativa no fechamento original
+      // Para pct: única forma de anular é marcar N/A
+      // Para outros tipos: zera o campo mas mantém editável
+      if (l.tipo === 'pct') {
+        toggleNaoAplica(l.id);
+      } else if (l.tipo === 'fixo' || l.tipo === 'livre') {
+        var fi0 = document.getElementById('fi-' + l.id);
+        if (fi0) { fi0.value = '0,00'; if (typeof initMoneyInput === 'function') initMoneyInput(fi0); }
+      } else if (l.tipo === 'qtd_unit') {
+        var fq0 = document.getElementById('fq-' + l.id);
+        if (fq0) fq0.value = '0';
+        // pct_toggle: já fica como "cliente" por padrão (contribui 0)
+      }
+    } else {
+      var val = ativasMap[l.label];
+      if (l.tipo === 'fixo' || l.tipo === 'livre') {
+        var fi = document.getElementById('fi-' + l.id);
+        if (fi) { fi.value = val.toFixed(2); if (typeof initMoneyInput === 'function') initMoneyInput(fi); }
+      } else if (l.tipo === 'qtd_unit') {
+        var fq = document.getElementById('fq-' + l.id);
+        var fu = document.getElementById('fu-' + l.id);
+        if (fq && fu) { fq.value = 1; fu.value = val.toFixed(2); if (typeof initMoneyInput === 'function') initMoneyInput(fu); }
+      } else if (l.tipo === 'pct') {
+        var base = getBaseForma(d.formas, l.forma);
+        var pct = base > 0 ? (val / base * 100) : (l.pct || 0);
+        var fp = document.getElementById('fp-' + l.id);
+        if (fp) fp.value = pct.toFixed(2);
+      } else if (l.tipo === 'pct_toggle') {
+        var base2 = getBaseForma(d.formas, l.forma);
+        var pct2 = base2 > 0 ? (val / base2 * 100) : (l.pct || 0);
+        var fp2 = document.getElementById('fp-' + l.id);
+        if (fp2) fp2.value = pct2.toFixed(2);
+        var btn = document.getElementById('btn-resp-' + l.id);
+        if (btn) {
+          btn.setAttribute('data-resp', 'produtor');
+          btn.textContent = '🏭 Produtor';
+          btn.style.background = '#fee2e2'; btn.style.color = '#991b1b'; btn.style.borderColor = '#fca5a5';
+        }
+      }
+    }
+  });
+
+  recalcFech();
+
+  var editBadge = document.getElementById('fech-edit-badge');
+  if (editBadge) {
+    editBadge.innerHTML = '✏️ Editando: <b>' + (f.evento||'-') + '</b> — ajuste os valores e clique em Gerar para salvar.';
+    editBadge.style.display = 'block';
+  }
+}
+
 function deleteFechamento(id) {
   if (!confirm('Excluir este fechamento? Esta ação não pode ser desfeita.')) return;
   firebase.database().ref('fechamentos/' + id).remove();
@@ -1722,7 +1878,15 @@ function renderFechHistorico() {
           '<span style="background:'+tipoBg+';color:'+tipoColor+';border-radius:999px;padding:2px 8px;font-size:11px;font-weight:bold;margin-left:6px">' + tipoLabel + '</span>' +
           '<div style="font-size:11px;color:#9ca3af;margin-top:3px">' + data + ' · ' + (f.criadoPor||'-') + '</div>' +
         '</div>' +
-        '<b style="font-size:18px;color:var(--green);white-space:nowrap">' + formatMoney(valorFinal) + '</b>' +
+        '<div style="display:flex;align-items:flex-start;gap:4px;flex-shrink:0">' +
+          '<b style="font-size:18px;color:var(--green);white-space:nowrap">' + formatMoney(valorFinal) + '</b>' +
+          '<div style="position:relative">' +
+            '<button type="button" onclick="toggleFechMenu(\'' + f.id + '\',event)" style="width:28px;height:28px;padding:0;background:transparent;border:none;font-size:22px;color:#9ca3af;line-height:1;border-radius:6px;cursor:pointer;flex-shrink:0;margin-top:-2px">⋮</button>' +
+            '<div id="fech-menu-' + f.id + '" style="display:none;position:absolute;top:30px;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:200;min-width:168px;overflow:hidden">' +
+              '<button type="button" onclick="editarFechamento(\'' + f.id + '\')" style="display:block;width:100%;padding:11px 14px;background:transparent;border:none;font-size:13px;color:#374151;text-align:left;cursor:pointer">✏️ Editar e regerar</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;margin-bottom:10px">' +
         '<div style="background:#f9fafb;border-radius:8px;padding:6px;text-align:center"><div style="color:#9ca3af">Total bruto</div><b>' + formatMoney(f.totalGeral||0) + '</b></div>' +
