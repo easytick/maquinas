@@ -190,19 +190,25 @@ function renderReservasIntencao() {
 
   var filtered = reservasIntencao.filter(function(r){
     if(filtroStatus!=='todas' && r.status!==filtroStatus) return false;
-    if(filtroData==='hoje'  && r.startDate!==hoje) return false;
-    if(filtroData==='3dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+3); if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
-    if(filtroData==='7dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+7); if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
-    if(filtroData==='15dias'){ var lim=new Date(); lim.setDate(lim.getDate()+15);if(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10)) return false; }
+    var atrasada = r.status==='pendente' && r.startDate < hoje;
+    if(filtroData==='hoje'  && !atrasada && r.startDate!==hoje) return false;
+    if(filtroData==='3dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+3); if(!atrasada&&(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10))) return false; }
+    if(filtroData==='7dias' ){ var lim=new Date(); lim.setDate(lim.getDate()+7); if(!atrasada&&(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10))) return false; }
+    if(filtroData==='15dias'){ var lim=new Date(); lim.setDate(lim.getDate()+15);if(!atrasada&&(r.startDate<hoje||r.startDate>lim.toISOString().slice(0,10))) return false; }
     if(filtroData==='personalizado'){
       var di=(document.getElementById('intencaoFiltroDataInicio')||{}).value;
       var df=(document.getElementById('intencaoFiltroDataFim')||{}).value;
-      if(di&&df&&(r.startDate<di||r.startDate>df)) return false;
+      if(di&&df&&!atrasada&&(r.startDate<di||r.startDate>df)) return false;
     }
     return true;
   });
 
-  filtered.sort(function(a,b){ return a.startDate.localeCompare(b.startDate); });
+  filtered.sort(function(a,b){
+    var aAtr = (a.status==='pendente'&&a.startDate<hoje) ? 0 : 1;
+    var bAtr = (b.status==='pendente'&&b.startDate<hoje) ? 0 : 1;
+    if(aAtr!==bAtr) return aAtr-bAtr;
+    return a.startDate.localeCompare(b.startDate);
+  });
 
   if(!filtered.length) {
     list.innerHTML='<p style="color:#9ca3af;font-size:13px;padding:10px 0">Nenhuma reserva de intencao encontrada.</p>';
@@ -288,8 +294,18 @@ function abrirSaidaIntencao(id) {
     selectList.appendChild(item);
   });
 
+  var busca = document.getElementById('saidaIntencaoBusca');
+  if(busca) busca.value = '';
   atualizarContadorSaidaIntencao(r.quantidade);
   document.getElementById('saidaIntencaoModal').classList.add('open');
+}
+
+function filtrarSaidaIntencaoLista() {
+  var q = ((document.getElementById('saidaIntencaoBusca')||{}).value||'').toLowerCase().trim();
+  document.querySelectorAll('#saidaIntencaoMachineList .machine-select-item').forEach(function(item){
+    var s = (item.dataset.serial||'').toLowerCase();
+    item.style.display = (!q || s.indexOf(q)>-1) ? '' : 'none';
+  });
 }
 
 var saidaIntencaoSelected = new Set();

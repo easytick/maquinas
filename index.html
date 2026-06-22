@@ -86,12 +86,12 @@
           <option value="hoje">Saindo hoje</option>
           <option value="3dias">Proximos 3 dias</option>
           <option value="7dias">Proximos 7 dias</option>
-          <option value="15dias">Proximos 15 dias</option>
+          <option value="15dias" selected>Proximos 15 dias</option>
           <option value="personalizado">Personalizado</option>
         </select>
         <select id="intencaoFiltroStatus" onchange="renderReservasIntencao()" style="font-size:12px">
           <option value="todas">Todos os status</option>
-          <option value="pendente">Pendentes</option>
+          <option value="pendente" selected>Pendentes</option>
           <option value="concluida">Concluidas</option>
           <option value="cancelada">Canceladas</option>
         </select>
@@ -836,7 +836,10 @@
     <h2>🚀 Dar Saida — Reserva de Intencao</h2>
     <div id="saidaIntencaoInfo" style="font-size:13px;line-height:1.6;margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:9px"></div>
     <div class="machine-select-box">
-      <div class="machine-select-header"><span id="saidaIntencaoCounter">0 selecionadas</span></div>
+      <div class="machine-select-header" style="flex-direction:column;align-items:stretch;gap:6px">
+        <input type="text" id="saidaIntencaoBusca" placeholder="🔍 Buscar serial..." oninput="filtrarSaidaIntencaoLista()" style="font-size:13px;padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;outline:none"/>
+        <span id="saidaIntencaoCounter" style="font-size:12px;color:#6b7280">0 selecionadas</span>
+      </div>
       <div id="saidaIntencaoMachineList" style="max-height:220px;overflow-y:auto"></div>
     </div>
     <div class="modal-actions" style="margin-top:10px">
