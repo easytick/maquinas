@@ -1364,6 +1364,65 @@ function baixarImagemFechamento() {
       html += '</div>';
     }
 
+  } else if (d.tipo === 'festival') {
+    // ── FESTIVAL: tabela de operações + cartão base + cobranças ──
+    var opsFest = d.operacoes || [];
+    var tcFest = 0, tdFest = 0;
+    opsFest.forEach(function(op){ tcFest += (op.deb||0)+(op.cred||0)+(op.pix||0); tdFest += (op.din||0); });
+    var bvFest = (d.totalGeral||0) - (d.dinheiro||0);
+    var opRowsFest = opsFest.map(function(op, i) {
+      var last = i === opsFest.length - 1;
+      var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+      var cardOp = (op.deb||0)+(op.cred||0)+(op.pix||0);
+      return '<tr>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'color:#1e293b;font-weight:600;">'+(op.nome||'-')+'</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;color:#1e40af;">'+fmtImg(cardOp)+'</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;color:#92400e;">'+(op.din>0?fmtImg(op.din):'—')+'</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;font-weight:700;color:#166534;">'+fmtImg(op.total||0)+'</td>' +
+      '</tr>';
+    }).join('');
+    html +=
+      '<div style="padding:14px 28px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">Operações do Festival</div>' +
+        '<table style="width:100%;border-collapse:collapse;margin-bottom:4px;">' +
+          '<thead><tr style="background:#f1f5f9;">' +
+            '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:left;">Operação</th>' +
+            '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Cartão</th>' +
+            '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Dinheiro</th>' +
+            '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Total</th>' +
+          '</tr></thead>' +
+          '<tbody>'+opRowsFest+'</tbody>' +
+          '<tfoot><tr style="background:#f1f5f9;">' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;font-weight:700;color:#374151;">Total</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#1e40af;">'+fmtImg(tcFest)+'</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#92400e;">'+(tdFest>0?fmtImg(tdFest):'—')+'</td>' +
+            '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#166534;">'+fmtImg(d.totalGeral||0)+'</td>' +
+          '</tr></tfoot>' +
+        '</table>' +
+      '</div>' +
+      '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;border-bottom:1px solid #b5d4f4;">' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Total entrada cartão (base do repasse)</div>' +
+        '<div style="'+F+'font-size:11px;color:#378add;margin-bottom:6px;">Total bruto &nbsp;−&nbsp; Dinheiro (ficou com o produtor)</div>' +
+        '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;">'+fmtImg(bvFest)+'</div>' +
+      '</div>';
+    var fcHTML = '', fsHTML = '';
+    despesas.forEach(function(c) {
+      fcHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+c.label+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(c.valor)+'</span></div>';
+    });
+    taxasCartao.forEach(function(t) {
+      fcHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+t.label+' ('+t.pct.toFixed(1)+'%)</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(t.valor)+'</span></div>';
+    });
+    saques.forEach(function(s) {
+      var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
+      fsHTML += '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+(s.nome||'-')+(ds?' — '+ds:'')+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmtImg(s.valor)+'</span></div>';
+    });
+    if (fcHTML || fsHTML) {
+      html += '<div style="padding:4px 28px 0;background:#fff;">' +
+        (fcHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Cobranças / despesas</div>'+fcHTML : '') +
+        (fsHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Saques antecipados</div>'+fsHTML : '') +
+      '</div>';
+    }
+
   } else {
     // ── INGRESSO: layout existente ──
     var compLinhas = [];
@@ -2564,6 +2623,7 @@ function fecharFestivalDetalhe() {
 function renderFestivalDetalhe(id) {
   var f = fechamentos.find(function(x){ return x.id === id; });
   if (!f) { fecharFestivalDetalhe(); return; }
+  window._currentFestObj = f;
   var detalhe = document.getElementById('fest-detalhe');
   if (!detalhe) return;
 
@@ -2695,6 +2755,7 @@ function renderFestivalDetalhe(id) {
       (isAberto
         ? '<button type="button" onclick="festEncerrarFestival(\''+f.id+'\')" style="flex:1;background:#dcfce7;color:#166534;border:1.5px solid #86efac;font-size:13px">✓ Encerrar Festival</button>'
         : '<button type="button" onclick="festReabrirFestival(\''+f.id+'\')" style="flex:1;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;font-size:13px">🔄 Reabrir Festival</button>') +
+      '<button type="button" onclick="gerarImagemFestivalHistorico()" style="width:auto;padding:8px 12px;background:#eff6ff;color:#1e40af;border:1.5px solid #93c5fd;font-size:13px">⬇ Imagem</button>' +
       '<button type="button" onclick="festDeletar(\''+f.id+'\')" style="width:auto;padding:8px 12px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-size:13px">🗑️</button>' +
     '</div>';
 }
@@ -2761,5 +2822,165 @@ function festReabrirFestival(id) {
 function festDeletar(id) {
   if (!confirm('Excluir este festival permanentemente? Esta ação não pode ser desfeita.')) return;
   firebase.database().ref('fechamentos/' + id).remove().then(function() { fecharFestivalDetalhe(); });
+}
+
+function gerarImagemFestivalHistorico() {
+  var f = window._currentFestObj;
+  if (!f) { alert('Nenhum festival selecionado.'); return; }
+
+  var ops = []; try { ops = JSON.parse(f.operacoes||'[]'); } catch(e){}
+  var cobs = []; try { cobs = JSON.parse(f.cobrancas||'[]'); } catch(e){}
+  var saqs = []; try { saqs = JSON.parse(f.saques||'[]'); } catch(e){}
+  var reps = []; try { reps = JSON.parse(f.repasses||'[]'); } catch(e){}
+
+  var evento = f.evento || 'Festival';
+  var hoje = f.criadoEm ? new Date(f.criadoEm).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
+  var F = 'font-family:Arial,Helvetica,sans-serif;';
+
+  function fmt(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  var tcOps = 0, tdOps = 0;
+  ops.forEach(function(op){ tcOps += (op.deb||0)+(op.cred||0)+(op.pix||0); tdOps += (op.din||0); });
+  var baseCart = (f.totalGeral||0) - (f.dinheiro||0);
+
+  var opRows = ops.map(function(op, i) {
+    var last = i === ops.length - 1;
+    var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+    var cardOp = (op.deb||0)+(op.cred||0)+(op.pix||0);
+    return '<tr>' +
+      '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'color:#1e293b;font-weight:600;">'+(op.nome||'-')+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;color:#1e40af;">'+fmt(cardOp)+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;color:#92400e;">'+(op.din>0?fmt(op.din):'—')+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:8px 8px;'+bd+'text-align:right;font-weight:700;color:#166534;">'+fmt(op.total||0)+'</td>' +
+    '</tr>';
+  }).join('');
+
+  var cobHTML = cobs.map(function(c) {
+    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+c.label+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmt(c.valor)+'</span></div>';
+  }).join('');
+  var saqHTML = saqs.map(function(s) {
+    var ds = s.data ? new Date(s.data).toLocaleDateString('pt-BR') : '';
+    return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+(s.nome||'-')+(ds?' — '+ds:'')+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmt(s.valor)+'</span></div>';
+  }).join('');
+
+  var repRows = reps.map(function(r, i) {
+    var last = i === reps.length - 1;
+    var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+    return '<tr>' +
+      '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'color:#1e293b;">'+(r.ok?'✓ ':'')+(r.nome||'-')+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#475569;">'+(r.responsavel||'—')+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#64748b;">'+(r.chavePix||'—')+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'text-align:right;font-weight:600;color:#1e293b;">'+fmt(r.valor)+'</td>' +
+    '</tr>';
+  }).join('');
+  var totalRep = reps.reduce(function(a, r){ return a + (r.valor||0); }, 0);
+
+  var html = '<div id="_fhi-wrap" style="'+F+'width:700px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">' +
+    '<div style="background:#1a3a6b;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<img src="'+EASYTICK_LOGO+'" style="height:34px;object-fit:contain;" />' +
+      '<div style="text-align:right;">' +
+        '<div style="'+F+'font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Fechamento de evento</div>' +
+        '<div style="'+F+'font-size:17px;font-weight:700;color:#fff;">'+evento+'</div>' +
+        '<div style="'+F+'font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">Fechamento festival&nbsp;&nbsp;•&nbsp;&nbsp;'+hoje+'</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="height:3px;background:#2563eb;"></div>' +
+    // Operações
+    '<div style="padding:14px 28px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:2px;">Operações do Festival</div>' +
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:4px;">' +
+        '<thead><tr style="background:#f1f5f9;">' +
+          '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:left;">Operação</th>' +
+          '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Cartão</th>' +
+          '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Dinheiro</th>' +
+          '<th style="'+F+'font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;text-align:right;">Total</th>' +
+        '</tr></thead>' +
+        '<tbody>'+opRows+'</tbody>' +
+        '<tfoot><tr style="background:#f1f5f9;">' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;font-weight:700;color:#374151;">Total</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#1e40af;">'+fmt(tcOps)+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#92400e;">'+(tdOps>0?fmt(tdOps):'—')+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#166534;">'+fmt(f.totalGeral||0)+'</td>' +
+        '</tr></tfoot>' +
+      '</table>' +
+    '</div>' +
+    // Base cartão
+    '<div style="padding:14px 28px 16px;background:#eef4fd;border-left:4px solid #185fa5;border-bottom:1px solid #b5d4f4;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Total entrada cartão (base do repasse)</div>' +
+      '<div style="'+F+'font-size:11px;color:#378add;margin-bottom:6px;">Total bruto &nbsp;−&nbsp; Dinheiro (ficou com o produtor)</div>' +
+      '<div style="'+F+'font-size:26px;font-weight:700;color:#185fa5;">'+fmt(baseCart)+'</div>' +
+    '</div>' +
+    // Cobranças
+    ((cobHTML||saqHTML) ? '<div style="padding:4px 28px 0;background:#fff;">' +
+      (cobHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Cobranças / despesas</div>'+cobHTML : '') +
+      (saqHTML ? '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 2px;">Saques antecipados</div>'+saqHTML : '') +
+    '</div>' : '') +
+    // Total a repassar
+    '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:#eef4fd;border-left:4px solid #185fa5;border-top:1px solid #b5d4f4;">' +
+      '<div>' +
+        '<div style="'+F+'font-size:10px;font-weight:700;color:#185fa5;letter-spacing:.07em;text-transform:uppercase;">Total a repassar para o contratante</div>' +
+        '<div style="'+F+'font-size:11px;color:#4b7cbf;margin-top:3px;">Total cartao liquido — taxas e despesas EasyTick</div>' +
+      '</div>' +
+      '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;">'+fmt(f.totalARepassar||0)+'</div>' +
+    '</div>' +
+    // Repasses por operação
+    (repRows ? '<div style="padding:4px 28px 0;background:#fff;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 4px;">Repasses por operacao</div>' +
+      '<table style="width:100%;border-collapse:collapse;">' +
+        '<thead><tr style="background:#f8fafc;">' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Operacao</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Responsavel</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Chave Pix</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:right;font-weight:600;">Valor</th>' +
+        '</tr></thead>' +
+        '<tbody>'+repRows+'</tbody>' +
+      '</table>' +
+      '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1.5px solid #e2e8f0;margin-top:4px;">' +
+        '<span style="font-size:13px;font-weight:700;color:#374151;">Total repasses</span>' +
+        '<span style="font-size:13px;font-weight:700;color:#374151;">'+fmt(totalRep)+'</span>' +
+      '</div>' +
+    '</div>' : '') +
+    // Restante para o produtor
+    '<div style="background:#166634;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Restante para o produtor</div>' +
+        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
+      '</div>' +
+      '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmt(f.valorFinal||0)+'</div>' +
+    '</div>' +
+    '<div style="padding:10px 28px;text-align:center;">' +
+      '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+new Date().toLocaleDateString('pt-BR')+'</span>' +
+    '</div>' +
+  '</div>';
+
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  function capturarFHI() {
+    html2canvas(wrapper.querySelector('#_fhi-wrap'), {
+      scale: 2.5, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 760
+    }).then(function(canvas) {
+      document.body.removeChild(wrapper);
+      var link = document.createElement('a');
+      link.download = 'festival-'+evento.toLowerCase().replace(/[^a-z0-9]/g,'-')+'.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(e) {
+      document.body.removeChild(wrapper);
+      alert('Erro ao gerar imagem: '+e.message);
+    });
+  }
+
+  if (typeof html2canvas !== 'undefined') {
+    capturarFHI();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = capturarFHI;
+    script.onerror = function(){ alert('Erro ao carregar html2canvas.'); document.body.removeChild(wrapper); };
+    document.head.appendChild(script);
+  }
 }
 
