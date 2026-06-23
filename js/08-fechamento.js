@@ -1807,6 +1807,108 @@ function editarFechamento(fid) {
   }
 }
 
+function editarFestival(fid) {
+  var f = fechamentos.find(function(x){ return x.id === fid; });
+  if (!f) return;
+
+  var operacoes = [], saques = [], cobranças = [], formas = {};
+  try { operacoes = JSON.parse(f.operacoes || '[]'); } catch(e) {}
+  try { saques    = JSON.parse(f.saques    || '[]'); } catch(e) {}
+  try { cobranças = JSON.parse(f.cobrancas || '[]'); } catch(e) {}
+  try { formas    = JSON.parse(f.formas    || '{}'); } catch(e) {}
+
+  // Reconstrói formas se não salvas (compatibilidade)
+  if (!Object.keys(formas).length && operacoes.length) {
+    var tDeb = 0, tCred = 0, tPix = 0, tDin = 0;
+    operacoes.forEach(function(op){ tDeb += (op.deb||0); tCred += (op.cred||0); tPix += (op.pix||0); tDin += (op.din||0); });
+    formas = { 'Débito': { valor: tDeb }, 'Crédito': { valor: tCred }, 'Pix': { valor: tPix }, 'Dinheiro': { valor: tDin } };
+  }
+
+  window._festOperacoes       = operacoes;
+  window._fechSaquesSelecionados = saques;
+  window._fechParams          = {};
+  window._fechEditandoId      = fid;
+
+  window._fechDados = {
+    tipo:       'festival',
+    totalGeral: f.totalGeral || 0,
+    totalBruto: f.totalGeral || 0,
+    dinheiro:   f.dinheiro   || 0,
+    formas:     formas,
+    pdvs:       {},
+    operacoes:  operacoes
+  };
+
+  // Navega para aba Novo → passo 2
+  document.querySelectorAll('#page-fechamentos .lote-tab-btn').forEach(function(b, i){ b.classList.toggle('active', i === 0); });
+  document.getElementById('fech-novo').classList.add('active');
+  document.getElementById('fech-historico').classList.remove('active');
+  var festTab = document.getElementById('fech-festivals'); if (festTab) festTab.classList.remove('active');
+
+  document.getElementById('fech-passo1').style.display = 'none';
+  document.getElementById('fech-passo2').style.display = 'block';
+  document.getElementById('fech-passo3').style.display = 'none';
+
+  var evInput = document.getElementById('fechEvento');
+  if (evInput) evInput.value = f.evento || '';
+
+  renderDadosLidos();
+  renderCobrancas();
+
+  // Restaura valores das cobranças salvas
+  var linhas = window._fechLinhas || [];
+  var ativasMap = {};
+  cobranças.forEach(function(c){ ativasMap[c.label] = c.valor; });
+
+  linhas.forEach(function(l) {
+    if (ativasMap[l.label] === undefined) {
+      if (l.tipo === 'pct' || l.tipo === 'pct_toggle') {
+        toggleNaoAplica(l.id);
+      } else if (l.tipo === 'fixo' || l.tipo === 'livre') {
+        var fi0 = document.getElementById('fi-' + l.id);
+        if (fi0) { fi0.value = '0,00'; if (typeof initMoneyInput === 'function') initMoneyInput(fi0); }
+      } else if (l.tipo === 'qtd_unit') {
+        var fq0 = document.getElementById('fq-' + l.id);
+        if (fq0) fq0.value = '0';
+      }
+    } else {
+      var val = ativasMap[l.label];
+      if (l.tipo === 'fixo' || l.tipo === 'livre') {
+        var fi = document.getElementById('fi-' + l.id);
+        if (fi) { fi.value = val.toFixed(2); if (typeof initMoneyInput === 'function') initMoneyInput(fi); }
+      } else if (l.tipo === 'qtd_unit') {
+        var fq = document.getElementById('fq-' + l.id);
+        var fu = document.getElementById('fu-' + l.id);
+        if (fq && fu) { fq.value = 1; fu.value = val.toFixed(2); if (typeof initMoneyInput === 'function') initMoneyInput(fu); }
+      } else if (l.tipo === 'pct') {
+        var base = getBaseForma(window._fechDados.formas, l.forma);
+        var pct = base > 0 ? (val / base * 100) : (l.pct || 0);
+        var fp = document.getElementById('fp-' + l.id);
+        if (fp) fp.value = pct.toFixed(2);
+      } else if (l.tipo === 'pct_toggle') {
+        var base2 = getBaseForma(window._fechDados.formas, l.forma);
+        var pct2 = base2 > 0 ? (val / base2 * 100) : (l.pct || 0);
+        var fp2 = document.getElementById('fp-' + l.id);
+        if (fp2) fp2.value = pct2.toFixed(2);
+        var btn = document.getElementById('btn-resp-' + l.id);
+        if (btn) {
+          btn.setAttribute('data-resp', 'produtor');
+          btn.textContent = '🏭 Produtor';
+          btn.style.background = '#fee2e2'; btn.style.color = '#991b1b'; btn.style.borderColor = '#fca5a5';
+        }
+      }
+    }
+  });
+
+  recalcFech();
+
+  var editBadge = document.getElementById('fech-edit-badge');
+  if (editBadge) {
+    editBadge.innerHTML = '✏️ Editando festival: <b>' + (f.evento||'-') + '</b> — ajuste as cobranças e clique em Gerar para salvar.';
+    editBadge.style.display = 'block';
+  }
+}
+
 function deleteFechamento(id) {
   if (!confirm('Excluir este fechamento? Esta ação não pode ser desfeita.')) return;
   firebase.database().ref('fechamentos/' + id).remove();
@@ -2755,6 +2857,7 @@ function renderFestivalDetalhe(id) {
       (isAberto
         ? '<button type="button" onclick="festEncerrarFestival(\''+f.id+'\')" style="flex:1;background:#dcfce7;color:#166534;border:1.5px solid #86efac;font-size:13px">✓ Encerrar Festival</button>'
         : '<button type="button" onclick="festReabrirFestival(\''+f.id+'\')" style="flex:1;background:#fef3c7;color:#92400e;border:1.5px solid #fcd34d;font-size:13px">🔄 Reabrir Festival</button>') +
+      '<button type="button" onclick="editarFestival(\''+f.id+'\')" style="width:auto;padding:8px 12px;background:#f3f4f6;color:#374151;border:1.5px solid var(--border);font-size:13px">✏️ Editar</button>' +
       '<button type="button" onclick="gerarImagemFestivalHistorico()" style="width:auto;padding:8px 12px;background:#eff6ff;color:#1e40af;border:1.5px solid #93c5fd;font-size:13px">⬇ Imagem</button>' +
       '<button type="button" onclick="festDeletar(\''+f.id+'\')" style="width:auto;padding:8px 12px;background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-size:13px">🗑️</button>' +
     '</div>';
