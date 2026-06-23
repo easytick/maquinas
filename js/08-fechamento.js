@@ -2726,6 +2726,7 @@ function renderFestivalDetalhe(id) {
   var f = fechamentos.find(function(x){ return x.id === id; });
   if (!f) { fecharFestivalDetalhe(); return; }
   window._currentFestObj = f;
+  window._festLogCache = {};
   var detalhe = document.getElementById('fest-detalhe');
   if (!detalhe) return;
 
@@ -2762,6 +2763,7 @@ function renderFestivalDetalhe(id) {
   var logHtml = log.length === 0
     ? '<p style="color:#9ca3af;font-size:12px;text-align:center;padding:12px">Nenhum lançamento ainda. Clique em + Adicionar.</p>'
     : log.map(function(r) {
+        window._festLogCache[r._id] = r;
         var isPago = r.status === 'pago';
         var tl = tipoLabel[r.tipo] || r.tipo;
         var tc = tColor[r.tipo] || '#374151';
@@ -2780,6 +2782,7 @@ function renderFestivalDetalhe(id) {
             '<span style="font-size:10px;color:#9ca3af">' + df + (r.chavePix?' · '+r.chavePix:'') + (r.obs?' · '+r.obs:'') + '</span>' +
             '<div style="display:flex;gap:4px">' +
               '<button type="button" onclick="festToggleLogStatus(\''+f.id+'\',\''+r._id+'\',\''+r.status+'\')" style="width:auto;padding:3px 8px;font-size:10px;background:'+(isPago?'#dcfce7':'#fef3c7')+';color:'+(isPago?'#166534':'#92400e')+';border:none;border-radius:5px">'+(isPago?'✓ Pago':'⏳ Pendente')+'</button>' +
+              '<button type="button" onclick="festAbrirEditLogEntry(\''+f.id+'\',\''+r._id+'\')" style="width:auto;padding:3px 6px;font-size:10px;background:#eff6ff;color:#1e40af;border:none;border-radius:5px">✏️</button>' +
               '<button type="button" onclick="festRemoverLogEntry(\''+f.id+'\',\''+r._id+'\')" style="width:auto;padding:3px 6px;font-size:10px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px">✕</button>' +
             '</div>' +
           '</div>' +
@@ -2887,6 +2890,36 @@ function festToggleAddForm(festId) {
   applyMoneyInputs();
 }
 
+function festAbrirEditLogEntry(festId, entryId) {
+  var r = window._festLogCache && window._festLogCache[entryId];
+  if (!r) return;
+  window._festLogEditId = entryId;
+  var form = document.getElementById('fest-log-form');
+  if (!form) return;
+  var benefOptsHtml = (window._festBenefOpts && window._festBenefOpts[festId]) || '';
+  form.innerHTML =
+    '<div style="font-size:11px;font-weight:bold;color:#1e40af;margin-bottom:8px">✏️ Editando lançamento</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Data<br><input type="date" id="flf-data" value="'+(r.data||new Date().toISOString().substr(0,10))+'" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"></label>' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Tipo<br><select id="flf-tipo" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"><option value="repasse"'+(r.tipo==='repasse'?' selected':'')+'>Repasse final</option><option value="saque"'+(r.tipo==='saque'?' selected':'')+'>Saque / Adiantamento</option><option value="despesa"'+(r.tipo==='despesa'?' selected':'')+'>Despesa do produtor</option></select></label>' +
+    '</div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:11px;font-weight:bold;color:#374151">Beneficiário<br><select id="flf-benef" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box">'+benefOptsHtml+'</select></label></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Valor<br><input type="text" class="money-input" id="flf-valor" value="'+(r.valor||0).toFixed(2)+'" style="margin-top:3px"></label>' +
+      '<label style="font-size:11px;font-weight:bold;color:#374151">Chave Pix<br><input type="text" id="flf-pix" value="'+(r.chavePix||'')+'" style="margin-top:3px;font-size:12px;padding:6px 8px"></label>' +
+    '</div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:bold;color:#374151">Observação<br><input type="text" id="flf-obs" value="'+(r.obs||'')+'" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"></label></div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button type="button" onclick="festSalvarLogEntry(\''+festId+'\')" style="flex:1;font-size:13px;background:var(--blue)">✓ Salvar edição</button>' +
+      '<button type="button" onclick="document.getElementById(\'fest-log-form\').style.display=\'none\';window._festLogEditId=null;" style="flex:1;font-size:13px;background:#f3f4f6;color:#374151;border:1px solid var(--border)">Cancelar</button>' +
+    '</div>';
+  form.style.display = 'block';
+  // Pré-seleciona beneficiário
+  var benefSel = document.getElementById('flf-benef');
+  if (benefSel) benefSel.value = r.beneficiario || '';
+  applyMoneyInputs();
+}
+
 function festSalvarLogEntry(festId) {
   var data  = (document.getElementById('flf-data')||{}).value || new Date().toISOString().substr(0,10);
   var tipo  = (document.getElementById('flf-tipo')||{}).value || 'repasse';
@@ -2899,8 +2932,19 @@ function festSalvarLogEntry(festId) {
   var obs   = (document.getElementById('flf-obs')||{}).value || '';
   if (!benefNome) { alert('Selecione o beneficiário.'); return; }
   if (valor <= 0)  { alert('Informe um valor maior que zero.'); return; }
-  var entry = { data: data, beneficiario: benefNome, tipoBenef: tipoBenef, tipo: tipo, valor: valor, chavePix: pix, obs: obs, status: 'pendente', criadoEm: new Date().toISOString() };
-  firebase.database().ref('fechamentos/' + festId + '/repassesLog').push(entry).catch(function(e){ alert('Erro: ' + e.message); });
+
+  var editId = window._festLogEditId || null;
+  window._festLogEditId = null;
+
+  if (editId) {
+    var cache = window._festLogCache && window._festLogCache[editId];
+    var updated = { data: data, beneficiario: benefNome, tipoBenef: tipoBenef, tipo: tipo, valor: valor, chavePix: pix, obs: obs };
+    if (cache) { updated.status = cache.status || 'pendente'; updated.criadoEm = cache.criadoEm || ''; }
+    firebase.database().ref('fechamentos/' + festId + '/repassesLog/' + editId).update(updated).catch(function(e){ alert('Erro: ' + e.message); });
+  } else {
+    var entry = { data: data, beneficiario: benefNome, tipoBenef: tipoBenef, tipo: tipo, valor: valor, chavePix: pix, obs: obs, status: 'pendente', criadoEm: new Date().toISOString() };
+    firebase.database().ref('fechamentos/' + festId + '/repassesLog').push(entry).catch(function(e){ alert('Erro: ' + e.message); });
+  }
 }
 
 function festToggleLogStatus(festId, entryId, current) {
@@ -2914,7 +2958,13 @@ function festRemoverLogEntry(festId, entryId) {
 }
 
 function festEncerrarFestival(id) {
-  if (!confirm('Encerrar este festival? Você poderá reabrir se necessário.')) return;
+  var f = fechamentos.find(function(x){ return x.id === id; });
+  var log = f ? _festParseLog(f) : [];
+  var totalPend = log.filter(function(r){ return r.status !== 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+  var msg = totalPend > 0.01
+    ? 'Atenção: ainda há ' + formatMoney(totalPend) + ' em repasses pendentes.\nDeseja encerrar mesmo assim?'
+    : 'Encerrar este festival? Você poderá reabrir se necessário.';
+  if (!confirm(msg)) return;
   firebase.database().ref('fechamentos/' + id + '/statusFest').set('encerrado');
 }
 
@@ -2934,7 +2984,7 @@ function gerarImagemFestivalHistorico() {
   var ops = []; try { ops = JSON.parse(f.operacoes||'[]'); } catch(e){}
   var cobs = []; try { cobs = JSON.parse(f.cobrancas||'[]'); } catch(e){}
   var saqs = []; try { saqs = JSON.parse(f.saques||'[]'); } catch(e){}
-  var reps = []; try { reps = JSON.parse(f.repasses||'[]'); } catch(e){}
+  var reps = _festParseLog(f); // usa repassesLog atual, nao os repasses planejados
 
   var evento = f.evento || 'Festival';
   var hoje = f.criadoEm ? new Date(f.criadoEm).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
@@ -2966,17 +3016,25 @@ function gerarImagemFestivalHistorico() {
     return '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed #e5e7eb;"><span style="font-size:13px;color:#475569;">(-) '+(s.nome||'-')+(ds?' — '+ds:'')+'</span><span style="font-size:13px;font-weight:600;color:#dc2626;">- '+fmt(s.valor)+'</span></div>';
   }).join('');
 
+  var tipoLabelImg = { repasse: 'Repasse', saque: 'Saque', despesa: 'Despesa' };
+  var totalPagoImg = reps.filter(function(r){ return r.status === 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+  var totalPendImg = reps.filter(function(r){ return r.status !== 'pago'; }).reduce(function(a,r){ return a+(r.valor||0); }, 0);
+  var restanteImg  = (f.valorFinal||0) - totalPagoImg;
+
   var repRows = reps.map(function(r, i) {
     var last = i === reps.length - 1;
     var bd = last ? '' : 'border-bottom:1px dashed #e5e7eb;';
+    var isPago = r.status === 'pago';
+    var df = r.data ? new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR') : '-';
+    var tl = tipoLabelImg[r.tipo] || r.tipo;
     return '<tr>' +
-      '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'color:#1e293b;">'+(r.ok?'✓ ':'')+(r.nome||'-')+'</td>' +
-      '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#475569;">'+(r.responsavel||'—')+'</td>' +
-      '<td style="'+F+'font-size:12px;padding:8px 10px;'+bd+'color:#64748b;">'+(r.chavePix||'—')+'</td>' +
-      '<td style="'+F+'font-size:13px;padding:8px 10px;'+bd+'text-align:right;font-weight:600;color:#1e293b;">'+fmt(r.valor)+'</td>' +
+      '<td style="'+F+'font-size:12px;padding:7px 8px;'+bd+'color:#475569;">'+df+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:7px 8px;'+bd+'color:#1e293b;font-weight:600;">'+(r.beneficiario||'-')+'</td>' +
+      '<td style="'+F+'font-size:11px;padding:7px 8px;'+bd+'color:#64748b;">'+tl+'</td>' +
+      '<td style="'+F+'font-size:13px;padding:7px 8px;'+bd+'text-align:right;font-weight:600;color:#1e293b;">'+fmt(r.valor)+'</td>' +
+      '<td style="'+F+'font-size:11px;padding:7px 8px;'+bd+'text-align:center;font-weight:bold;color:'+(isPago?'#166534':'#92400e')+'">'+(isPago?'✓ Pago':'⏳ Pend.')+'</td>' +
     '</tr>';
   }).join('');
-  var totalRep = reps.reduce(function(a, r){ return a + (r.valor||0); }, 0);
 
   var html = '<div id="_fhi-wrap" style="'+F+'width:700px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;">' +
     '<div style="background:#1a3a6b;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;">' +
@@ -3026,30 +3084,37 @@ function gerarImagemFestivalHistorico() {
       '</div>' +
       '<div style="'+F+'font-size:22px;font-weight:700;color:#185fa5;">'+fmt(f.totalARepassar||0)+'</div>' +
     '</div>' +
-    // Repasses por operação
-    (repRows ? '<div style="padding:4px 28px 0;background:#fff;">' +
-      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 4px;">Repasses por operacao</div>' +
+    // Repasses & Saques (log atual)
+    (reps.length > 0 ? '<div style="padding:4px 28px 0;background:#fff;">' +
+      '<div style="'+F+'font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 4px;">Repasses & Saques</div>' +
       '<table style="width:100%;border-collapse:collapse;">' +
         '<thead><tr style="background:#f8fafc;">' +
-          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Operacao</th>' +
-          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Responsavel</th>' +
-          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:left;font-weight:600;">Chave Pix</th>' +
-          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 10px;text-align:right;font-weight:600;">Valor</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:left;font-weight:600;">Data</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:left;font-weight:600;">Beneficiário</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:left;font-weight:600;">Tipo</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:right;font-weight:600;">Valor</th>' +
+          '<th style="'+F+'font-size:10px;color:#94a3b8;text-transform:uppercase;padding:5px 8px;text-align:center;font-weight:600;">Status</th>' +
         '</tr></thead>' +
         '<tbody>'+repRows+'</tbody>' +
       '</table>' +
       '<div style="'+F+'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1.5px solid #e2e8f0;margin-top:4px;">' +
-        '<span style="font-size:13px;font-weight:700;color:#374151;">Total repasses</span>' +
-        '<span style="font-size:13px;font-weight:700;color:#374151;">'+fmt(totalRep)+'</span>' +
+        '<div>' +
+          '<span style="font-size:12px;font-weight:700;color:#166534;">Pago: '+fmt(totalPagoImg)+'</span>' +
+          (totalPendImg > 0.01 ? '&nbsp;&nbsp;<span style="font-size:12px;font-weight:700;color:#92400e;">Pendente: '+fmt(totalPendImg)+'</span>' : '') +
+        '</div>' +
+        '<span style="font-size:13px;font-weight:700;color:#374151;">Total: '+fmt(totalPagoImg+totalPendImg)+'</span>' +
       '</div>' +
     '</div>' : '') +
     // Restante para o produtor
     '<div style="background:#166634;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">' +
       '<div>' +
-        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Restante para o produtor</div>' +
-        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+hoje+'</div>' +
+        '<div style="'+F+'font-size:10px;font-weight:600;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;">Saldo restante a distribuir</div>' +
+        '<div style="'+F+'font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px;">'+evento+'&nbsp;&nbsp;—&nbsp;&nbsp;'+new Date().toLocaleDateString('pt-BR')+'</div>' +
       '</div>' +
-      '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmt(f.valorFinal||0)+'</div>' +
+      '<div style="text-align:right;">' +
+        '<div style="'+F+'font-size:28px;font-weight:700;color:#fff;">'+fmt(restanteImg)+'</div>' +
+        (totalPagoImg > 0.01 ? '<div style="'+F+'font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px;">pago: '+fmt(totalPagoImg)+' · total a distribuir: '+fmt(f.valorFinal||0)+'</div>' : '') +
+      '</div>' +
     '</div>' +
     '<div style="padding:10px 28px;text-align:center;">' +
       '<span style="'+F+'font-size:11px;color:#94a3b8;">Easytick&nbsp;&nbsp;•&nbsp;&nbsp;easytick.com.br&nbsp;&nbsp;•&nbsp;&nbsp;Gerado em '+new Date().toLocaleDateString('pt-BR')+'</span>' +

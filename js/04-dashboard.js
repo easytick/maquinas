@@ -108,8 +108,22 @@ function renderDayAlerts() {
     recVencendo  = recorrentes.filter(function(r) { return r.status !== 'inativo' && getRecStatus(r) === 'vencendo'; });
   }
 
+  var festRepPend = [], festRepPendTotal = 0;
+  if (typeof fechamentos !== 'undefined' && typeof _festParseLog === 'function') {
+    fechamentos.forEach(function(f) {
+      if (f.tipo !== 'festival') return;
+      var log = _festParseLog(f);
+      var pend = log.filter(function(r){ return r.status !== 'pago'; });
+      var total = pend.reduce(function(a, r){ return a + (r.valor||0); }, 0);
+      if (total > 0.01) {
+        festRepPend.push({ evento: f.evento, total: total });
+        festRepPendTotal += total;
+      }
+    });
+  }
+
   var movHoje = ts + tr;
-  var temAlgo = movHoje > 0 || ta > 0 || fp.length > 0 || fechPendentes.length > 0 || intProximas.length > 0 || recAtrasados.length > 0 || recVencendo.length > 0;
+  var temAlgo = movHoje > 0 || ta > 0 || fp.length > 0 || fechPendentes.length > 0 || intProximas.length > 0 || recAtrasados.length > 0 || recVencendo.length > 0 || festRepPend.length > 0;
 
   // ── STRIP ──
   var stripEl = document.getElementById('alertas-strip');
@@ -120,7 +134,8 @@ function renderDayAlerts() {
         _makeChip(movHoje, 'hoje', movHoje > 0 ? 'blue' : 'gray') +
         _makeChip(ta, 'atraso', ta > 0 ? 'red' : 'gray') +
         _makeChip(fp.length, 'pgto', fp.length > 0 ? 'yellow' : 'gray') +
-        _makeChip(fechPendentes.length, 'repasse', fechPendentes.length > 0 ? 'yellow' : 'gray');
+        _makeChip(fechPendentes.length, 'repasse', fechPendentes.length > 0 ? 'yellow' : 'gray') +
+        (festRepPend.length > 0 ? _makeChip(festRepPend.length, 'festival', 'yellow') : '');
     } else {
       stripEl.style.display = 'none';
       stripEl.innerHTML = '';
@@ -199,7 +214,20 @@ function renderDayAlerts() {
       function() { setPage('inicio'); setTimeout(function(){ var el=document.getElementById('reservasIntencaoCard'); if(el) el.scrollIntoView({behavior:'smooth'}); },50); }));
   }
 
-  // Prioridade 6 — Retornos hoje
+  // Prioridade 6 — Repasses de festival pendentes
+  if (festRepPend.length > 0) {
+    var detalheFestRep = festRepPend.map(function(f) {
+      return '<b>' + (f.evento||'-') + '</b> — ' + formatMoney(f.total) + ' pendente';
+    });
+    var subFestRep = festRepPend.slice(0, 2).map(function(f) { return f.evento; }).join(', ') + (festRepPend.length > 2 ? '…' : '');
+    listaEl.appendChild(_makeAlertaItem('yellow', '🎪',
+      festRepPend.length + ' festival' + (festRepPend.length > 1 ? 'is' : '') + ' com repasses pendentes',
+      subFestRep + ' · ' + formatMoney(festRepPendTotal) + ' total',
+      detalheFestRep, 'Ver festivals',
+      function() { setPage('fechamentos'); setFechTab('festivals'); }));
+  }
+
+  // Prioridade 7 — Retornos hoje
   if (tr > 0) {
     var detalheRet = Object.keys(retornosHoje).map(function(ev) {
       return '<b>' + ev + '</b> — ' + retornosHoje[ev].length + ' maq.';
