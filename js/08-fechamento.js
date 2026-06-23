@@ -2645,9 +2645,11 @@ function renderFestivalDetalhe(id) {
         '</div>';
       }).join('');
 
-  // beneficiary options for form
+  // beneficiary options for form — stored globally to avoid double-quote escaping inside onclick=""
   var benefOpts = '<option value="">-- Selecionar --</option><option value="Produtor" data-tipo="produtor">🎪 Produtor</option>';
   ops.forEach(function(op){ benefOpts += '<option value="'+(op.nome||'Operação')+'" data-tipo="operacao">🏪 '+(op.nome||'Operação')+'</option>'; });
+  window._festBenefOpts = window._festBenefOpts || {};
+  window._festBenefOpts[f.id] = benefOpts;
 
   detalhe.innerHTML =
     // Header
@@ -2677,7 +2679,7 @@ function renderFestivalDetalhe(id) {
     '<div style="background:#f9fafb;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
         '<div style="font-size:12px;font-weight:bold;color:#374151">💸 Repasses & Saques</div>' +
-        '<button type="button" onclick="festToggleAddForm(\''+f.id+'\',\''+benefOpts.replace(/'/g,'&#39;')+'\')" id="btn-fest-add" style="width:auto;padding:4px 10px;font-size:11px;background:var(--blue);color:#fff;border:none;border-radius:6px">+ Adicionar</button>' +
+        '<button type="button" onclick="festToggleAddForm(\''+f.id+'\')" id="btn-fest-add" style="width:auto;padding:4px 10px;font-size:11px;background:var(--blue);color:#fff;border:none;border-radius:6px">+ Adicionar</button>' +
       '</div>' +
       '<div id="fest-log-form" style="display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px"></div>' +
       '<div id="fest-log-entries">' + logHtml + '</div>' +
@@ -2697,10 +2699,11 @@ function renderFestivalDetalhe(id) {
     '</div>';
 }
 
-function festToggleAddForm(festId, benefOptsHtml) {
+function festToggleAddForm(festId) {
   var form = document.getElementById('fest-log-form');
   if (!form) return;
   if (form.style.display !== 'none') { form.style.display = 'none'; return; }
+  var benefOptsHtml = (window._festBenefOpts && window._festBenefOpts[festId]) || '';
   form.innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
       '<label style="font-size:11px;font-weight:bold;color:#374151">Data<br><input type="date" id="flf-data" value="'+new Date().toISOString().substr(0,10)+'" style="margin-top:3px;font-size:12px;padding:6px 8px;width:100%;box-sizing:border-box"></label>' +
