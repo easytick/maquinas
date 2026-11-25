@@ -83,8 +83,11 @@ Disponivel --> Manutencao --> Disponivel
 - 2 modos de entrada: colar relatorio de vendas ou inserir manualmente
 - 2 tipos de evento: Ficha (bares/festas) ou Ingresso
 - Para ingresso: relatorio separado por origem (Loja Virtual + Aplicativo)
+  - Aplicativo: "Nao informado" (digital App/WhatsApp) e **Dinheiro** ficam com o produtor (somados em `totalDigital`, rotulo em `labelProdutor` / `labelProdutorIngresso(d)`); demais formas do App = PDV fisico (base do repasse)
+  - Base do repasse = Loja Virtual liquido + PDV fisico
 - Calculo: total bruto - dinheiro (fica com produtor) - cobranças/taxas - saques antecipados = valor a repassar
 - Conciliacao automatica de saques do financeiro pelo nome do evento
+- Relatorio de ficha (formato 2026): em "Agrupado por Forma Pagamento" cada forma vem em uma linha (`Nome<TAB>R$ valor`) SEM quantidade, porque uma compra pode ser dividida em mais de uma forma de pagamento nas maquinas fisicas. Nao tentar reconstruir qtd por forma; a conferencia e feita pela soma dos valores x total do relatorio. O parser continua aceitando o formato antigo (nome numa linha, `qtd R$ valor` na seguinte)
 - Exportacao: copiar texto, baixar imagem (PNG) ou baixar PDF (A4, paginado; jsPDF carregado sob demanda via CDN)
 - Fluxo de exportacao: `coletarModeloFechamento()` (le a tela) -> `montarHtmlFechamento(modelo)` (layout) -> `exportarHtmlFechamento(html, nome, 'png'|'pdf')`
 - O modelo e salvo no Firebase no campo `modelo` (JSON) ao gerar/editar; o menu `⋮` do historico usa `baixarFechamentoHistorico(fid, formato)` para baixar de novo. Fechamentos antigos sem `modelo` usam `montarHtmlFechamentoTexto()` (cabecalho/rodape padrao + `textoFinal`)

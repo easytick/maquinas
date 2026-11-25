@@ -216,6 +216,11 @@ function matchTotalLinha(linha) {
   return { qtd: parseInt(m[1].replace(/\./g,'')), valor: parseMoney(m[2]) };
 }
 
+// Rotulo da parte do Aplicativo que fica com o produtor (dinheiro e/ou digital "Nao informado")
+function labelProdutorIngresso(d) {
+  return (d && d.labelProdutor) ? d.labelProdutor : 'Digital/App';
+}
+
 function setFechTipoRelatorio(tipo) {
   var isFicha = tipo === 'ficha';
   document.getElementById('fech-campo-ficha').style.display = isFicha ? 'block' : 'none';
@@ -269,6 +274,16 @@ function extrairDadosRelatorio(texto) {
   var formaAtual = null;
   secaoForma.split('\n').forEach(function(linha) {
     linha = linha.trim(); if (!linha) return;
+    // Formato novo (2026): nome e valor na mesma linha, sem quantidade
+    //   "Crédito À Vista<TAB>R$ 18.787,00"  (opcionalmente "Nome<TAB>qtd<TAB>R$ valor")
+    var mLinha = linha.match(/^([^\d\t].*?)\s+(?:([\d.]+)\s+)?R\$\s*([\d.,]+)\s*$/);
+    if (mLinha && !/R\$/.test(mLinha[1]) && !/^(Total|Forma|Valor|Lote|Unitário|Produto|Preço|Desconto)\b/i.test(mLinha[1])) {
+      var nomeF = mLinha[1].replace(/\s+/g,' ').trim();
+      formas[nomeF] = { qtd: mLinha[2] ? parseInt(mLinha[2].replace(/\./g,'')) : 0, valor: parseMoney(mLinha[3]) };
+      formaAtual = null;
+      return;
+    }
+    // Formato antigo: nome da forma numa linha, "qtd R$ valor" na linha seguinte
     if (/^(Lote|Unitário|Produto|Preço|Total|Valor|Forma|Desconto)/i.test(linha) && !/^(Déb|Deb|Cré|Cre|Pix|Din|Bol|Não|Nao)/i.test(linha)) return;
     var isForma = /^(Déb|Deb|Cré|Cre|Pix|Din|Bol|Não\s*inf|Nao\s*inf)/i.test(linha) && !/R\$/.test(linha);
     if (isForma) { formaAtual = linha.replace(/\s+/g,' ').trim(); formas[formaAtual] = {qtd:0,valor:0}; return; }
@@ -323,7 +338,7 @@ function parsearRelatorio() {
     if (!dados || dados.totalGeral === 0) { erro.textContent = 'Nao foi possivel ler o relatorio.'; erro.style.display = 'block'; return; }
     var dinheiro = 0;
     Object.keys(dados.formas).forEach(function(f){ if(/dinheiro/i.test(f)) dinheiro = dados.formas[f].valor; });
-    window._fechDados = { tipo:'ficha', formas:dados.formas, pdvs:dados.pdvs, totalGeral:dados.totalGeral, totalQtd:dados.totalQtd, dinheiro:dinheiro };
+    window._fechDados = { tipo:'ficha', formas:dados.formas, pdvs:dados.pdvs, totalGeral:dados.totalGeral, totalQtd:dados.totalQtd, totalRelatorio:dados.totalGeral, dinheiro:dinheiro };
 
   } else {
     // INGRESSO: dois relatórios
@@ -341,12 +356,16 @@ function parsearRelatorio() {
     // Aplicativo: separa "Não informado" (digital, fica c/ produtor) de formas com pagamento (PDV físico)
     var totalApp = dadosApp ? dadosApp.totalGeral : 0;
     var formasApp = dadosApp ? dadosApp.formas : {};
-    var totalDigital = 0; // não informado = app/whatsapp = fica c/ produtor
-    var formasPdv = {};   // débito/crédito/pix do app = PDV físico
+    // Fica c/ produtor: "Não informado" (digital App/WhatsApp) + Dinheiro recebido nas maquinas do App
+    var totalDigital = 0;      // soma de tudo que fica c/ produtor (nome mantido por compatibilidade)
+    var temNaoInformado = false, temDinheiroApp = false;
+    var formasPdv = {};        // débito/crédito/pix do app = PDV físico (base do repasse)
 
     Object.keys(formasApp).forEach(function(f) {
       if (/n.o\s*inf/i.test(f) || /nao\s*inf/i.test(f) || /não\s*inf/i.test(f)) {
-        totalDigital += formasApp[f].valor;
+        totalDigital += formasApp[f].valor; temNaoInformado = true;
+      } else if (/dinheiro/i.test(f)) {
+        totalDigital += formasApp[f].valor; temDinheiroApp = true;
       } else {
         formasPdv[f] = formasApp[f];
       }
@@ -356,8 +375,10 @@ function parsearRelatorio() {
     var formasConsolidadas = {};
     // Loja virtual como forma
     if (totalLoja > 0) formasConsolidadas['Loja Virtual'] = { qtd: dadosLoja ? dadosLoja.totalQtd : 0, valor: totalLoja, _isLoja: true };
-    // Digital (app) como dinheiro do produtor
-    if (totalDigital > 0) formasConsolidadas['Digital (App/WhatsApp)'] = { qtd: 0, valor: totalDigital, _isDigital: true };
+    // Parte do App que fica c/ produtor (dinheiro e/ou digital)
+    var labelProdutor = temDinheiroApp && temNaoInformado ? 'Dinheiro + Digital (App)'
+                      : temDinheiroApp ? 'Dinheiro (App)' : 'Digital (App/WhatsApp)';
+    if (totalDigital > 0) formasConsolidadas[labelProdutor] = { qtd: 0, valor: totalDigital, _isDigital: true };
     // PDV físico por forma
     Object.keys(formasPdv).forEach(function(f) {
       formasConsolidadas['PDV - ' + f] = formasPdv[f];
@@ -390,6 +411,7 @@ function parsearRelatorio() {
       formasLoja: formasLoja,
       formasPdv: formasPdv,
       totalDigital: totalDigital,
+      labelProdutor: labelProdutor,
       pdvs: pdvs,
       totalGeral: totalGeral,
       totalBruto: dadosLoja ? (dadosLoja.totalBruto||dadosLoja.totalGeral) : totalGeral,
@@ -461,7 +483,7 @@ function renderDadosLidos() {
     linhasTotal += '<div style="font-size:11px;color:#6b7280">Loja Virtual: ' + formatMoney(d.totalLoja||0);
     if (d.totalDesconto > 0) linhasTotal += ' <span style="color:#dc2626">(cupons: -' + formatMoney(d.totalDesconto) + ')</span>';
     linhasTotal += '</div>';
-    if ((d.totalDigital||0) > 0) linhasTotal += '<div style="font-size:11px;color:#92400e">Digital/App (produtor): ' + formatMoney(d.totalDigital||0) + '</div>';
+    if ((d.totalDigital||0) > 0) linhasTotal += '<div style="font-size:11px;color:#92400e">' + labelProdutorIngresso(d) + ' (produtor): ' + formatMoney(d.totalDigital||0) + '</div>';
     if ((d.totalPdv||0) > 0)     linhasTotal += '<div style="font-size:11px;color:#374151">PDV físico: ' + formatMoney(d.totalPdv||0) + '</div>';
     tbEl.innerHTML = '<div style="text-align:right;line-height:1.8">' + linhasTotal + '</div>';
   } else {
@@ -498,6 +520,20 @@ function renderDadosLidos() {
     formasList.appendChild(row);
   });
 
+  // Conferencia ficha: soma das formas deve bater com o total do relatorio
+  if (d.tipo === 'ficha' && d.totalRelatorio) {
+    var somaF = 0; Object.keys(d.formas).forEach(function(f){ somaF += d.formas[f].valor||0; });
+    var confere = Math.abs(somaF - d.totalRelatorio) < 0.01;
+    var cEl = document.createElement('div');
+    cEl.style.cssText = 'margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:bold;' +
+      (confere ? 'background:#dcfce7;color:#166534;' : 'background:#fef3c7;color:#92400e;');
+    cEl.innerHTML = Object.keys(d.formas).length === 0
+      ? '⚠️ Nenhuma forma de pagamento encontrada no relatorio. Preencha os valores manualmente.'
+      : (confere ? '✅ ' : '⚠️ ') + 'Soma das formas: ' + formatMoney(somaF) +
+        (confere ? ' — confere com o total do relatorio!' : ' — diverge do total do relatorio (' + formatMoney(d.totalRelatorio) + ')');
+    formasList.appendChild(cEl);
+  }
+
   // Validação ingresso: LV + App = Total
   if (d.tipo === 'ingresso' && window._fechValidacao) {
     var val = window._fechValidacao;
@@ -507,7 +543,7 @@ function renderDadosLidos() {
     validEl.style.cssText = 'margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:bold;' +
       (bate ? 'background:#dcfce7;color:#166534;' : 'background:#fef3c7;color:#92400e;');
     validEl.innerHTML = (bate ? '✅ ' : '⚠️ ') +
-      'Loja Virtual (' + formatMoney(val.loja) + ') + Digital (' + formatMoney(val.digital) + ')' +
+      'Loja Virtual (' + formatMoney(val.loja) + ') + ' + labelProdutorIngresso(d) + ' (' + formatMoney(val.digital) + ')' +
       (val.pdv > 0 ? ' + PDV (' + formatMoney(val.pdv) + ')' : '') +
       ' = ' + formatMoney(soma) +
       (bate ? ' — confere!' : ' — diverge do total (' + formatMoney(val.total) + ')');
@@ -833,7 +869,7 @@ function recalcFech() {
     if (d.tipo === 'ingresso') {
       html +=
         '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">Loja Virtual (base)</span><span>'+formatMoney(d.totalLoja||0)+'</span></div>' +
-        ((d.totalDigital||0) > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) Digital/App (produtor)</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' : '') +
+        ((d.totalDigital||0) > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">(-) '+labelProdutorIngresso(d)+' (produtor)</span><span>- '+formatMoney(d.dinheiro)+'</span></div>' : '') +
         ((d.totalPdv||0) > 0 ? '<div style="display:flex;justify-content:space-between"><span style="opacity:.8">PDV fisico</span><span>+'+formatMoney(d.totalPdv||0)+'</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px"><span style="opacity:.8">= Base repasse</span><span>'+formatMoney(baseRepasse)+'</span></div>';
     } else if (d.tipo === 'festival') {
@@ -1026,17 +1062,20 @@ function gerarFechamento() {
 
   txt += '📊 VENDAS\n';
   if (d.tipo === 'ingresso') {
-    var totalBrutoEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
-    txt += 'Total geral do evento: ' + formatMoney(totalBrutoEvt) + '\n';
-    if ((d.totalDigital||0) > 0) txt += '(-) Digital/App (produtor): - ' + formatMoney(d.totalDigital||0) + '\n';
-    txt += '(=) Loja Virtual bruto: ' + formatMoney(d.totalBruto||d.totalLoja||0) + '\n';
+    // Composicao: origens -> total geral real -> deducoes -> base do repasse
+    var lvBruto = d.totalBruto||d.totalLoja||0;
+    var totalBrutoEvt = lvBruto + (d.totalPdv||0) + (d.totalDigital||0);
+    txt += 'Loja Virtual bruto: ' + formatMoney(lvBruto) + '\n';
+    if ((d.totalPdv||0) > 0) txt += '(+) PDV fisico (maquinas): ' + formatMoney(d.totalPdv||0) + '\n';
+    if ((d.totalDigital||0) > 0) txt += '(+) ' + labelProdutorIngresso(d) + ': ' + formatMoney(d.totalDigital||0) + '\n';
+    txt += '(=) Total geral do evento: ' + formatMoney(totalBrutoEvt) + '\n';
+    if ((d.totalDigital||0) > 0) txt += '(-) ' + labelProdutorIngresso(d) + ' (ficou c/ produtor): - ' + formatMoney(d.totalDigital||0) + '\n';
     if ((d.totalDesconto||0) > 0) txt += '(-) Cupons/descontos: - ' + formatMoney(d.totalDesconto||0) + '\n';
-    txt += '(=) Loja Virtual liquido (base): ' + formatMoney(d.totalLoja||0) + '\n';
-    if ((d.totalPdv||0) > 0) txt += '(+) PDV fisico: ' + formatMoney(d.totalPdv||0) + '\n';
+    txt += '(=) Base do repasse: ' + formatMoney((d.totalLoja||0) + (d.totalPdv||0)) + '\n';
   } else {
     txt += 'Total bruto: ' + formatMoney(d.totalGeral) + '\n';
     Object.keys(d.formas).forEach(function(f){
-      txt += '  ' + f + ': ' + formatMoney(d.formas[f].valor) + ' (' + d.formas[f].qtd + ' vend.)\n';
+      txt += '  ' + f + ': ' + formatMoney(d.formas[f].valor) + (d.formas[f].qtd ? ' (' + d.formas[f].qtd + ' vend.)' : '') + '\n';
     });
   }
   txt += '\n';
@@ -1262,10 +1301,12 @@ function coletarModeloFechamento() {
     formas: d.formas || {},
     operacoes: d.operacoes || [],
     totalGeral: d.totalGeral || 0,
+    totalQtd: d.totalQtd || 0,
     dinheiro: d.dinheiro || 0,
     totalBruto: d.totalBruto || 0,
     totalLoja: d.totalLoja || 0,
     totalDigital: d.totalDigital || 0,
+    labelProdutor: d.labelProdutor || '',
     totalDesconto: d.totalDesconto || 0,
     totalPdv: d.totalPdv || 0,
     taxasCartao: taxasCartao,
@@ -1327,14 +1368,14 @@ function montarHtmlFechamento(m) {
     Object.keys(d.formas).forEach(function(f) {
       var v = d.formas[f];
       var isDin = /dinheiro/i.test(f);
-      totalQtdFormas += v.qtd;
+      totalQtdFormas += (v.qtd||0);
       var bg = isDin ? '#fffbeb' : '#fff';
       var tc = isDin ? '#92400e' : '#475569';
       var vc = isDin ? '#b45309' : '#1e293b';
       linhasFormas +=
         '<tr style="background:'+bg+'">' +
           '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;color:'+tc+';">'+(isDin?'💵 ':'')+f+'</td>' +
-          '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;text-align:center;color:'+tc+';">'+v.qtd+'</td>' +
+          '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;text-align:center;color:'+tc+';">'+(v.qtd ? v.qtd.toLocaleString('pt-BR') : '—')+'</td>' +
           '<td style="'+F+'font-size:13px;padding:8px 8px;border-bottom:1px dashed #e5e7eb;text-align:right;font-weight:600;color:'+vc+';">'+fmtImg(v.valor)+'</td>' +
         '</tr>';
     });
@@ -1342,7 +1383,7 @@ function montarHtmlFechamento(m) {
     linhasFormas +=
       '<tr style="background:#f1f5f9;">' +
         '<td style="'+F+'font-size:13px;padding:8px 8px;font-weight:700;color:#374151;">Total bruto</td>' +
-        '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:center;font-weight:700;color:#374151;">'+totalQtdFormas+'</td>' +
+        '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:center;font-weight:700;color:#374151;">'+((totalQtdFormas || d.totalQtd) ? (totalQtdFormas || d.totalQtd).toLocaleString('pt-BR') : '—')+'</td>' +
         '<td style="'+F+'font-size:13px;padding:8px 8px;text-align:right;font-weight:700;color:#1e293b;">'+fmtImg(d.totalGeral)+'</td>' +
       '</tr>';
 
@@ -1481,15 +1522,15 @@ function montarHtmlFechamento(m) {
   } else {
     // ── INGRESSO: layout existente ──
     var compLinhas = [];
-    var tbEvt = (d.totalBruto||d.totalLoja||0) + (d.totalDigital||0);
-    compLinhas.push({ label: 'Total geral do evento', valor: fmtImg(tbEvt), red: false });
-    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) Digital / App (ficou c/ produtor)', valor: '- ' + fmtImg(d.totalDigital), red: true });
-    compLinhas.push({ label: '(=) Loja virtual bruto', valor: fmtImg(d.totalBruto||d.totalLoja||0), red: false });
+    // Composicao: origens -> total geral real -> deducoes (a base aparece no bloco azul abaixo)
+    var lvBrutoImg = d.totalBruto||d.totalLoja||0;
+    var tbEvt = lvBrutoImg + (d.totalPdv||0) + (d.totalDigital||0);
+    compLinhas.push({ label: 'Loja virtual bruto', valor: fmtImg(lvBrutoImg), red: false });
+    if ((d.totalPdv||0) > 0) compLinhas.push({ label: '(+) PDV físico (máquinas)', valor: fmtImg(d.totalPdv), green: true });
+    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(+) ' + labelProdutorIngresso(d), valor: fmtImg(d.totalDigital), red: false });
+    compLinhas.push({ label: '<b>(=) Total geral do evento</b>', valor: '<b>' + fmtImg(tbEvt) + '</b>', red: false });
+    if ((d.totalDigital||0) > 0) compLinhas.push({ label: '(-) ' + labelProdutorIngresso(d) + ' (ficou c/ produtor)', valor: '- ' + fmtImg(d.totalDigital), red: true });
     if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(-) Cupons / descontos', valor: '- ' + fmtImg(d.totalDesconto), red: true });
-    if ((d.totalPdv||0) > 0) {
-      if ((d.totalDesconto||0) > 0) compLinhas.push({ label: '(=) Loja virtual líquido', valor: fmtImg(d.totalLoja||0), red: false });
-      compLinhas.push({ label: '(+) PDV físico (máquinas)', valor: fmtImg(d.totalPdv), green: true });
-    }
 
     var compHTML = compLinhas.map(function(c,i) {
       var lColor = c.red ? '#92400e' : (c.green ? '#166534' : '#475569');
