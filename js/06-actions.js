@@ -23,11 +23,11 @@ function buildSelectItem(serial, brand, usos, selectedSet, toggleFn) {
   return '<label class="machine-select-item'+(selectedSet.has(serial)?' selected':'')+'" onclick="'+toggleFn+'(\''+serial+'\')"><input type="checkbox"'+(selectedSet.has(serial)?' checked':'')+' onclick="event.stopPropagation();'+toggleFn+'(\''+serial+'\')" /><div style="flex:1"><b>'+serial+'</b> <span style="color:#6b7280;font-size:13px">- '+brand+'</span></div><span style="font-size:12px;color:#6b7280">'+usos+' uso(s)</span></label>';
 }
 function refreshReserveMachineList(){var el=getEligibleForReserve(),list=document.getElementById('reserveMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel para as marcas selecionadas.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,reserveSelected,'toggleReserveSel');}).join('');document.getElementById('reserveSelCount').textContent=reserveSelected.size+' selecionadas';}
-function toggleReserveSel(s){if(reserveSelected.has(s))reserveSelected.delete(s);else reserveSelected.add(s);refreshReserveMachineList();}
+function toggleReserveSel(s){if(reserveSelected.has(s))reserveSelected.delete(s);else reserveSelected.add(s);refreshReserveMachineList();limparBuscaSerial('reserveMachineList');}
 function toggleAllReserve(){var el=getEligibleForReserve();if(reserveSelected.size===el.length)reserveSelected.clear();else el.forEach(function(m){reserveSelected.add(m.serial);});refreshReserveMachineList();}
 
 function refreshExitMachineList(){var el=getEligibleForExit(),list=document.getElementById('exitMachineList');if(!el.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel para as marcas selecionadas.</p>';return;}list.innerHTML=el.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,exitSelected,'toggleExitSel');}).join('');document.getElementById('exitSelCount').textContent=exitSelected.size+' selecionadas';}
-function toggleExitSel(s){if(exitSelected.has(s))exitSelected.delete(s);else exitSelected.add(s);refreshExitMachineList();}
+function toggleExitSel(s){if(exitSelected.has(s))exitSelected.delete(s);else exitSelected.add(s);refreshExitMachineList();limparBuscaSerial('exitMachineList');}
 function toggleAllExit(){var el=getEligibleForExit();if(exitSelected.size===el.length)exitSelected.clear();else el.forEach(function(m){exitSelected.add(m.serial);});refreshExitMachineList();}
 
 ['batchStartDate','batchEndDate'].forEach(function(id){document.getElementById(id).addEventListener('change',function(){if(reserveMode==='manual')refreshReserveMachineList();});});
@@ -125,7 +125,7 @@ function confirmarCancelamentoLote(){if(!cancelarSelected.size){alert('Selecione
 // ═══════════════════════════════════════════
 var manutSelected=new Set();
 function refreshManutList(){var brands=getSelectedBrands('manutBrands'),mqs=machines.filter(function(m){return brands.indexOf(m.brand)>-1&&getRealStatus(m)==='Disponivel';});var list=document.getElementById('manutMachineList');if(!mqs.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina disponivel.</p>';return;}list.innerHTML=mqs.map(function(m){return buildSelectItem(m.serial,m.brand,m.history.filter(function(h){return h.type==='saida';}).length,manutSelected,'toggleManutSel');}).join('');document.getElementById('manutSelCount').textContent=manutSelected.size+' selecionadas';}
-function toggleManutSel(s){if(manutSelected.has(s))manutSelected.delete(s);else manutSelected.add(s);refreshManutList();}
+function toggleManutSel(s){if(manutSelected.has(s))manutSelected.delete(s);else manutSelected.add(s);refreshManutList();limparBuscaSerial('manutMachineList');}
 function toggleAllManut(){var brands=getSelectedBrands('manutBrands'),mqs=machines.filter(function(m){return brands.indexOf(m.brand)>-1&&getRealStatus(m)==='Disponivel';});if(manutSelected.size===mqs.length)manutSelected.clear();else mqs.forEach(function(m){manutSelected.add(m.serial);});refreshManutList();}
 function confirmarManutencaoLote(){if(!manutSelected.size){alert('Selecione ao menos uma maquina.');return;}var motivo=document.getElementById('manutMotivo').value.trim(),result=document.getElementById('manutResult');if(!confirm('Enviar '+manutSelected.size+' maquina(s) para manutencao?'))return;var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){return manutSelected.has(m.serial);});selected.forEach(function(m){m.status='Manutencao';m.history.push({type:'manutencao',observation:motivo||'',date:new Date().toISOString(),user:un,userEmail:ue,batch:true});});result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+' em manutencao!</span>'+selected.map(function(m){return m.serial;}).join(', ');manutSelected.clear();document.getElementById('manutMotivo').value='';refreshManutList();save();}
 
@@ -323,6 +323,8 @@ function toggleSaidaIntencaoSel(serial){
     item.querySelector('input[type=checkbox]').checked = sel;
   });
   atualizarContadorSaidaIntencao(r.quantidade);
+  var busca = document.getElementById('saidaIntencaoBusca');
+  if(busca && busca.value){ busca.value=''; filtrarSaidaIntencaoLista(); busca.focus(); }
 }
 
 function atualizarContadorSaidaIntencao(qty){

@@ -9,6 +9,17 @@ function filterSelectList(listId, query) {
     item.style.display=(!q||text.indexOf(q)>-1)?'flex':'none';
   });
 }
+// Apos selecionar uma maquina pela busca: limpa o campo, mostra a lista inteira
+// e devolve o foco para digitar o proximo serial
+function limparBuscaSerial(listId) {
+  var list=document.getElementById(listId);
+  if(!list||!list.parentNode) return;
+  var input=list.parentNode.querySelector('.search-in-select input');
+  if(!input||!input.value) return;
+  input.value='';
+  filterSelectList(listId,'');
+  input.focus();
+}
 function filterEventSelect(selectId, query) {
   var sel=document.getElementById(selectId);
   if(!sel) return;
