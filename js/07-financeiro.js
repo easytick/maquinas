@@ -74,6 +74,10 @@ function parsePixText() {
       setPixTipoByName('Email');
     } else if(chaveDigits.length === 14) {
       setPixTipoByName('CPF'); // CNPJ
+    } else if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(chave)) {
+      setPixTipoByName('CPF'); // formato 000.000.000-00
+    } else if(chaveDigits.length >= 10 && /^\s*(\+|\()/.test(chave)) {
+      setPixTipoByName('Celular'); // +55... ou (DD) ...
     } else if(chaveDigits.length === 11 && /^[9][0-9]/.test(chaveDigits.substring(2))) {
       setPixTipoByName('Celular'); // DDD + 9 + numero
     } else if(chaveDigits.length === 11) {
@@ -96,8 +100,10 @@ function parsePixText() {
 function setPixTipoByName(name) {
   document.querySelectorAll('.pix-tipo-btn').forEach(function(b){
     b.classList.remove('active');
-    if(b.textContent.indexOf(name)>-1) b.classList.add('active');
+    if(b.getAttribute('data-tipo')===name) b.classList.add('active');
   });
+  // Mantem a variavel usada no salvamento sincronizada com o botao destacado
+  _pixTipo = name;
   document.getElementById('finPixTipo').value = name;
 }
 var finItens = [];
@@ -444,3 +450,16 @@ startFirebaseListener = function() {
   startSaldoListener();
 };
 
+// ═══════════════════════════════════════════
+// LIMPAR FILTROS (Extrato)
+// ═══════════════════════════════════════════
+function limparFiltrosExtrato() {
+  var box = document.getElementById('finExtratoFiltroEvento').parentNode;
+  var busca = box.querySelector('.search-in-select input');
+  if (busca) busca.value = '';
+  filterEventSelect('finExtratoFiltroEvento', '');
+  ['finExtratoFiltroEvento','finExtratoFiltroStatus','finExtratoFiltroBanco','finExtratoDataInicio','finExtratoDataFim'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  renderExtrato();
+}

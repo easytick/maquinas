@@ -100,6 +100,7 @@
         <input type="date" id="intencaoFiltroDataInicio" onchange="renderReservasIntencao()" style="font-size:12px;width:100%;margin-bottom:6px"/>
         <input type="date" id="intencaoFiltroDataFim" onchange="renderReservasIntencao()" style="font-size:12px;width:100%"/>
       </div>
+      <div class="filtros-acoes"><button type="button" class="btn-limpar-filtros" onclick="limparFiltrosIntencao()">✕ Limpar filtros</button></div>
       <div id="intencoesList"></div>
     </div>
   </div>
@@ -128,7 +129,7 @@
       </select>
       <select id="eventFilter" onchange="renderMachines()"><option value="">Todos os eventos</option></select>
     </div>
-    <div id="resultsCount" class="results-count"></div>
+    <div id="resultsCount" class="results-count"><span id="resultsCountText"></span><button type="button" class="btn-limpar-filtros" onclick="limparFiltrosMaquinas()">✕ Limpar filtros</button></div>
     <div id="machineList"><p style="color:#9ca3af">Aguardando conexao...</p></div>
   </div>
 
@@ -369,10 +370,10 @@
           <div id="pixFields" style="display:none">
             <p style="font-size:12px;font-weight:bold;color:var(--gray);margin-bottom:6px">Tipo da chave Pix</p>
             <div class="pix-tipo-row">
-              <button type="button" class="pix-tipo-btn active" onclick="setPixTipo(this,'Celular')">📱 Celular</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'CPF')">🪪 CPF</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Email')">📧 E-mail</button>
-              <button type="button" class="pix-tipo-btn" onclick="setPixTipo(this,'Aleatoria')">🔑 Aleatoria</button>
+              <button type="button" class="pix-tipo-btn active" data-tipo="Celular" onclick="setPixTipo(this,'Celular')">📱 Celular</button>
+              <button type="button" class="pix-tipo-btn" data-tipo="CPF" onclick="setPixTipo(this,'CPF')">🪪 CPF</button>
+              <button type="button" class="pix-tipo-btn" data-tipo="Email" onclick="setPixTipo(this,'Email')">📧 E-mail</button>
+              <button type="button" class="pix-tipo-btn" data-tipo="Aleatoria" onclick="setPixTipo(this,'Aleatoria')">🔑 Aleatoria</button>
             </div>
             <input type="hidden" id="finPixTipo" value="Celular"/>
             <input type="text" id="finChavePix" placeholder="Chave Pix"/>
@@ -430,6 +431,7 @@
             <option value="PagBank">PagBank</option>
             <option value="Sicoob">Sicoob</option>
           </select>
+          <div class="filtros-acoes" style="margin-bottom:0"><button type="button" class="btn-limpar-filtros" onclick="limparFiltrosExtrato()">✕ Limpar filtros</button></div>
         </div>
         <div id="finExtratoList"></div>
       </div>
@@ -726,6 +728,7 @@
           <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
             <button type="button" onclick="copiarFechamento()" style="background:#374151;font-size:13px;flex:1">📋 Copiar texto</button>
             <button type="button" onclick="baixarImagemFechamento()" style="background:var(--blue);font-size:13px;flex:1">🖼️ Baixar imagem</button>
+            <button type="button" onclick="baixarPdfFechamento()" style="background:#b91c1c;font-size:13px;flex:1">📄 Baixar PDF</button>
           </div>
         </div>
 
@@ -739,7 +742,8 @@
           <button type="button" id="btn-fst-parcial" onclick="setFechHistFiltroStatus('parcial')" style="flex:1;font-size:12px;padding:7px 0;background:#f9fafb;color:#374151;border:1.5px solid var(--border);border-radius:8px">Parcial</button>
           <button type="button" id="btn-fst-quitado" onclick="setFechHistFiltroStatus('quitado')" style="flex:1;font-size:12px;padding:7px 0;background:#f9fafb;color:#374151;border:1.5px solid var(--border);border-radius:8px">Quitado</button>
         </div>
-        <input id="fech-hist-filtro" type="text" placeholder="Buscar por nome do evento..." oninput="renderFechHistorico()" style="margin-bottom:12px;font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;width:100%;box-sizing:border-box">
+        <input id="fech-hist-filtro" type="text" placeholder="Buscar por nome do evento..." oninput="renderFechHistorico()" style="margin-bottom:8px;font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;width:100%;box-sizing:border-box">
+        <div class="filtros-acoes"><button type="button" class="btn-limpar-filtros" onclick="limparFiltrosFechHistorico()">✕ Limpar filtros</button></div>
         <div id="fech-hist-lista">
           <p style="color:#9ca3af;font-size:13px">Carregando...</p>
         </div>
@@ -824,6 +828,7 @@
         <select id="recExtratoMes" onchange="renderRecExtrato()"><option value="">Todos os meses</option></select>
         <select id="recExtratoCliente" onchange="renderRecExtrato()"><option value="">Todos os clientes</option></select>
       </div>
+      <div class="filtros-acoes"><button type="button" class="btn-limpar-filtros" onclick="limparFiltrosRecExtrato()">✕ Limpar filtros</button></div>
       <div id="recExtratoList"></div>
     </div>
   </div>
@@ -907,7 +912,23 @@
         <input type="checkbox" id="adminHideZero" onchange="renderAdminEventos()" style="width:auto"/>
         Ocultar eventos sem maquinas (0 maquinas)
       </label>
+      <select id="adminIdadeFiltro" onchange="renderAdminEventos()" style="margin-top:8px;font-size:13px">
+        <option value="0">Todos os eventos</option>
+        <option value="30">Sem atividade ha mais de 30 dias</option>
+        <option value="60">Sem atividade ha mais de 60 dias</option>
+        <option value="90">Sem atividade ha mais de 90 dias</option>
+        <option value="180">Sem atividade ha mais de 6 meses</option>
+        <option value="365">Sem atividade ha mais de 1 ano</option>
+      </select>
       </div>
+      <div id="adminLoteBar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;cursor:pointer;font-weight:normal;margin:0">
+          <input type="checkbox" id="adminSelTodos" onchange="toggleAdminSelTodos(this.checked)" style="width:auto;margin:0"/>
+          Selecionar todos
+        </label>
+        <button type="button" id="adminApagarLoteBtn" onclick="apagarEventosSelecionados()" disabled style="width:auto;font-size:12px;padding:6px 10px;background:#dc2626;margin:0;opacity:.5">🗑️ Apagar selecionados (0)</button>
+      </div>
+      <p style="font-size:11px;color:#6b7280;margin:0 0 6px">Apaga apenas historico e reservas das maquinas. Lancamentos financeiros e fechamentos sao mantidos. Eventos com maquina em uso ou reserva futura ficam protegidos.</p>
       <div id="adminEventosList" style="max-height:400px;overflow-y:auto"></div>
     </div>
 

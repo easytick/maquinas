@@ -86,7 +86,7 @@ function submitSaidaLote(e){
   if(exitMode==='auto'){var qty=Number(document.getElementById('batchExitQuantity').value);if(!qty||qty<=0){alert('Informe a quantidade.');return;}var el=getEligibleForExit();if(el.length<qty){result.className='batch-result show error';result.innerHTML='<b>Saida nao realizada.</b><br>Pedido: '+qty+' - Disponiveis: '+el.length;return;}selected=el.slice(0,qty);}
   else{if(!exitSelected.size){alert('Selecione ao menos uma maquina.');return;}selected=machines.filter(function(m){return exitSelected.has(m.serial);});}
   selected.forEach(function(m){m.status='Em uso';m.history.push({type:'saida',event:eventName,city:city,responsible:responsible,address:address,startDate:startDate,endDate:endDate,date:new Date().toISOString(),batch:true,user:un,userEmail:ue});});
-  result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+' saiu'+(selected.length>1?'ram':'')+'!</span><b>Evento: '+eventName+'</b><br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br>'+selected.map(function(m){return m.serial;}).join(', ');
+  result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+(selected.length>1?' sairam':' saiu')+'!</span><b>Evento: '+eventName+'</b><br>'+formatDate(startDate)+' ate '+formatDate(endDate)+'<br>'+selected.map(function(m){return m.serial;}).join(', ');
   document.querySelectorAll('input[name="batchExitBrands"]').forEach(function(i){i.checked=true;});exitSelected.clear();save();
 }
 
@@ -98,7 +98,7 @@ function refreshEntradaEventos(){var sel=document.getElementById('entradaEventoS
 function refreshEntradaList(){var ev=document.getElementById('entradaEventoSelect').value,box=document.getElementById('entradaMachineBox');if(!ev){box.style.display='none';return;}box.style.display='block';var maquinas=machines.filter(function(m){var rs=getRealStatus(m);if(rs!=='Em uso'&&rs!=='Em atraso')return false;var last=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}return last&&last.event===ev;});var list=document.getElementById('entradaMachineList');if(!maquinas.length){list.innerHTML='<p style="padding:12px;font-size:13px;color:#9ca3af">Nenhuma maquina.</p>';return;}list.innerHTML=maquinas.map(function(m){var last=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}var isAtraso=getRealStatus(m)==='Em atraso';return'<label class="machine-select-item'+(entradaSelected.has(m.serial)?' selected':'')+'" onclick="toggleEntradaSel(\''+m.serial+'\')"><input type="checkbox"'+(entradaSelected.has(m.serial)?' checked':'')+' onclick="event.stopPropagation();toggleEntradaSel(\''+m.serial+'\')" /><div style="flex:1"><b>'+m.serial+'</b> <span style="color:#6b7280;font-size:13px">- '+m.brand+'</span></div><span style="font-size:12px;color:'+(isAtraso?'#9d174d':'#6b7280')+'">'+( isAtraso?'ATRASO: ':'Retorno: ')+formatDate(last?last.endDate:'')+'</span></label>';}).join('');document.getElementById('entradaSelCount').textContent=entradaSelected.size+' selecionadas';}
 function toggleEntradaSel(s){if(entradaSelected.has(s))entradaSelected.delete(s);else entradaSelected.add(s);refreshEntradaList();}
 function toggleAllEntrada(){var ev=document.getElementById('entradaEventoSelect').value,mqs=machines.filter(function(m){var rs=getRealStatus(m);if(rs!=='Em uso'&&rs!=='Em atraso')return false;var last=null;for(var i=m.history.length-1;i>=0;i--){if(m.history[i].type==='saida'){last=m.history[i];break;}}return last&&last.event===ev;});if(entradaSelected.size===mqs.length)entradaSelected.clear();else mqs.forEach(function(m){entradaSelected.add(m.serial);});refreshEntradaList();}
-function confirmarEntradaEmLote(){if(!entradaSelected.size){alert('Selecione ao menos uma maquina.');return;}var obs=document.getElementById('entradaObservacao').value.trim(),result=document.getElementById('entradaResult');if(!confirm('Confirmar entrada de '+entradaSelected.size+' maquina(s)?'))return;var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){return entradaSelected.has(m.serial);});selected.forEach(function(m){m.status='Disponivel';m.history.push({type:'entrada',observation:obs||'',date:new Date().toISOString(),user:un,userEmail:ue});});result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+' deu'+(selected.length>1?'ram':'')+' entrada!</span>'+selected.map(function(m){return m.serial;}).join(', ');entradaSelected.clear();document.getElementById('entradaObservacao').value='';refreshEntradaEventos();save();}
+function confirmarEntradaEmLote(){if(!entradaSelected.size){alert('Selecione ao menos uma maquina.');return;}var obs=document.getElementById('entradaObservacao').value.trim(),result=document.getElementById('entradaResult');if(!confirm('Confirmar entrada de '+entradaSelected.size+' maquina(s)?'))return;var un=getCurrentUserName(),ue=getCurrentUserEmail(),selected=machines.filter(function(m){return entradaSelected.has(m.serial);});selected.forEach(function(m){m.status='Disponivel';m.history.push({type:'entrada',observation:obs||'',date:new Date().toISOString(),user:un,userEmail:ue});});result.className='batch-result show';result.innerHTML='<span class="batch-total">'+selected.length+' maquina'+(selected.length>1?'s':'')+(selected.length>1?' deram':' deu')+' entrada!</span>'+selected.map(function(m){return m.serial;}).join(', ');entradaSelected.clear();document.getElementById('entradaObservacao').value='';refreshEntradaEventos();save();}
 
 // ═══════════════════════════════════════════
 // RENOVAR
@@ -175,7 +175,7 @@ function atualizarQtyDisponivel() {
   if(!brands.length||!s||!e) { el.innerHTML=''; return; }
   var linhas = brands.map(function(b){
     var d = getDisponiveisPorMarca(b, s, e);
-    return '<b style="color:'+(d>0?'#166534':'#991b1b')+'">'+b+': '+d+' disponivel'+(d!==1?'is':'')+'</b>';
+    return '<b style="color:'+(d>0?'#166534':'#991b1b')+'">'+b+': '+d+(d!==1?' disponiveis':' disponivel')+'</b>';
   });
   el.innerHTML = 'Disponibilidade: '+linhas.join(' &nbsp;|&nbsp; ');
 }
@@ -367,3 +367,13 @@ startFirebaseListener = function() {
   startReservasIntencaoListener();
 };
 
+// ═══════════════════════════════════════════
+// LIMPAR FILTROS (Reservas por quantidade)
+// ═══════════════════════════════════════════
+function limparFiltrosIntencao() {
+  document.getElementById('intencaoFiltroData').value = 'todas';
+  document.getElementById('intencaoFiltroStatus').value = 'todas';
+  document.getElementById('intencaoFiltroDataInicio').value = '';
+  document.getElementById('intencaoFiltroDataFim').value = '';
+  onFiltroDataChange(); // esconde datas personalizadas e re-renderiza
+}

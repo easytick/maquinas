@@ -221,7 +221,7 @@ function renderDayAlerts() {
     });
     var subFestRep = festRepPend.slice(0, 2).map(function(f) { return f.evento; }).join(', ') + (festRepPend.length > 2 ? '…' : '');
     listaEl.appendChild(_makeAlertaItem('yellow', '🎪',
-      festRepPend.length + ' festival' + (festRepPend.length > 1 ? 'is' : '') + ' com repasses pendentes',
+      festRepPend.length + (festRepPend.length > 1 ? ' festivais' : ' festival') + ' com repasses pendentes',
       subFestRep + ' · ' + formatMoney(festRepPendTotal) + ' total',
       detalheFestRep, 'Ver festivals',
       function() { setPage('fechamentos'); setFechTab('festivals'); }));

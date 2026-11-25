@@ -372,3 +372,11 @@ startFirebaseListener = function() {
   startFechamentosListener();
 };
 
+// ═══════════════════════════════════════════
+// LIMPAR FILTROS (Extrato recorrentes)
+// ═══════════════════════════════════════════
+function limparFiltrosRecExtrato() {
+  document.getElementById('recExtratoMes').value = '';
+  document.getElementById('recExtratoCliente').value = '';
+  renderRecExtrato();
+}

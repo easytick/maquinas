@@ -96,7 +96,7 @@ function render(){
   var search=document.getElementById('searchInput').value.toLowerCase(),brand=document.getElementById('brandFilter').value,status=currentStatusFilter,evFilt=document.getElementById('eventFilter').value;
   var filtered=machines.filter(function(m){var rs=getRealStatus(m);return m.serial.toLowerCase().indexOf(search)>-1&&(!brand||m.brand===brand)&&(!status||rs===status)&&(!evFilt||machineIsInEvent(m,evFilt));});
   var rc=document.getElementById('resultsCount');
-  if(search||brand||status||evFilt){rc.style.display='block';rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
+  if(search||brand||status||evFilt){rc.style.display='flex';document.getElementById('resultsCountText').textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:'');}
   else rc.style.display='none';
   var list=document.getElementById('machineList');list.innerHTML='';
   if(!filtered.length){list.innerHTML="<p style='color:#9ca3af'>Nenhuma maquina encontrada.</p>";return;}
@@ -188,7 +188,7 @@ function renderMachines() {
     return m.serial.toLowerCase().indexOf(search)>-1 && (!brand||m.brand===brand) && (!status||rs===status) && (!evFilt||machineIsInEvent(m,evFilt));
   });
   var rc = document.getElementById('resultsCount');
-  if(search||brand||status||evFilt){ rc.style.display='block'; rc.textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:''); }
+  if(search||brand||status||evFilt){ rc.style.display='flex'; document.getElementById('resultsCountText').textContent=filtered.length+' maquina'+(filtered.length!==1?'s':'')+' encontrada'+(filtered.length!==1?'s':'')+(evFilt?' - Evento: '+evFilt:'')+(brand?' - '+brand:'')+(status?' - '+status:''); }
   else rc.style.display='none';
   var list = document.getElementById('machineList'); list.innerHTML='';
   if(!filtered.length){ list.innerHTML="<p style='color:#9ca3af'>Nenhuma maquina encontrada.</p>"; return; }
@@ -232,4 +232,12 @@ document.getElementById('searchInput').addEventListener('input', renderMachines)
 document.getElementById('brandFilter').addEventListener('change', renderMachines);
 document.getElementById('eventFilter').addEventListener('change', renderMachines);
 
-
+// ═══════════════════════════════════════════
+// LIMPAR FILTROS (aba Maquinas)
+// ═══════════════════════════════════════════
+function limparFiltrosMaquinas() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('brandFilter').value = '';
+  document.getElementById('eventFilter').value = '';
+  setStatusFilter(''); // ja chama renderMachines()
+}

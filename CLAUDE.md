@@ -85,7 +85,9 @@ Disponivel --> Manutencao --> Disponivel
 - Para ingresso: relatorio separado por origem (Loja Virtual + Aplicativo)
 - Calculo: total bruto - dinheiro (fica com produtor) - cobranças/taxas - saques antecipados = valor a repassar
 - Conciliacao automatica de saques do financeiro pelo nome do evento
-- Exportacao: copiar texto ou baixar imagem
+- Exportacao: copiar texto, baixar imagem (PNG) ou baixar PDF (A4, paginado; jsPDF carregado sob demanda via CDN)
+- Fluxo de exportacao: `coletarModeloFechamento()` (le a tela) -> `montarHtmlFechamento(modelo)` (layout) -> `exportarHtmlFechamento(html, nome, 'png'|'pdf')`
+- O modelo e salvo no Firebase no campo `modelo` (JSON) ao gerar/editar; o menu `⋮` do historico usa `baixarFechamentoHistorico(fid, formato)` para baixar de novo. Fechamentos antigos sem `modelo` usam `montarHtmlFechamentoTexto()` (cabecalho/rodape padrao + `textoFinal`)
 
 ### Historico de fechamentos
 
@@ -129,6 +131,12 @@ Cada maquina e exibida como um card colapsavel:
 - Estado de expansao controlado por `expandedMachines{}` em memoria (nao persiste no Firebase)
 - `toggleMachineExpand(serial)` — alterna aberto/fechado e re-renderiza
 - Classes CSS relevantes: `.machine-item`, `.machine-compact-row`, `.machine-expand-btn`, `.machine-detail`
+
+## Admin — limpeza de eventos
+
+- `getEventoInfo(ev)` — ultima atividade, qtd de maquinas, lancamentos no financeiro e `ativo` (maquina em uso no evento ou reserva com `endDate >= hoje`)
+- Filtro por idade (sem atividade ha 30/60/90/180/365 dias) + selecao multipla + `apagarEventosSelecionados()`
+- `removerEventosDasMaquinas(nomes)` apaga so historico/reservas das maquinas; eventos ativos sao sempre ignorados. Financeiro e fechamentos NAO sao apagados (decisao do usuario)
 
 ## Marcas suportadas
 

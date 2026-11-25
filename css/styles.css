@@ -208,7 +208,7 @@ button:disabled{background:#9ca3af;cursor:not-allowed;opacity:.7}
 .blocked-msg{margin-top:6px;padding:7px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e}
 
 /* RESULTS COUNT */
-.results-count{background:#eef6ff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;margin-bottom:10px;display:none}
+.results-count{background:#eef6ff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:bold;margin-bottom:10px;display:none;align-items:center;justify-content:space-between;gap:8px}
 
 /* FINANCEIRO */
 .fin-summary{background:var(--blue);color:#fff;border-radius:14px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
@@ -256,3 +256,8 @@ button:disabled{background:#9ca3af;cursor:not-allowed;opacity:.7}
   .day-tabs{grid-template-columns:repeat(4,1fr)}
   .custom-filter{grid-template-columns:1fr 1fr 1fr}
 }
+
+/* Botao limpar filtros */
+.btn-limpar-filtros{width:auto;background:#fff;color:#b91c1c;border:1.5px solid #fecaca;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0;margin:0}
+.btn-limpar-filtros:hover{background:#fef2f2}
+.filtros-acoes{display:flex;justify-content:flex-end;margin-bottom:10px}
